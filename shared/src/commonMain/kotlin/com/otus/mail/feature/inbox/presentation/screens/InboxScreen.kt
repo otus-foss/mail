@@ -30,13 +30,13 @@ import com.otus.mail.feature.inbox.presentation.InboxContext
 import com.otus.mail.feature.inbox.presentation.InboxFilterState
 import com.otus.mail.feature.inbox.presentation.InboxState
 import com.otus.mail.feature.inbox.presentation.InboxStatus
+import com.otus.mail.feature.inbox.presentation.components.CategoryView
 import com.otus.mail.feature.inbox.presentation.components.InboxEmptyState
 import com.otus.mail.feature.inbox.presentation.components.InboxHeaderActions
 import com.otus.mail.feature.inbox.presentation.components.InboxLayers
 import com.otus.mail.feature.inbox.presentation.components.InboxPanel
 import com.otus.mail.feature.inbox.presentation.components.InboxPanelActions
 import com.otus.mail.feature.inbox.presentation.components.InboxResults
-import com.otus.mail.feature.inbox.presentation.components.ListedMail
 import com.otus.mail.feature.inbox.presentation.components.OpenedMessage
 import com.otus.mail.feature.inbox.presentation.components.PanelLook
 import com.otus.mail.feature.inbox.presentation.components.PanelOpens
@@ -46,6 +46,7 @@ import com.otus.mail.feature.inbox.presentation.components.grownWith
 import com.otus.mail.feature.inbox.presentation.components.inboxBar
 import com.otus.mail.feature.inbox.presentation.components.panelSelection
 import com.otus.mail.feature.inbox.presentation.components.rememberActiveFilters
+import com.otus.mail.feature.inbox.presentation.components.rememberCategoryView
 import com.otus.mail.feature.inbox.presentation.components.rememberFilterSelection
 import com.otus.mail.feature.inbox.presentation.components.rememberHeaderActions
 import com.otus.mail.feature.inbox.presentation.components.rememberInboxRows
@@ -65,21 +66,21 @@ fun InboxScreen(
     val state = rememberInboxState(context.defaultSearch)
     val rows = rememberInboxRows(messages, messageActions, context.opening)
     val filters = context.filters ?: remember { InboxFilterState() }
-    val listed = ListedMail(messages, filters.applied)
-    val unreadCount = rememberUnreadCount(listed, status.loading)
+    val sorted = rememberCategoryView(context, state, messages, status, filters)
+    val unreadCount = rememberUnreadCount(sorted.listed, status.loading)
     val activeFilters = rememberActiveFilters(filters, context.filterOptions, messages, dateFormatter)
     var panelHeight by remember { mutableStateOf(0.dp) }
     val density = LocalDensity.current
-    val page = shownPage(state, context)
+    val page = shownPage(state, context).sortedInto(sorted)
     val headerActions = rememberHeaderActions(state, page, filters, messages, rows, onOpenNavigation, dateFormatter)
-    val selecting = rows.panelSelection(listed.messages)
+    val selecting = rows.panelSelection(sorted.listed.messages)
     ProvideTextStyle(panelTextStyle()) {
         SlidingOverlay(
             rows.opened,
             Modifier.fillMaxSize(),
             base = {
                 ActionBarHost(
-                    bar = inboxBar(listed, state, rows, messageActions, context.onCompose, headerActions),
+                    bar = inboxBar(sorted.listed, state, rows, messageActions, context.onCompose, headerActions),
                     Modifier
                         .fillMaxSize()
                         // The control panel draws behind the status bar and pads itself.
@@ -90,7 +91,7 @@ fun InboxScreen(
                     // Message rows reach the screen edges so a swipe's color does; everything else keeps the inset.
                     PanelOverList(
                         status.loading,
-                        rowsShown = messages.isNotEmpty(),
+                        rowsShown = sorted.messages.isNotEmpty(),
                         onRefresh,
                         holdInset = selecting != null,
                         expansion = headerActions.expansion,
@@ -101,17 +102,17 @@ fun InboxScreen(
                                 page,
                                 dateFormatter,
                                 headerActions,
-                                PanelLook(collapse, unreadCount, activeFilters, selecting),
+                                PanelLook(collapse, unreadCount, activeFilters, sorted.tabs, selecting),
                                 Modifier
                                     .onSizeChanged { panelHeight = with(density) { it.height.toDp() } }
                                     .then(modifier),
                             )
                         },
                     ) { topInset, collapse ->
-                        val frame = context.listFrame(state.searching, topInset, barPadding, collapse)
+                        val frame = page.listFrame(state.searching, topInset, barPadding, collapse)
                         Box(Modifier.hiddenWhen(headerActions.covers(state))) {
-                            InboxResults(listed, status, state, dateFormatter, rows.gestures, frame) {
-                                InboxEmptyContent(messages, status, state, page, filters, onRefresh)
+                            InboxResults(sorted.listed, status, state, dateFormatter, rows.gestures, frame) {
+                                InboxEmptyContent(sorted.messages, status, state, page, filters, onRefresh)
                             }
                         }
                     }
@@ -245,6 +246,10 @@ private fun shownPage(
         context.copy(title = it.label, emptyTitle = "${it.label} is empty", folderPill = it)
     } ?: context
 }
+
+/** This page naming an empty category pill, and paging for the pill's share of the mail. */
+private fun InboxContext.sortedInto(view: CategoryView): InboxContext =
+    copy(emptyTitle = view.tabs?.emptyTitle ?: emptyTitle, onLoadMore = view.onLoadMore)
 
 /** Whether search, folder filters, or a folder pill mix folders, so an opened row names none it came from. */
 private fun InboxState.mixesFolders(

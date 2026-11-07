@@ -59,10 +59,13 @@ import com.otus.mail.feature.folders.domain.FolderRuleRepository
 import com.otus.mail.feature.folders.domain.ReadLaterFolders
 import com.otus.mail.feature.folders.domain.RuleSenderBlocks
 import com.otus.mail.feature.folders.domain.SenderHistory
+import com.otus.mail.feature.inbox.data.CategorizedMailSource
+import com.otus.mail.feature.inbox.data.CategoryRecords
 import com.otus.mail.feature.inbox.data.JmapAddressBook
 import com.otus.mail.feature.inbox.data.JmapMailSource
 import com.otus.mail.feature.inbox.data.JmapPeopleSearch
 import com.otus.mail.feature.inbox.domain.MailSource
+import com.otus.mail.feature.inbox.domain.category.SenderDirectory
 import com.otus.mail.feature.notifications.data.JmapNewMailChecker
 import com.otus.mail.feature.notifications.data.PushServices
 import com.otus.mail.feature.notifications.domain.InstantPush
@@ -81,6 +84,7 @@ import com.otus.mail.feature.read.domain.KnownPeople
 import com.otus.mail.feature.read.domain.MessageHeaders
 import com.otus.mail.feature.read.domain.Newsletters
 import com.otus.mail.feature.read.presentation.NewsletterSteps
+import com.otus.mail.resources.Res
 import com.otus.storage.StringMapStore
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -160,7 +164,11 @@ class MailServices(
     /** The changes a notification's buttons make to one email. */
     val byIdWriter: EmailByIdWriter by lazy { JmapEmailByIdWriter(connections, changes, mailboxes) }
     internal val mail: MailSource by lazy {
-        JmapMailSource(connections, cache, changes, mailboxes, sites = serverSites)
+        CategorizedMailSource(
+            JmapMailSource(connections, cache, changes, mailboxes, sites = serverSites),
+            cache,
+            CategoryRecords(::senderCategories, host.categoriesOn),
+        )
     }
     internal val bodies: MessageBodies by lazy { JmapMessageBodies(connections, cache) }
     private val compose by lazy { JmapComposeMail(connections, mailboxes, changes) }
@@ -258,3 +266,7 @@ class MailServices(
             emptyList()
         }
 }
+
+/** The curated sender list Inbox categories start from; see docs/categories.md. */
+private suspend fun senderCategories(): SenderDirectory =
+    SenderDirectory.parse(Res.readBytes("files/sender_categories.txt").decodeToString())

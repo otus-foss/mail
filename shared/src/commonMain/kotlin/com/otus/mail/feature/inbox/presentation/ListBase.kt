@@ -1,5 +1,6 @@
 package com.otus.mail.feature.inbox.presentation
 
+import com.otus.mail.core.categories.domain.InboxCategories
 import com.otus.mail.core.mailbox.MailboxRole
 import com.otus.mail.core.messages.domain.MailScope
 import com.otus.mail.core.messages.domain.MailboxScope
@@ -14,10 +15,11 @@ import com.otus.mail.feature.inbox.domain.InboxSearch
 
 /**
  * What a list page calls itself, by [title] and when it is empty by [emptyTitle], what its search
- * starts from and can widen to, its row of [pills], the filters it opens with, and whether its
- * filter panel offers folders, [byFolder].
+ * starts from and can widen to, its row of [pills], the filters it opens with, whether its
+ * filter panel offers folders, [byFolder], and the [categories] that sort its mail into pills, null
+ * on a page that shows none.
  */
-class ListBase(
+data class ListBase(
     val title: String,
     val emptyTitle: String,
     val defaultSearch: InboxSearch,
@@ -25,16 +27,19 @@ class ListBase(
     val pills: InboxPills,
     val startingFilters: InboxFilters = InboxFilters(),
     val byFolder: Boolean = false,
+    val categories: InboxCategories? = null,
 ) {
     companion object {
         /**
          * The Inbox, holding what the user chose in the Inbox settings, [contents]. Only it filters
-         * by folder: a folder's page already shows one.
+         * by folder, as a folder's page already shows one, and sorts into [categories] while they
+         * are on.
          */
         fun inbox(
             contents: InboxContents,
             pills: InboxPills,
             mailboxSearch: MailboxSearch,
+            categories: InboxCategories,
         ): ListBase =
             ListBase(
                 title = MailboxRole.Inbox.title,
@@ -43,6 +48,7 @@ class ListBase(
                 mailboxSearch = mailboxSearch,
                 pills = pills,
                 byFolder = true,
+                categories = categories.takeIf { it.enabled },
             )
 
         /** A folder's page shows only the filter pills of [pills]: folder pills would leave the folder. */

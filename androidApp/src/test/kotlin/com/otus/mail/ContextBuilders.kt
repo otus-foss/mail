@@ -1,6 +1,7 @@
 package com.otus.mail
 
 import com.otus.designsystem.shared.feedback.components.ToastState
+import com.otus.mail.core.categories.domain.InboxCategories
 import com.otus.mail.core.messages.domain.ComposeRequest
 import com.otus.mail.core.messages.domain.MailMessage
 import com.otus.mail.core.messages.domain.MessageContent
@@ -68,6 +69,7 @@ internal class InboxContextBuilder {
     var scope: MailScopeSwitch? = null
     var quick = QuickViewContext(QuickViewModule.Defaults, targets = emptyList())
     var opening: OpenRequest? = null
+    var categories: InboxCategories? = null
 
     fun build(): InboxContext =
         InboxContext(
@@ -86,6 +88,7 @@ internal class InboxContextBuilder {
             scope = scope,
             quick = quick,
             opening = opening,
+            categories = categories,
         )
 }
 
@@ -108,6 +111,7 @@ internal class ReadContextBuilder {
             edits = null,
             person = null,
             files = ReadFiles(downloads = null, saved = null, printer = null),
+            categories = null,
         )
     var effects = ReadEffects(ToastState(), launch = {}, NewsletterSteps())
     var display =

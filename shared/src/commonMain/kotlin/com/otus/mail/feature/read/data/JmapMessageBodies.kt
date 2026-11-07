@@ -100,6 +100,8 @@ class JmapMessageBodies(
             try {
                 write(loginId) {
                     putObject(CacheKind.Body, email.id, EmailObject.serializer(), email, email.receivedMillis)
+                    // The body may hold markup the headers lacked, so the Inbox sorts the email again.
+                    remove(CacheKind.Category, listOf(email.id))
                 }
             } catch (expected: CacheStorageException) {
                 // The fetched body can still be opened without a persistent copy.

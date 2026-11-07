@@ -14,6 +14,8 @@ strings. It knows nothing of JMAP; the callers encode and decode the objects.
 - Address books and contact cards of every account the login reaches, by account and id.
 - Sync values per login, such as the `Email` and `Thread` states and the loaded listings, and
   each contacts account's name, sharing, and `AddressBook` and `ContactCard` states.
+- The Inbox category of each listed email, with its reasons and the classifier's version; see
+  [categories](categories.md).
 
 ## Where it lives
 
@@ -131,9 +133,9 @@ already in the target book counts as that card, like a matching address.
 
 ## Retention and removal
 
-At each start the app removes cached bodies of mail received more than 90 days ago
-(`trimCache` in `app/CacheUpkeep.kt`). Opening such a message fetches its body again. The other kinds stay
-until sync replaces or destroys them.
+At each start the app removes cached bodies and Inbox categories of mail received more than 90 days
+ago (`trimCache` in `app/MailCacheUpkeep.kt`). Opening such a message fetches its body again, and a
+list that shows it sorts it again. The other kinds stay until sync replaces or destroys them.
 
 The same start-up trim, `AttachmentRetention.trim`, deletes `.partial` files that an earlier process left, and downloaded
 attachments that are not kept offline and were last used more than 7 days ago. Opening or

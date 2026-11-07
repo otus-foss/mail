@@ -196,6 +196,7 @@ internal object ReadViewFixtures {
                 edits = edits(writer, toasts),
                 person = null,
                 files = photoFiles(),
+                categories = null,
             )
         effects = ReadEffects(toasts, launch, NewsletterSteps())
         display =
@@ -228,9 +229,7 @@ internal object ReadViewFixtures {
                 PHOTO_SIZE * 0.6f,
                 PHOTO_SIZE * 0.4f,
                 PHOTO_SIZE * 0.25f,
-                Paint().apply {
-                    color = Color.rgb(0xe8, 0xc4, 0x6a)
-                },
+                Paint().apply { color = Color.rgb(0xe8, 0xc4, 0x6a) },
             )
         }
         return bitmap.pngBytes()

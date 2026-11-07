@@ -1,5 +1,7 @@
 package com.otus.mail.feature.read.presentation
 
+import com.otus.mail.core.categories.domain.CategoryPlacement
+import com.otus.mail.core.categories.domain.MailCategory
 import com.otus.mail.core.mailbox.pathText
 import com.otus.mail.core.messages.domain.MailAction
 import com.otus.mail.core.messages.domain.MailMessage
@@ -14,7 +16,8 @@ import com.otus.mail.feature.read.domain.Participant
  * The Read view page the ⋯ menu acts on: its [message], at [index] of [count] in its conversation,
  * newest first. [imagesBlocked] while its sender may not show remote images. [suggestedPath] is the
  * folder this sender's mail usually goes to, when one is known. [people] is everyone the
- * conversation names besides the user.
+ * conversation names besides the user. [category] is where the Inbox's categories put the
+ * conversation; null while they are off or the list is not the Inbox.
  */
 data class ReadPage(
     val message: MailMessage,
@@ -26,6 +29,7 @@ data class ReadPage(
     val muted: Boolean = false,
     val suggestedPath: List<String>? = null,
     val people: List<Participant> = emptyList(),
+    val category: CategoryPlacement? = null,
 )
 
 /** A part of the ⋯ menu: the page's message, its sender, or the whole conversation. */
@@ -99,14 +103,23 @@ sealed interface ReadMenuEntry {
     data class People(
         val people: List<Participant>,
     ) : ReadMenuEntry
+
+    /** Says why the Inbox shows the conversation in [category], and lets the sender's mail go elsewhere. */
+    data class WhyCategory(
+        val category: MailCategory,
+    ) : ReadMenuEntry
+
+    /** Puts all mail from the sender in a category the user picks. */
+    data object CategorizeSender : ReadMenuEntry
 }
 
 /**
  * The ⋯ menu for [page]: what acts on its message, then its sender, then the whole conversation.
  * A single message moves from its own section and has no conversation section. A newsletter
  * offers no reply, and the user's own message has no reply or sender section. Always show images
- * appears only while images are blocked. People appears once anyone besides the sender takes part:
- * with the conversation's entries in a thread, else with the message's.
+ * appears only while images are blocked, and the category entries only while the Inbox sorts the
+ * conversation. People appears once anyone besides the sender takes part: with the conversation's
+ * entries in a thread, else with the message's.
  */
 fun readMenu(page: ReadPage): ReadMenu =
     ReadMenu(
@@ -114,7 +127,8 @@ fun readMenu(page: ReadPage): ReadMenu =
             add(ReadMenuSection(ReadMenuPart.ThisMessage, page.messageEntries()))
             if (!page.fromUser) {
                 val entries =
-                    listOf(ReadMenuEntry.SenderContact, ReadMenuEntry.BlockSender, ReadMenuEntry.Act(MailAction.Spam))
+                    listOf(ReadMenuEntry.SenderContact, ReadMenuEntry.BlockSender, ReadMenuEntry.Act(MailAction.Spam)) +
+                        listOfNotNull(ReadMenuEntry.CategorizeSender.takeIf { page.category != null })
                 add(ReadMenuSection(ReadMenuPart.Sender(page.senderName), entries))
             }
             if (page.thread) {
@@ -148,6 +162,7 @@ private fun ReadPage.messageEntries(): List<ReadMenuEntry> =
         add(ReadMenuEntry.Act(MailAction.Flag))
         if (!thread) add(moveEntry)
         add(ReadMenuEntry.ViewDetails)
+        category?.let { add(ReadMenuEntry.WhyCategory(it.category)) }
         add(ReadMenuEntry.Print)
         if (thread && index > 0) add(ReadMenuEntry.DeleteThisMessage)
         if (!thread) peopleEntry?.let(::add)

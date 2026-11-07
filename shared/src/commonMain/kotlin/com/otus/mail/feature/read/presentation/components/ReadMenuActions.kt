@@ -1,10 +1,12 @@
 package com.otus.mail.feature.read.presentation.components
 
 import com.otus.designsystem.resources.Res
+import com.otus.designsystem.resources.symbol_all_inbox
 import com.otus.designsystem.resources.symbol_block
 import com.otus.designsystem.resources.symbol_delete
 import com.otus.designsystem.resources.symbol_group
 import com.otus.designsystem.resources.symbol_info
+import com.otus.designsystem.resources.symbol_label
 import com.otus.designsystem.resources.symbol_notifications_off
 import com.otus.designsystem.resources.symbol_person_add
 import com.otus.designsystem.resources.symbol_print
@@ -12,6 +14,7 @@ import com.otus.designsystem.resources.symbol_verified_user
 import com.otus.designsystem.shared.controls.elements.UiAction
 import com.otus.designsystem.shared.feedback.components.ToastMessage
 import com.otus.designsystem.shared.overlays.components.OptionsItem
+import com.otus.mail.core.categories.presentation.label
 import com.otus.mail.core.mailbox.MailboxRole
 import com.otus.mail.core.messages.domain.MailAction
 import com.otus.mail.core.messages.domain.MailMessage
@@ -45,6 +48,13 @@ internal class ReadMenuActions(
 ) {
     private val row = subject.messages.single()
     private val edits = read.services.edits
+    private val headers = read.services.headers != null
+
+    /** Whether the app offers something for a person: their card, or ways to save the address. */
+    private val people = read.services.person != null
+
+    /** Whether the list sorts into the Inbox's categories, which the category sheet needs. */
+    private val sorted = read.services.categories != null
 
     /** Marks on the page alone, while the conversation's folder lets them change. */
     private val pageSubject =
@@ -90,11 +100,8 @@ internal class ReadMenuActions(
             }
 
             ReadMenuEntry.ViewDetails -> {
-                read.services.headers?.let {
-                    action("View details", Res.drawable.symbol_info, "Headers, encryption, original") {
-                        state.sheet = ReadSheet.Details(page)
-                    }
-                }
+                val details = ReadSheet.Details(page)
+                sheetItem("View details", Res.drawable.symbol_info, details, headers, "Headers, encryption, original")
             }
 
             ReadMenuEntry.Print -> {
@@ -120,11 +127,21 @@ internal class ReadMenuActions(
             }
 
             ReadMenuEntry.SenderContact -> {
-                personItem("Add to contacts", Res.drawable.symbol_person_add, ReadSheet.Person(page.sender))
+                sheetItem("Add to contacts", Res.drawable.symbol_person_add, ReadSheet.Person(page.sender), people)
             }
 
             is ReadMenuEntry.People -> {
-                personItem("People (${entry.people.size})", Res.drawable.symbol_group, ReadSheet.People(entry.people))
+                val sheet = ReadSheet.People(entry.people)
+                sheetItem("People (${entry.people.size})", Res.drawable.symbol_group, sheet, people)
+            }
+
+            is ReadMenuEntry.WhyCategory -> {
+                val label = "Why is this in ${entry.category.label}?"
+                sheetItem(label, Res.drawable.symbol_all_inbox, ReadSheet.Category, sorted)
+            }
+
+            ReadMenuEntry.CategorizeSender -> {
+                sheetItem("Categorize sender…", Res.drawable.symbol_label, ReadSheet.Category, sorted, opens = true)
             }
         }
 
@@ -149,12 +166,16 @@ internal class ReadMenuActions(
             }
         }
 
-    /** An entry that opens [sheet] about people, where the app offers something for them. */
-    private fun personItem(
+    /** An entry that opens [sheet], where the app [offers] what the sheet needs; null where it does not. */
+    private fun sheetItem(
         label: String,
         symbol: DrawableResource,
         sheet: ReadSheet,
-    ): OptionsItem? = read.services.person?.let { action(label, symbol) { state.sheet = sheet } }
+        offers: Boolean,
+        detail: String? = null,
+        opens: Boolean = false,
+    ): OptionsItem? =
+        OptionsItem.Action(UiAction(label, symbol) { state.sheet = sheet }, opens, detail).takeIf { offers }
 
     private fun offer(action: MailAction): OfferedAction? =
         if (action == MailAction.Read || action == MailAction.Flag) pageSubject.offer(action) else subject.offer(action)

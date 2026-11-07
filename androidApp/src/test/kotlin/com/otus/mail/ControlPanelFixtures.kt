@@ -1,5 +1,7 @@
 package com.otus.mail
 
+import com.otus.mail.core.categories.domain.CategoryVerdict
+import com.otus.mail.core.categories.domain.MailCategory
 import com.otus.mail.core.mailbox.MailboxRole
 import com.otus.mail.core.messages.domain.AccountAddresses
 import com.otus.mail.core.messages.domain.MailAttributes
@@ -23,14 +25,14 @@ internal object ControlPanelFixtures {
     val messages: List<MailMessage> =
         listOf(
             message("1", "Grace Hopper", "Q4 launch plan", 0, unread = true, files = true),
-            message("2", "Acme Billing", "Invoice 1042 for September", 0),
+            message("2", "Acme Billing", "Invoice 1042 for September", 0, category = MailCategory.Transactions),
             message("3", "Mara König", "Notes from Thursday", 2, unread = true),
             message("4", "Katherine Johnson", "Re: Launch numbers", 3),
             message("5", "Legal team", "German terms review", 8),
             message("6", "Alan Turing", "Lunch on Friday?", 9),
             message("7", "Radia Perlman", "Spanning tree slides", 10),
             message("8", "Grace Hopper", "Re: COBOL review notes", 10),
-            message("9", "Sentry", "Weekly report for Otus", 11, unread = true),
+            message("9", "Sentry", "Weekly report for Otus", 11, unread = true, category = MailCategory.Notifications),
             message("10", "Donald Knuth", "TAOCP errata", 12),
             message("11", "Barbara Liskov", "Abstraction talk", 13),
             message("12", "Edsger Dijkstra", "Go To considered", 14),
@@ -77,6 +79,7 @@ internal object ControlPanelFixtures {
         daysAgo: Int,
         unread: Boolean = false,
         files: Boolean = false,
+        category: MailCategory? = null,
     ) = MailMessage(
         id,
         MailSender(from, "${from.lowercase().replace(' ', '.')}@example.org"),
@@ -86,5 +89,6 @@ internal object ControlPanelFixtures {
         MailLocation("Inbox", "otus@rubylabs.design", accountId = "otus", mailboxRole = MailboxRole.Inbox),
         MailAttributes(unread = unread, attachments = if (files) listOf("plan.pdf") else emptyList()),
         to = listOf(MailSender("", "otus@rubylabs.design")),
+        category = category?.let { CategoryVerdict(it, emptyList()) },
     )
 }

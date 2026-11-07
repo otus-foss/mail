@@ -40,6 +40,7 @@ import com.otus.mail.core.messages.presentation.components.MailScopeSwitch
 import com.otus.mail.core.messages.presentation.icon
 import com.otus.mail.core.settings.presentation.icon
 import com.otus.mail.feature.inbox.domain.InboxSearch
+import com.otus.mail.feature.inbox.presentation.CategoryTabs
 import com.otus.mail.feature.inbox.presentation.InboxContext
 
 /**
@@ -216,13 +217,15 @@ private fun searchFieldModifier(
 /**
  * How the panel looks right now: [collapse] reads how far the list has collapsed it;
  * [unreadCount] shows on the Unread pill; [filters] are the page's active filters, which lead the
- * pill row and count on the filter button; [selecting] is set while rows are selected; and
- * [searchFocused] puts the keyboard in the panel's search field.
+ * pill row and count on the filter button; [categories] are the Inbox's category pills, which lead
+ * the row while they are on; [selecting] is set while rows are selected; and [searchFocused] puts
+ * the keyboard in the panel's search field.
  */
-class PanelLook(
+data class PanelLook(
     val collapse: () -> Float = { 0f },
     val unreadCount: Int = 0,
     val filters: ActiveFilters = ActiveFilters(),
+    val categories: CategoryTabs? = null,
     val selecting: PanelSelection? = null,
     val searchFocused: Boolean = false,
     val expansion: PanelExpansion? = null,
@@ -237,7 +240,7 @@ fun PanelLook.grownWith(
     expansion: PanelExpansion?,
     expanded: @Composable () -> Unit,
     searchFocused: Boolean,
-): PanelLook = PanelLook(collapse, unreadCount, filters, selecting, searchFocused, expansion, expanded)
+): PanelLook = copy(searchFocused = searchFocused, expansion = expansion, expanded = expanded)
 
 /** The selected rows' [count], with what ✕ and Select all do. */
 class PanelSelection(

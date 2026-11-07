@@ -67,6 +67,7 @@ class OtusMailApplication :
                     DevicePrivacy(screen = true, keyboard = true),
                     wakeOutbox = { OutboxWorker.wake(this, it) },
                     instantPush = instantPush,
+                    categoriesOn = { behavior.behavior.list.categories.enabled },
                 ),
         )
     }

@@ -15,8 +15,8 @@ import com.otus.mail.core.messages.presentation.empty
 import com.otus.mail.feature.read.domain.Participant
 
 /**
- * A sheet over the Read view: the folders of the conversation, a new folder started from there, or
- * a page's headers.
+ * A sheet over the Read view: the folders of the conversation, a new folder started from there, a
+ * page's headers, people, or the conversation's Inbox category.
  */
 sealed interface ReadSheet {
     data object Folders : ReadSheet
@@ -36,6 +36,9 @@ sealed interface ReadSheet {
     data class People(
         val people: List<Participant>,
     ) : ReadSheet
+
+    /** Why the Inbox shows the conversation where it does, and where its sender's mail goes. */
+    data object Category : ReadSheet
 }
 
 /**

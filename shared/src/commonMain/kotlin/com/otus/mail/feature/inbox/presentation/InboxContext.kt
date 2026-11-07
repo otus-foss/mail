@@ -1,5 +1,6 @@
 package com.otus.mail.feature.inbox.presentation
 
+import com.otus.mail.core.categories.domain.InboxCategories
 import com.otus.mail.core.messages.domain.ComposeRequest
 import com.otus.mail.core.messages.presentation.ListNudge
 import com.otus.mail.core.messages.presentation.components.MailScopeSwitch
@@ -41,6 +42,8 @@ data class InboxContext(
     val quick: QuickViewContext,
     /** A row the app asks the list to open, such as a tapped notification's message; null for none. */
     val opening: OpenRequest?,
+    /** The Inbox's categories, which sort the page's own mail into pills; null on a page that shows none. */
+    val categories: InboxCategories?,
     /** The folder pill the screen shows in place of the page's own mail; none until the user picks one. */
     val folderPill: FolderPillOption? = null,
 ) {

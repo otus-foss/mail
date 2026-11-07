@@ -9,6 +9,7 @@ import com.otus.mail.app.MailServices
 import com.otus.mail.core.cache.MailDatabase
 import com.otus.mail.core.cache.SqlMailCache
 import com.otus.mail.core.files.FileDownloadFolder
+import com.otus.mail.core.settings.presentation.MailBehaviorState
 import com.otus.mail.feature.folders.domain.ReadLaterStore
 import com.otus.mail.feature.notifications.domain.InstantPush
 import com.otus.storage.UserDefaultsMap
@@ -17,6 +18,12 @@ import platform.Foundation.NSCachesDirectory
 import platform.Foundation.NSSearchPathDirectory
 import platform.Foundation.NSSearchPathForDirectoriesInDomains
 import platform.Foundation.NSUserDomainMask
+
+/**
+ * The saved Mail settings, one for the process, so the screen and the mail services that run
+ * without it, such as push, read the same settings.
+ */
+internal val iosMailBehavior: MailBehaviorState by lazy { MailBehaviorState(IosMailBehaviorStore()) }
 
 internal fun iosMailServices(push: InstantPush?): MailServices {
     val cacheDirectory = userDirectory(NSCachesDirectory)
@@ -33,7 +40,11 @@ internal fun iosMailServices(push: InstantPush?): MailServices {
                 SqlMailCache(cacheDriver(cacheDirectory)),
                 FileDownloadFolder("${userDirectory(NSApplicationSupportDirectory)}/attachments"),
             ),
-        host = MailPlatform(instantPush = push),
+        host =
+            MailPlatform(
+                instantPush = push,
+                categoriesOn = { iosMailBehavior.behavior.list.categories.enabled },
+            ),
     )
 }
 

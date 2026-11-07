@@ -1,6 +1,9 @@
 package com.otus.mail.feature.read.presentation
 
 import com.otus.designsystem.shared.feedback.components.ToastState
+import com.otus.mail.core.categories.domain.CategoryPlacement
+import com.otus.mail.core.categories.domain.InboxCategories
+import com.otus.mail.core.categories.domain.MailCategory
 import com.otus.mail.core.files.SavedFiles
 import com.otus.mail.core.messages.domain.ComposeRequest
 import com.otus.mail.core.messages.domain.MailMessage
@@ -106,8 +109,9 @@ class ReadFiles(
 
 /**
  * The services behind the newsletter strip and the ⋯ menu, including the [edits] the view makes,
- * and [person], what tapping a person or the menu's contact entries open; each is null where none
- * is wired, and without [person] the pills stay plain. [files] handles attachments and printing.
+ * [person], what tapping a person or the menu's contact entries open, and the Inbox's
+ * [categories]; each is null where none is wired, and without [person] the pills stay plain.
+ * [files] handles attachments and printing.
  */
 class ReadServices(
     val newsletters: Newsletters?,
@@ -116,7 +120,21 @@ class ReadServices(
     val edits: ReadEdits?,
     val person: PersonSheet?,
     val files: ReadFiles,
+    val categories: ReadCategories?,
 )
+
+/**
+ * The Inbox's categories as the Read view offers them: the saved [settings], and [choose], which
+ * puts a sender's mail in a category from now on, or hands it back to the classifier with null.
+ */
+class ReadCategories(
+    val settings: () -> InboxCategories,
+    val choose: (sender: String, category: MailCategory?) -> Unit,
+) {
+    /** Where the Inbox shows [row] and why; null while categories are off. */
+    fun placement(row: MailMessage): CategoryPlacement? =
+        settings().takeIf { it.enabled }?.placement(row.sender.address, row.category)
+}
 
 /**
  * The Read view's [toasts], and [launch], which runs work in the process's scope, so an

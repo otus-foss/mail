@@ -25,6 +25,7 @@ internal fun AppEffects(
     LaunchedEffect(inbox) { if (inbox) states.list.feed.refresh() }
     ServerChangeEffects(services, states) { current() == MailPage.Inbox }
     AvatarEffects(states, behaviorState)
+    CategoryEffects(states, behaviorState)
     PageRequestEffects(services, states, show)
     MessageOpenEffects(states, navigation::go)
 }
@@ -103,5 +104,21 @@ private fun AvatarEffects(
         snapshotFlow { behaviorState.behavior.avatars.allAccountPhotos }
             .drop(1)
             .collect { states.contacts.avatars.apply() }
+    }
+}
+
+/**
+ * Turning categories on sorts the mail already listed, which only a new list read does, so the
+ * Inbox loads again. Turning them off needs nothing: the pills go and rows keep their order.
+ */
+@Composable
+private fun CategoryEffects(
+    states: MailStates,
+    behaviorState: MailBehaviorState,
+) {
+    LaunchedEffect(states) {
+        snapshotFlow { behaviorState.behavior.list.categories.enabled }
+            .drop(1)
+            .collect { on -> if (on) states.list.feed.refresh() }
     }
 }

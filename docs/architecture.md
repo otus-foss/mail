@@ -45,6 +45,9 @@ as `ListPage` for the Inbox and every folder page. It holds no feature behavior 
   model, `EmailWriter`), the writer and change queue in `data`, and in `presentation` the edits
   every list and Read view observe, the action offers and bars, toasts, and the Move sheet.
 - `core/settings`: the settings models, their store, and the labels settings and lists share.
+- `core/categories`: the Inbox's categories that the list, the Read view, and settings share: the
+  categories, a message's verdict and its reasons, the user's category settings, and their labels.
+  The classifier that makes verdicts stays in `inbox`; see [categories](categories.md).
 - `core/cache`, `core/files`, `core/text`: the mail cache, picked, saved, and downloaded files,
   and size text.
 - `core/storage`: `StoreSpec` and `DeviceStore`, the typed app-private stores each feature

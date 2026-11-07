@@ -18,7 +18,8 @@ import com.otus.mail.feature.sidebar.presentation.sidebarMailboxes
 /**
  * A list of [feed]'s mail on [page], the Inbox and every folder page alike: [base] names the list
  * and says what its search starts from, and every page gets the same Read view, filters, quick
- * view, and scope switcher. [opening] is the row a tapped notification asks it to open.
+ * view, and scope switcher. [opening] is the row a tapped notification asks it to open. Only a
+ * page whose [base] has categories sorts its mail into pills and offers them in the Read view.
  */
 @Composable
 internal fun ListPage(
@@ -54,7 +55,16 @@ internal fun ListPage(
                 filters = filters,
                 filterOptions = rememberFilterOptions(states, base, filters.applied),
                 rowLook = rowLook,
-                readView = rememberReadView(states, feed, navigation, page, messageActions, rowLook.own),
+                readView =
+                    rememberReadView(
+                        states,
+                        feed,
+                        navigation,
+                        page,
+                        messageActions,
+                        rowLook.own,
+                        base.categories != null,
+                    ),
                 nudge =
                     rememberFolderNudge(
                         states.folders.nudge,
@@ -66,6 +76,7 @@ internal fun ListPage(
                 scope = states.scopeSwitch(states.mailScope, states.chooseScope),
                 quick = rememberQuickView(states, page, navigation),
                 opening = opening,
+                categories = base.categories,
             ),
         messageActions = messageActions,
     )

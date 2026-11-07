@@ -329,3 +329,11 @@ header; search still shows its own filters.
   under the pill. A message in two of the folders is listed once.
 - `MailBehaviorStore` saves the row as one value with a pill per line. Lines this version doesn't
   know are skipped.
+
+## Categories
+
+With **Mail behavior › Inbox › Categories** on, the pill row starts with the category pills:
+Primary, Transactions, Notifications, and Newsletters & promotions, each with its unread count.
+Mail sorts every message on the device from its headers, the sender, and the text it has, and the
+⋯ menu says why a message is where it is and can put all of a sender's mail in another category.
+See [categories](categories.md).

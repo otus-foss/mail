@@ -2,6 +2,7 @@ package com.otus.mail.feature.mailsettings.presentation.components
 
 import androidx.compose.runtime.Composable
 import com.otus.designsystem.resources.Res
+import com.otus.designsystem.resources.symbol_all_inbox
 import com.otus.designsystem.resources.symbol_bookmark
 import com.otus.designsystem.resources.symbol_filter_list
 import com.otus.designsystem.resources.symbol_inbox
@@ -22,10 +23,10 @@ import com.otus.settings.presentation.components.ToggleRowSpec
 
 /**
  * Settings › Mail behavior: how Mail acts, in the order the user meets it. Inbox holds what the
- * Inbox lists and its pills, Panels the start page, the sidebar, and the filter panel, then Actions,
- * Reading, and Writing. [folderPills] are the folder pills the accounts' folders can fill,
- * [startPages] the sidebar mailboxes Mail can open on, and [rtl] names the swipes by their physical
- * direction. Each change is saved at once.
+ * Inbox lists, its pills, and its categories, Panels the start page, the sidebar, and the filter
+ * panel, then Actions, Reading, and Writing. [folderPills] are the folder pills the accounts'
+ * folders can fill, [startPages] the sidebar mailboxes Mail can open on, and [rtl] names the swipes
+ * by their physical direction. Each change is saved at once.
  */
 fun mailBehaviorSettings(
     state: MailBehaviorState,
@@ -42,7 +43,7 @@ fun mailBehaviorSettings(
         SettingsSectionSpec("Writing", writingRows(state, pages.signatures)),
     )
 
-/** What the Inbox lists and the inbox pills, each in a sheet, and Read later. */
+/** What the Inbox lists, the inbox pills, and its categories, each in a sheet, and Read later. */
 private fun inboxRows(
     state: MailBehaviorState,
     folderPills: List<FolderPillOption>,
@@ -63,6 +64,14 @@ private fun inboxRows(
             icon = Res.drawable.symbol_filter_list,
             description = "Filters and folders above your mail",
             keywords = listOf("Chips", "Tabs"),
+        ),
+        ChoiceRowSpec(
+            "Categories",
+            categoriesSummary(behavior.list.categories),
+            { CategoriesSheet(state, it) },
+            icon = Res.drawable.symbol_all_inbox,
+            description = "Primary, Transactions, Notifications, and Newsletters",
+            keywords = listOf("Primary", "Transactions", "Notifications", "Newsletters", "Promotions", "Sort"),
         ),
         ToggleRowSpec(
             "Read later",

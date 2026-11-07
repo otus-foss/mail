@@ -58,3 +58,6 @@ sqldelight {
         }
     }
 }
+
+// Data files Mail ships with, such as the sender list Inbox categories start from.
+compose.resources { packageOfResClass = "com.otus.mail.resources" }

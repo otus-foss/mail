@@ -130,13 +130,16 @@ internal fun rememberReadMenu(
                 muted = state.muted == true,
                 suggestedPath = suggested?.let(::listOf),
                 people = participants(state.pages, parts.read.replies.own),
+                category =
+                    parts.read.services.categories
+                        ?.placement(row),
             ),
         )
     return ReadMenuActions(actions.subject, page, content, parts.read, state, perform)
         .items(menu, actions.bar?.more(menu.covers).orEmpty())
 }
 
-/** The sheets over the Read view: the conversation's folders, a new folder, and a page's headers. */
+/** The sheets over the Read view: the conversation's folders and category, a new folder, headers, and people. */
 @Composable
 internal fun ReadSheets(
     parts: ReadParts,
@@ -173,6 +176,10 @@ internal fun ReadSheets(
 
         is ReadSheet.People -> {
             PeopleSheet(sheet.people, onPick = { state.sheet = ReadSheet.Person(it) }, onDismiss = dismiss)
+        }
+
+        ReadSheet.Category -> {
+            read.services.categories?.let { CategorySheet(row, it, dismiss) }
         }
     }
 }
