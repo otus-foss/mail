@@ -22,6 +22,7 @@ import com.otus.designsystem.shared.controls.elements.Symbol
 import com.otus.designsystem.shared.controls.elements.UiAction
 import com.otus.designsystem.shared.folders.elements.FolderColorSwatch
 import com.otus.designsystem.shared.input.elements.InputField
+import com.otus.designsystem.shared.input.elements.InputNote
 import com.otus.designsystem.shared.overlays.components.SheetFrame
 import com.otus.designsystem.shared.overlays.elements.sheetBodyInset
 import com.otus.designsystem.theme.colors.FolderColor
@@ -76,7 +77,7 @@ internal fun NewFolderSheet(
                 name,
                 { name = it },
                 Modifier.focusRequester(focus),
-                supportingText = problem.takeIf { name.isNotEmpty() },
+                note = problem.takeIf { name.isNotEmpty() }?.let(::InputNote),
             )
             SetupControls(
                 setup,
