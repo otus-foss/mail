@@ -180,9 +180,9 @@ private fun PageRequestEffects(
 
 /**
  * Shows mail that arrives or changes elsewhere without a pull: each push reloads the folders, the
- * open list pages, and the inbox while [inboxShown]; the inbox reloads anyway when shown. While Mail is off screen, pushes
- * wait, and one reload follows when it comes back. A push often follows the user's own action, so
- * the inbox keeps a notice about that action's failure.
+ * open list pages, and the inbox while [inboxShown]; the inbox reloads anyway when shown. While
+ * Mail is off screen, pushes wait, and one reload follows when it comes back. A push often follows
+ * the user's own action, so the lists keep a notice about that action's failure.
  */
 @Composable
 private fun ServerChangeEffects(

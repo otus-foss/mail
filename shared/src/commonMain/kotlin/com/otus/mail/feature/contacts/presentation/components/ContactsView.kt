@@ -50,7 +50,6 @@ internal class ContactsView(
     /** Whether the list shows everything: no search and no book filter. */
     val showsAll: Boolean get() = query.isBlank() && books.isEmpty()
 
-    /** Ends the selection. */
     fun clearSelection() {
         selected = emptySet()
     }

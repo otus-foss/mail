@@ -82,7 +82,7 @@ otus-meta. See [JMAP](jmap.md) and [shared libraries](shared-libraries.md). Code
 Calendar moves to otus-meta when both apps need it; other shared package names do not share code
 across Git repositories. Shared account setup and settings screens come from otus-meta.
 Mail supplies their state, persistence, service requirement, and destinations in
-app wiring. Mail-specific inbox, folder, and rule screens stay here. Calendar is unchanged.
+app wiring. Mail-specific inbox, folder, and rule screens stay here.
 Mail's `feature/folders` holds folders and the Sieve rules that file into them; see
 [Folders and rules](folders.md).
 
@@ -129,7 +129,7 @@ A new element or reusable component belongs in Meta even when Mail is its only c
 Mail feature adapters supply domain-derived labels, values, and callbacks to shared renderers.
 The checker rejects local production design-system code and drawable resources.
 
-Meta 0.10.0 groups rendering beneath `com.otus.designsystem.shared.<group>` and
+Meta groups rendering beneath `com.otus.designsystem.shared.<group>` and
 `com.otus.designsystem.mail.<feature>`, each with `elements` and `components` where needed.
 For example, contact rows come from `shared.contacts.components` and message HTML from
 `mail.read.elements`. Theme declarations use `theme.colors`, `theme.motion`, `theme.brand`,
