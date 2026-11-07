@@ -16,7 +16,7 @@ One bullet per change, in the words a user would use. Name code only where a rev
 
 ## Depends on
 
-<!-- The paired Meta PR as reazndev/otus-meta#123, the Meta release to pin, or the design page. -->
+<!-- The paired Meta PR as reazndev/otus-meta#123, the same-named Meta branch, or the design page. -->
 
 -
 

@@ -8,7 +8,7 @@ cd "$repo_root"
 meta=$(printenv 'ORG_GRADLE_PROJECT_otus.meta.path' || true)
 for properties in "${GRADLE_USER_HOME:-$HOME/.gradle}/gradle.properties" gradle.properties; do
   if [ -z "$meta" ] && [ -f "$properties" ]; then
-    meta=$(sed -n 's/^otus\.meta\.path=//p' "$properties" | tail -n 1)
+    meta=$(tr -d '\r' < "$properties" | sed -n 's/^[[:space:]]*otus\.meta\.path[[:space:]]*[=:][[:space:]]*//p' | tail -n 1)
   fi
 done
 exec python3 "${meta:-../otus-meta}/tools/check_commit_message.py" "$1"
