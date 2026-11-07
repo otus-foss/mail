@@ -154,7 +154,7 @@ internal sealed interface MailPage {
     }
 
     companion object {
-        /** Every page without arguments. */
+        /** Every page without arguments; MailPageSaverTest checks it against the `Fixed` objects. */
         val fixed: List<Fixed> =
             listOf(
                 Inbox,

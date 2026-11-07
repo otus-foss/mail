@@ -4,30 +4,39 @@ import androidx.compose.runtime.saveable.SaverScope
 import com.otus.mail.core.mailbox.MailboxRole
 import com.otus.mail.core.messages.domain.ComposeRequest
 import com.otus.mail.feature.contacts.domain.CardKey
+import kotlin.reflect.KClass
 import kotlin.test.Test
 import kotlin.test.assertEquals
-import kotlin.test.assertTrue
 
 class MailPageSaverTest {
     @Test
     fun everyPageComesBackAsItWasSaved() {
-        assertTrue(pages.all(::sampled))
         pages.forEach { page ->
             val expected = if (page is MailPage.Compose) page.parent else page
             assertEquals(expected, MailPageSaver.restore(saved(page)), "$page")
         }
     }
 
+    /** A page left out of [MailPage.fixed] saves fine but restores as the Inbox. */
+    @Test
+    fun theFixedListHoldsEveryPageWithoutArguments() {
+        val objects = kinds(MailPage.Fixed::class).mapNotNull { it.objectInstance }.toSet()
+        assertEquals(objects, MailPage.fixed.toSet())
+    }
+
+    @Test
+    fun everyKindOfPageHasASample() {
+        val missing = kinds(MailPage::class).filter { kind -> pages.none { it::class == kind } }
+        assertEquals(emptyList(), missing.map { it.simpleName })
+    }
+
     private fun saved(page: MailPage): List<String> = with(MailPageSaver) { SaverScope { true }.save(page) }.orEmpty()
 
-    /** Fails to compile until a new kind of page has a sample in [pages]. */
-    private fun sampled(page: MailPage): Boolean =
-        when (page) {
-            is MailPage.Fixed, is MailPage.Compose, is MailPage.SignatureEditor, is MailPage.FolderDetail,
-            is MailPage.Folder, is MailPage.Combined, is MailPage.Shared, is MailPage.Contact,
-            is MailPage.ContactEditor,
-            -> pages.any { it::class == page::class }
-        }
+    /** The classes that can be a [MailPage], through every sealed interface between. */
+    private fun kinds(root: KClass<out MailPage>): Set<KClass<out MailPage>> =
+        root.sealedSubclasses
+            .flatMap { if (it.isSealed) kinds(it) else setOf(it) }
+            .toSet()
 
     private val pages =
         MailPage.fixed +

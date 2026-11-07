@@ -44,6 +44,8 @@ kotlin {
         getByName("androidHostTest").dependencies {
             implementation(libs.robolectric)
             implementation(appLibs.sqldelight.sqlite.driver)
+            // MailPageSaverTest lists every kind of page through sealedSubclasses.
+            implementation(kotlin("reflect"))
         }
     }
 }
