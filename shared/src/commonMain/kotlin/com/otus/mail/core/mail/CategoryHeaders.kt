@@ -23,7 +23,9 @@ val CATEGORY_HEADER_PROPERTIES =
         FORGEJO_PROPERTY,
     )
 
-const val LIST_POST_PROPERTY = "header:List-Post:asText"
+// RFC 8621, section 4.1.2.3 forbids asText for RFC 2369 headers, and servers reject the whole
+// Email/get with invalidArguments. asRaw is allowed for every header and still names the address.
+const val LIST_POST_PROPERTY = "header:List-Post:asRaw"
 const val PRECEDENCE_PROPERTY = "header:Precedence:asText"
 const val AUTO_SUBMITTED_PROPERTY = "header:Auto-Submitted:asText"
 const val FEEDBACK_ID_PROPERTY = "header:Feedback-ID:asText"
