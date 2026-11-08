@@ -5,15 +5,14 @@ import androidx.compose.runtime.remember
 import com.otus.accounts.presentation.screens.AccountSetupScreen
 import com.otus.avatar.ui.presentation.components.OwnAvatarEditor
 import com.otus.dateformat.DateFormatter
-import com.otus.mail.feature.inbox.presentation.components.ThemeInboxPreview
 import com.otus.mail.feature.mailsettings.presentation.components.alertButtonsRow
 import com.otus.mail.feature.mailsettings.presentation.components.updateToastRow
 import com.otus.mail.feature.mailsettings.presentation.screens.FilterPanelSettingsScreen
 import com.otus.mail.feature.notifications.presentation.screens.NotificationOverridesScreen
 import com.otus.mail.feature.notifications.presentation.screens.NotificationsScreen
+import com.otus.mail.feature.theme.presentation.screens.MailThemeScreen
 import com.otus.settings.presentation.components.SettingSpecRow
 import com.otus.settings.presentation.screens.SettingsScreen
-import com.otus.settings.presentation.screens.ThemeSettingsScreen
 
 /** Settings and its subpages. */
 @Composable
@@ -32,7 +31,7 @@ internal fun SettingsPageContent(
         MailPage.Behavior -> MailBehaviorPage(states, navigation, back)
         MailPage.Notifications, MailPage.NotificationOverrides -> NotificationPages(page, states, navigation, back)
         MailPage.SidebarSettings, MailPage.PinnedSettings -> SidebarSettingsPage(page, states, navigation, back)
-        MailPage.ThemeSettings -> ThemeSettingsScreen(settings.theme, onBack = back) { ThemeInboxPreview() }
+        MailPage.ThemeSettings -> MailThemeScreen(settings.theme, onBack = back)
         MailPage.ActionBarSettings -> ActionBarSettingsPage(states, back)
         MailPage.FilterPanelSettings -> FilterPanelSettingsScreen(states.behavior, onBack = back)
         MailPage.MailListSettings -> MailListSettingsPage(states, dateFormatter, back)
