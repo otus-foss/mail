@@ -54,6 +54,7 @@ class SidebarMailboxTest {
                 SidebarPin.Conversations,
                 SidebarPin.Contacts,
                 SidebarPin.Role(MailboxRole.Sent),
+                SidebarPin.Role(MailboxRole.Scheduled),
                 SidebarPin.Folder(listOf("work")),
                 SidebarPin.Folder(listOf("work", "clients")),
             ),
