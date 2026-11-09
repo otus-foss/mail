@@ -7,10 +7,13 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import com.otus.dateformat.DateFormatter
 import com.otus.designsystem.shared.settings.components.LocalFoundSetting
+import com.otus.mail.core.mailbox.MailboxRole
 import com.otus.mail.core.messages.domain.MailMessage
 import com.otus.mail.core.messages.domain.MailScope
 import com.otus.mail.core.messages.domain.within
 import com.otus.mail.core.messages.presentation.MessageActions
+import com.otus.mail.core.settings.domain.InboxPill
+import com.otus.mail.core.settings.domain.fits
 import com.otus.mail.core.settings.presentation.FolderPillOption
 import com.otus.mail.feature.folders.presentation.FoldersState
 import com.otus.mail.feature.folders.presentation.LabeledCopies
@@ -100,7 +103,14 @@ private fun CombinedPage(
     dateFormatter: DateFormatter,
     navigation: MailNavigation,
 ) {
-    FeedPage(page, MailScope.Role(page.role), states.folderBase(page.role.title), states, dateFormatter, navigation)
+    FeedPage(
+        page,
+        MailScope.Role(page.role),
+        states.folderBase(page.role.title, page.role),
+        states,
+        dateFormatter,
+        navigation,
+    )
 }
 
 @Composable
@@ -115,7 +125,7 @@ private fun FolderPage(
     FeedPage(
         page,
         MailScope.Folder(page.accountId, page.folderId),
-        states.folderBase(folder?.name ?: "Folder"),
+        states.folderBase(folder?.name ?: "Folder", folder?.role),
         states,
         dateFormatter,
         navigation,
@@ -138,8 +148,16 @@ internal fun FeedPage(
     ListPage(page, feed, base, states, dateFormatter, navigation)
 }
 
-/** A folder page called [name], with the pills the user chose. */
-internal fun MailStates.folderBase(name: String): ListBase = ListBase.folder(name, behavior.behavior.list.pills)
+/** A folder page called [name], with the pills the user chose that mean something in a folder of [role]. */
+internal fun MailStates.folderBase(
+    name: String,
+    role: MailboxRole? = null,
+): ListBase =
+    ListBase.folder(
+        name,
+        behavior.behavior.list.pills
+            .filter { it !is InboxPill.Filter || it.fits(role) },
+    )
 
 /**
  * Runs [leave] when the page's folders are [gone], such as after a delete or rename elsewhere,

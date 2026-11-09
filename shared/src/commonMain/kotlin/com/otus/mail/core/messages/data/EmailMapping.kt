@@ -42,7 +42,7 @@ internal fun EmailObject.toMessage(
         location = place.copy(mailboxIds = mailboxIds.filterValues { it }.keys),
         attributes =
             MailAttributes(
-                unread = !isSeen,
+                unread = !isSeen && !isDraft && place.mailboxRole?.holdsUnsent != true,
                 attachments = if (hasAttachment) attachments.orEmpty().map { it.displayName() } else emptyList(),
                 flagged = isFlagged,
                 invite = hasInvite,

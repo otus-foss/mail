@@ -18,6 +18,10 @@ enum class MailboxRole(
     Trash("trash", "Trash"),
     ;
 
+    /** Drafts and Scheduled, whose mail nobody received yet, so it is never unread. */
+    val holdsUnsent: Boolean
+        get() = this == Drafts || this == Scheduled
+
     /** Trash and Spam, where discarded mail goes. */
     val isBin: Boolean
         get() = this == Junk || this == Trash

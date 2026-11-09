@@ -33,8 +33,11 @@ internal class SidebarCounter(
     constructor(accountId: String?, setting: SidebarCount) : this(
         accountId,
         when (setting) {
-            SidebarCount.Unread -> MailFolder::unread
+            // Drafts and Scheduled hold no unread mail, so they count what they hold.
+            SidebarCount.Unread -> { folder -> if (folder.role?.holdsUnsent == true) folder.total else folder.unread }
+
             SidebarCount.Total -> MailFolder::total
+
             SidebarCount.None -> null
         },
     )
