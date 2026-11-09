@@ -30,8 +30,12 @@ class DraftEmailTest {
         val draft = Draft("a1", body = "Thursday works.", html = "<p><b>Thursday</b> works.</p>", quote = quote)
         val email = draft.toEmail("dr")
         val html = email.part("html")
-        assertTrue(html.startsWith("<p><b>Thursday</b> works.</p><br>On 2026-10-11 12:30, Grace wrote:<br>"))
-        assertTrue(html.endsWith("<blockquote>Noon?<br>&lt;ok&gt;</blockquote>"))
+        assertTrue(
+            html.startsWith(
+                "<p><b>Thursday</b> works.</p><div class=\"otus-quote\"><br>On 2026-10-11 12:30, Grace wrote:<br>",
+            ),
+        )
+        assertTrue(html.endsWith("<blockquote>Noon?<br>&lt;ok&gt;</blockquote></div>"))
         assertEquals("Thursday works.\n\n$quote", email.part("text"))
     }
 
@@ -43,7 +47,7 @@ class DraftEmailTest {
         val html = Draft("a1", body = "Yes.", html = "<p>Yes.</p>", quote = long).htmlContent().orEmpty()
         assertTrue(started.elapsedNow() < 2.seconds, "Copying the run at each line took ${started.elapsedNow()}")
         assertEquals(1, html.split("<blockquote>").size - 1, "The quoted lines form one blockquote")
-        assertTrue(html.endsWith("line $lines</blockquote>"))
+        assertTrue(html.endsWith("line $lines</blockquote></div>"))
     }
 
     private fun kotlinx.serialization.json.JsonObject.part(id: String): String =
@@ -59,7 +63,14 @@ class DraftEmailTest {
         val signature = Signature("<p><b>Alex</b></p>", "Alex")
         val email = Draft("a1", body = "Thanks.", signature = signature, quote = quote).toEmail("dr")
         assertEquals("Thanks.\n\n-- \nAlex\n\n$quote", email.part("text"))
-        assertTrue(email.part("html").startsWith("Thanks.<br><div><p><b>Alex</b></p></div><br>On 2026-10-11"))
+        assertTrue(
+            email
+                .part(
+                    "html",
+                ).startsWith(
+                    "Thanks.<br><div class=\"otus-signature\"><p><b>Alex</b></p></div><div class=\"otus-quote\"><br>On 2026-10-11",
+                ),
+        )
     }
 
     @Test

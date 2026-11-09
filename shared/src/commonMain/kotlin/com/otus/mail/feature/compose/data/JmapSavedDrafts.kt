@@ -8,6 +8,7 @@ import com.otus.mail.core.mail.EmailBodyPart
 import com.otus.mail.core.mail.EmailObject
 import com.otus.mail.core.mail.EmailType
 import com.otus.mail.core.mail.mailAccount
+import com.otus.mail.core.messages.data.htmlToText
 import com.otus.mail.core.messages.data.isHtml
 import com.otus.mail.core.messages.data.toSender
 import com.otus.mail.core.messages.domain.AttachmentBlob
@@ -45,22 +46,36 @@ internal class JmapSavedDrafts(
         }
 }
 
-/** The draft this saved Email holds, [whole] or split for Write, which adds the identity's signature. */
-private fun EmailObject.toDraft(
+/**
+ * The draft this saved Email holds, [whole] or split for Write, which adds the identity's signature.
+ * Only HTML that Write marked can be split; other HTML stays whole, so nothing of it is lost. Images
+ * only the cut-off signature or quote showed are dropped, since Write adds those again.
+ */
+internal fun EmailObject.toDraft(
     accountId: String,
     whole: Boolean,
 ): Draft {
-    val text = textBody.orEmpty().joinToString("\n") { bodyValues[it.partId]?.value.orEmpty() }
-    val parts = if (whole) SavedText(text) else text.savedParts()
-    val files = (htmlBody.orEmpty() + attachments.orEmpty()).filter { it.blobId != null && !it.isBody }
-    val html =
+    val fullHtml =
         htmlBody
             .orEmpty()
             .firstOrNull { it.isHtml }
             ?.let { bodyValues[it.partId]?.value }
-            ?.savedHtmlBody(endsEarly = parts.body != text.trimEnd())
             .orEmpty()
-    val inline = files.filter { file -> file.cid != null && "cid:${file.cid}" in html }
+    val text =
+        textBody
+            .orEmpty()
+            .filterNot { it.isHtml }
+            .joinToString("\n") { bodyValues[it.partId]?.value.orEmpty() }
+            .ifEmpty { fullHtml.htmlToText() }
+    val cut = fullHtml.savedHtmlBody()
+    val split = !whole && (fullHtml.isEmpty() || cut != null)
+    val html = if (split) cut.orEmpty() else fullHtml
+    val parts = if (split) text.savedParts() else SavedText(text)
+    val files =
+        (htmlBody.orEmpty() + attachments.orEmpty())
+            .filter { it.blobId != null && !it.isBody }
+            .distinctBy { it.blobId }
+            .filterNot { it.shows(fullHtml) && !it.shows(html) }
     return Draft(
         accountId = accountId,
         from = from?.firstOrNull()?.toSender(accountId),
@@ -69,14 +84,21 @@ private fun EmailObject.toDraft(
         bcc = bcc.orEmpty().map { it.toSender(accountId) },
         subject = subject.orEmpty(),
         body = parts.body,
-        html = inline.fold(html) { body, file -> body.replace("cid:${file.cid}", "cid:${file.draftId}@otus.mail") },
+        html =
+            files
+                .filter {
+                    it.shows(html)
+                }.fold(html) { body, file -> body.replace("cid:${file.cid}", "cid:${file.draftId}@otus.mail") },
         quote = parts.quote,
         references = references.orEmpty(),
         inReplyTo = references.orEmpty().takeLast(1),
         emailId = id,
-        attachments = files.distinctBy { it.blobId }.map { it.draftFile(accountId, inline = it in inline) },
+        attachments = files.map { it.draftFile(accountId, inline = it.shows(html)) },
     )
 }
+
+/** Whether [html] shows this part by its `cid`, as an inline image. */
+private fun EmailBodyPart.shows(html: String): Boolean = cid != null && "cid:$cid" in html
 
 /** A part of the body itself, its text or HTML, rather than a file. */
 private val EmailBodyPart.isBody: Boolean
@@ -108,6 +130,7 @@ private val PROPERTIES =
         "bcc",
         "subject",
         "references",
+        // Not read here, but every Email decodes with it.
         "receivedAt",
         "textBody",
         "htmlBody",

@@ -2,6 +2,7 @@ package com.otus.mail.feature.read.data
 
 import com.otus.mail.core.mail.EmailBodyValue
 import com.otus.mail.core.mail.EmailObject
+import com.otus.mail.core.messages.data.htmlToText
 import com.otus.mail.core.messages.data.isHtml
 import com.otus.mail.core.messages.domain.MessageContent
 import com.otus.mail.core.messages.domain.displayText

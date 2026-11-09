@@ -34,7 +34,7 @@ internal fun rememberScheduledActions(
         ScheduledActions(
             edit = { message ->
                 scope.launch {
-                    val (held, draft) = states.waiting(message, whole = false) ?: return@launch
+                    val (held, draft) = states.waiting(message) ?: return@launch
                     open(
                         ComposeRequest.Resume(
                             draft,
@@ -47,11 +47,13 @@ internal fun rememberScheduledActions(
             },
             sendNow = { message ->
                 scope.launch {
-                    val (held, draft) = states.waiting(message, whole = true) ?: return@launch
-                    if (states.compose.cancel(held.message).isFailure) return@launch states.couldNotChange()
+                    // The copy goes as it is; Undo opens it split, as Write expects.
+                    val sent = states.compose.savedDraft(message, whole = true) ?: return@launch states.changeFailed()
+                    val (held, draft) = states.waiting(message) ?: return@launch
+                    if (states.compose.cancel(held.message).isFailure) return@launch states.changeFailed()
                     states.compose.outgoing.send(
                         Outgoing(
-                            OutgoingDraft(ready = { draft }, answered = null, sent = {}),
+                            OutgoingDraft(ready = { sent }, answered = null, sent = {}),
                             ComposeRequest.Resume(draft, ComposeRequest.New(draft.accountId)),
                             filed = { states.list.refreshPages(keepReport = true) },
                             open = open,
@@ -64,20 +66,19 @@ internal fun rememberScheduledActions(
 }
 
 /**
- * [message]'s waiting send and the draft its copy holds, [whole] or split for Write; null after a
- * toast when no send waits or the copy could not be loaded.
+ * [message]'s waiting send and the draft its copy holds, split for Write; null after a toast when no
+ * send waits or the copy could not be loaded.
  */
-private suspend fun MailStates.waiting(
-    message: MailMessage,
-    whole: Boolean,
-): Pair<HeldSend, Draft>? {
+private suspend fun MailStates.waiting(message: MailMessage): Pair<HeldSend, Draft>? {
     val held = compose.held(message)
-    val draft = held?.let { compose.savedDraft(message, whole) }
+    val draft = held?.let { compose.savedDraft(message, whole = false) }
     if (held == null || draft == null) {
-        couldNotChange()
+        changeFailed()
         return null
     }
     return held to draft
 }
 
-private fun MailStates.couldNotChange() = moveToasts.toasts.show(ToastMessage(COULD_NOT_CHANGE))
+private fun MailStates.changeFailed() {
+    moveToasts.toasts.show(ToastMessage(COULD_NOT_CHANGE))
+}

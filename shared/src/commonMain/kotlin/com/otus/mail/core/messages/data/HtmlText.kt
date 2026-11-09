@@ -1,4 +1,4 @@
-package com.otus.mail.feature.read.data
+package com.otus.mail.core.messages.data
 
 /**
  * Readable plain text from an HTML body part, which the app shows and quotes as text and never
