@@ -48,7 +48,7 @@ enum class ActionBarPlace(
     Compose("compose", setOf(ActionTarget.Draft)),
 
     /** The layout Fixed mode shows on every screen. */
-    Everywhere("everywhere", ActionTarget.entries.toSet()),
+    Everywhere("everywhere", ActionTarget.entries.toSet() - ActionTarget.Scheduled),
     ;
 
     /** The plain actions the bar here can offer. */

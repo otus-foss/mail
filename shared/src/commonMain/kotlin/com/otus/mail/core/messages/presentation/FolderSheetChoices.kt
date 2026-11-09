@@ -16,10 +16,10 @@ data class FolderSheetChoices(
 /**
  * [folders], in their tree order, split into the system folders and Read later, which show as
  * pills as the Move to sheet's do, Inbox first and Read later next, and the user's own folders.
- * Drafts stay out, since mail is not added to them.
+ * Drafts and Scheduled stay out, since mail is not added to them.
  */
 fun folderSheetChoices(folders: List<MessageFolder>): FolderSheetChoices {
-    val listed = folders.filter { it.role != MailboxRole.Drafts }
+    val listed = folders.filter { it.role?.holdsUnsent != true }
     val (system, own) = listed.partition { it.role != null || it.readLater }
     val (inbox, rest) = system.partition { it.role == MailboxRole.Inbox }
     val (readLater, others) = rest.partition { it.readLater }

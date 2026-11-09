@@ -110,8 +110,7 @@ class JmapDraftSender internal constructor(
         stored: suspend (emailId: String) -> Unit,
     ): SentMessage {
         val folder =
-            route.scheduled.takeIf { time is SendTime.Scheduled }
-                ?: createScheduledFolder().takeIf { time is SendTime.Scheduled }
+            (if (time is SendTime.Scheduled) route.scheduled ?: createScheduledFolder() else null)
                 ?: route.drafts
                 ?: route.sent
                 ?: failSend(SendFailure.Mail(MailFailure.ServerProblem))

@@ -6,6 +6,7 @@ import com.otus.mail.core.mailbox.MailboxRole
 import com.otus.mail.core.mailbox.Mailboxes
 import com.otus.mail.core.messages.data.EmailChangeQueue
 import com.otus.mail.core.messages.domain.DraftRepository
+import com.otus.mail.feature.compose.domain.SavedDrafts
 
 /**
  * Saving and sending drafts of every login. [drafts] and [sender] share what one leaves for the
@@ -23,6 +24,7 @@ class JmapComposeMail(
     private val copies = DraftCopies(mailboxes)
     val drafts: DraftRepository = JmapDraftRepository(connections, copies, newMessageId)
     val sender: JmapDraftSender = JmapDraftSender(connections, copies, changes)
+    val saved: SavedDrafts = JmapSavedDrafts(connections)
 }
 
 /** What saving and sending share: the folders, lost copies, and uploaded signature images. */

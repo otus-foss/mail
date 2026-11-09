@@ -45,6 +45,7 @@ import com.otus.mail.feature.compose.data.JmapSignatures
 import com.otus.mail.feature.compose.data.JmapThreadHistory
 import com.otus.mail.feature.compose.domain.AttachmentUploads
 import com.otus.mail.feature.compose.domain.MailOutbox
+import com.otus.mail.feature.compose.domain.SavedDrafts
 import com.otus.mail.feature.compose.domain.SignatureRepository
 import com.otus.mail.feature.compose.domain.ThreadHistory
 import com.otus.mail.feature.contacts.data.JmapContactRepository
@@ -175,6 +176,7 @@ class MailServices(
     internal val drafts: DraftRepository get() = compose.drafts
     internal val sender: DraftSender get() = compose.sender
     internal val scheduled: ScheduledSends get() = compose.sender
+    internal val savedDrafts: SavedDrafts get() = compose.saved
 
     /** Messages handed over for sending, kept until the server has them; see docs/compose.md. */
     internal val outbox by lazy {

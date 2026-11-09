@@ -1,6 +1,8 @@
 package com.otus.mail.feature.compose.data
 
 import com.otus.mail.core.messages.domain.Draft
+import com.otus.mail.feature.compose.domain.QUOTE
+import com.otus.mail.feature.compose.domain.SIGNATURE_MARK
 
 /** What the user wrote, then the signature after a "-- " line, then the quote, each after a blank line. */
 internal fun Draft.textContent(): String =
@@ -27,14 +29,14 @@ internal fun Draft.htmlContent(): String? {
 
 private fun String.quoteHtml(): String =
     lines()
-        .chunkedBy { it.startsWith(QUOTE_MARK) }
+        .chunkedBy { it.startsWith(QUOTE) }
         .joinToString("", prefix = "<br>") { (quoted, lines) ->
             if (quoted) {
                 lines.joinToString(
                     "<br>",
                     "<blockquote>",
                     "</blockquote>",
-                ) { it.removePrefix(QUOTE_MARK).trimStart().escapeHtml() }
+                ) { it.removePrefix(QUOTE).trimStart().escapeHtml() }
             } else {
                 lines.joinToString("<br>", postfix = "<br>") { it.escapeHtml() }
             }
@@ -49,8 +51,3 @@ private fun List<String>.chunkedBy(key: (String) -> Boolean): List<Pair<Boolean,
 
 private fun String.escapeHtml(): String =
     replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").replace("\"", "&quot;")
-
-private const val QUOTE_MARK = ">"
-
-/** The line RFC 3676 puts before a signature, so readers can tell it apart. */
-private const val SIGNATURE_MARK = "-- "

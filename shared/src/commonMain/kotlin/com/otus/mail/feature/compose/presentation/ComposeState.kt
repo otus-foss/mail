@@ -5,7 +5,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import com.otus.designsystem.mail.compose.elements.RichText
-import com.otus.mail.core.mail.EmailAddressKey
 import com.otus.mail.core.mail.MailFailure
 import com.otus.mail.core.messages.domain.ComposeRequest
 import com.otus.mail.core.messages.domain.Draft
@@ -133,6 +132,9 @@ class ComposeState(
     // Undo can resume unsaved content with the id of an older copy.
     private var savedHere = false
 
+    /** Whether the draft is still its stored copy as opened, which needs no save. */
+    private var asOpened = (request as? ComposeRequest.Resume)?.asSaved == true
+
     /** Set once the draft is discarded or sent; nothing saves after that. */
     private var finished = false
 
@@ -227,6 +229,7 @@ class ComposeState(
     }
 
     private fun scheduleSave() {
+        asOpened = false
         pending?.cancel()
         pending =
             scope.launch {
@@ -247,7 +250,7 @@ class ComposeState(
                 } else {
                     savedHere && current.copy(emailId = null) == stored?.copy(emailId = null)
                 }
-            if (finished || unchanged) return@withLock
+            if (finished || unchanged || asOpened) return@withLock
             drafts.save(current).fold(
                 onSuccess = { id ->
                     val previous = stored
@@ -275,10 +278,6 @@ private fun List<SendIdentity>.signatureOf(from: MailSender?): Signature =
         from != null && it.accountId == from.accountKey && it.sender.address.equals(from.address, ignoreCase = true)
     }?.signature ?: Signature()
 
-/** Every recipient once, in line order, for the bar's context. */
-val Draft.recipients: List<MailSender>
-    get() = (to + cc + bcc).distinctBy { EmailAddressKey(it.address) }
-
 /**
  * What the user wrote, without the sending identity, the account, the stored copy's id, or the
  * signature, which follows the identity.
@@ -294,7 +293,3 @@ private fun String.plainHtml(): String =
     }
 
 private const val SAVE_DELAY_MILLIS = 2_000L
-
-/** The request that opens this draft again as it is, such as after Undo. */
-fun ComposeState.reopening(): ComposeRequest.Resume =
-    ComposeRequest.Resume(draft, (request as? ComposeRequest.Resume)?.from ?: request, attachments.sourceFiles, sendAt)
