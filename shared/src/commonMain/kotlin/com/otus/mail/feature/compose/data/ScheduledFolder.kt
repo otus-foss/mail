@@ -20,6 +20,8 @@ import com.otus.mail.core.mail.MailAccount
 import com.otus.mail.core.mail.MailboxType
 import com.otus.mail.core.mailbox.MailFolder
 import com.otus.mail.core.mailbox.MailboxRole
+import com.otus.mail.core.messages.domain.HeldSend
+import com.otus.mail.core.messages.domain.SentMessage
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
@@ -27,6 +29,7 @@ import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.contentOrNull
 import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.put
+import kotlin.time.Instant
 
 /**
  * The folder scheduled mail waits in: the one with the `scheduled` role (IANA IMAP Mailbox Name
@@ -46,6 +49,22 @@ internal suspend fun MailAccount.createScheduledFolder(): String? =
             }
         connection.call(SetMethod(MailboxType, id, create = mapOf(FOLDER to folder))).createdId(FOLDER)
     }
+
+/** [fileScheduled] with the account's Drafts, Scheduled, and Sent among [folders]; nothing without Sent. */
+internal suspend fun MailAccount.fileScheduled(folders: List<MailFolder>) {
+    val sent = folders.firstOrNull { it.role == MailboxRole.Sent }?.id ?: return
+    fileScheduled(folders.firstOrNull { it.role == MailboxRole.Drafts }?.id, folders.scheduledFolder()?.id, sent)
+}
+
+/** The send still waiting for [emailId], whose cancel makes it a draft in the Drafts among [folders]. */
+internal suspend fun MailAccount.heldSend(
+    emailId: String,
+    folders: List<MailFolder>,
+): HeldSend? {
+    val pending = pendingSubmission(emailId) ?: return null
+    val drafts = folders.firstOrNull { it.role == MailboxRole.Drafts }?.id
+    return HeldSend(SentMessage(login.id, emailId, pending.id, drafts, pending.identityId), pending.at)
+}
 
 /**
  * Files scheduled mail by its submission (RFC 8621, section 7): a copy whose send finished
@@ -121,6 +140,51 @@ private suspend fun MailAccount.submissionStatus(emailIds: List<String>): Map<St
             if (email != null && undo != null && email in emailIds) email to undo else null
         }.toMap()
 }
+
+/** The submission of [emailId] the server still holds, with its identity and when it goes; null when none waits. */
+internal suspend fun MailAccount.pendingSubmission(emailId: String): PendingSubmission? {
+    lateinit var waiting: JmapCall<QueryResult>
+    lateinit var submissions: JmapCall<GetResult<JsonObject>>
+    val response =
+        connection.send {
+            waiting =
+                call(
+                    QueryMethod(
+                        EmailSubmissionType,
+                        id,
+                        allOf(
+                            filterCondition("emailIds", JsonArray(listOf(JsonPrimitive(emailId)))),
+                            filterCondition("undoStatus", JsonPrimitive(PENDING)),
+                        ),
+                        limit = 1,
+                    ),
+                )
+            submissions =
+                call(
+                    GetMethod(
+                        EmailSubmissionType,
+                        id,
+                        JmapIds.Result(waiting.resultOf("/ids")),
+                        listOf("id", "identityId", "sendAt"),
+                    ),
+                )
+        }
+    val submission = response[submissions].list.firstOrNull() ?: return null
+
+    fun text(name: String) = submission[name]?.jsonPrimitive?.contentOrNull
+    return PendingSubmission(
+        id = text("id") ?: return null,
+        identityId = text("identityId").orEmpty(),
+        at = text("sendAt")?.let { runCatching { Instant.parse(it) }.getOrNull() } ?: return null,
+    )
+}
+
+/** A held submission [id], sent as [identityId] at [at]. */
+internal data class PendingSubmission(
+    val id: String,
+    val identityId: String,
+    val at: Instant,
+)
 
 private fun move(
     from: String,

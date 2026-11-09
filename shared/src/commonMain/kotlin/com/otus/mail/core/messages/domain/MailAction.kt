@@ -16,6 +16,9 @@ enum class ActionTarget {
 
     /** Nothing in particular; it works on every screen. */
     Anywhere,
+
+    /** A message waiting in Scheduled. No bar offers these to pick; the Scheduled folder's bar has them. */
+    Scheduled,
 }
 
 /**
@@ -51,6 +54,8 @@ enum class MailAction(
     Send("send", ActionTarget.Draft),
     Attach("attach", ActionTarget.Draft),
     Discard("discard", ActionTarget.Draft),
+    EditScheduled("edit_scheduled", ActionTarget.Scheduled),
+    SendNow("send_now", ActionTarget.Scheduled),
 
     /** Lists every action the screen offers in a menu, so a bar can reach those it leaves out. */
     AllActions("all_actions", ActionTarget.Anywhere),

@@ -56,6 +56,8 @@ internal val BarButton.label: String
             MailAction.Send -> "Send"
             MailAction.Attach -> "Attach"
             MailAction.Discard -> "Discard"
+            MailAction.EditScheduled -> "Edit"
+            MailAction.SendNow -> "Send now"
             MailAction.AllActions -> "All actions"
         }
 
@@ -93,7 +95,8 @@ internal val BarButton.symbol: DrawableResource
             MailAction.Search -> Res.drawable.symbol_search
             MailAction.Filters -> Res.drawable.symbol_filter_list
             MailAction.MarkAllRead -> Res.drawable.symbol_mark_email_read
-            MailAction.Send -> Res.drawable.symbol_send
+            MailAction.Send, MailAction.SendNow -> Res.drawable.symbol_send
+            MailAction.EditScheduled -> Res.drawable.symbol_edit
             MailAction.Attach -> Res.drawable.symbol_attach_file
             MailAction.Discard -> Res.drawable.symbol_delete
             MailAction.AllActions -> Res.drawable.symbol_more_horiz

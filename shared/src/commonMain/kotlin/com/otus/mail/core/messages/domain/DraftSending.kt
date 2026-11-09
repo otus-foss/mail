@@ -123,9 +123,21 @@ interface ScheduledSends {
      */
     suspend fun sendNow(message: SentMessage): Result<Unit>
 
+    /** The send still waiting for [emailId] of [accountId]; null when none waits or the server cannot say. */
+    suspend fun held(
+        accountId: String,
+        emailId: String,
+    ): HeldSend?
+
     /** Moves [accountId]'s scheduled mail that the server has sent from Scheduled to Sent. */
     suspend fun fileSent(accountId: String)
 }
+
+/** A [message] the server holds until [at]. */
+data class HeldSend(
+    val message: SentMessage,
+    val at: Instant,
+)
 
 /** Sending was canceled, but the saved email could not be restored as an editable draft. */
 class DraftRestoreException(

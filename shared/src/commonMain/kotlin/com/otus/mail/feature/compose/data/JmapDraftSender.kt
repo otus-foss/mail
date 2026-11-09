@@ -24,6 +24,7 @@ import com.otus.mail.core.messages.domain.AnsweredMessage
 import com.otus.mail.core.messages.domain.Draft
 import com.otus.mail.core.messages.domain.DraftRestoreException
 import com.otus.mail.core.messages.domain.DraftSender
+import com.otus.mail.core.messages.domain.HeldSend
 import com.otus.mail.core.messages.domain.ScheduledSends
 import com.otus.mail.core.messages.domain.SendException
 import com.otus.mail.core.messages.domain.SendFailure
@@ -182,13 +183,17 @@ class JmapDraftSender internal constructor(
                 ?.delayedSendSeconds() ?: 0L
         }
 
+    override suspend fun held(
+        accountId: String,
+        emailId: String,
+    ): HeldSend? =
+        jmapCallOr(null) {
+            connections.mailAccount(accountId)?.let { it.heldSend(emailId, copies.mailboxes.sendFresh(it) {}.first) }
+        }
+
     override suspend fun fileSent(accountId: String) {
         jmapCallOr(Unit) {
-            val account = connections.mailAccount(accountId) ?: return@jmapCallOr
-            val folders = copies.mailboxes.sendFresh(account) {}.first
-            val sent = folders.firstOrNull { it.role == MailboxRole.Sent }?.id ?: return@jmapCallOr
-            val drafts = folders.firstOrNull { it.role == MailboxRole.Drafts }?.id
-            account.fileScheduled(drafts, folders.scheduledFolder()?.id, sent)
+            connections.mailAccount(accountId)?.let { it.fileScheduled(copies.mailboxes.sendFresh(it) {}.first) }
         }
     }
 

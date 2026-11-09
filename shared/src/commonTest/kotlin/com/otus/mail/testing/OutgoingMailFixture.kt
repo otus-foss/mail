@@ -51,6 +51,11 @@ internal abstract class OutgoingMailFixture {
             }
 
             override suspend fun fileSent(accountId: String) = Unit
+
+            override suspend fun held(
+                accountId: String,
+                emailId: String,
+            ) = null
         }
 
     protected val checker =

@@ -37,11 +37,21 @@ internal class MoveOptions(
     val suggestion: MoveTarget? = null,
 )
 
-/** The open [message] replies answer, in a folder of [role]; drafts start through [onCompose]. */
+/**
+ * The open [message] replies answer, in a folder of [role]; drafts start through [onCompose], and
+ * a message in Scheduled is edited or sent through [scheduled].
+ */
 internal class PageSubject(
     val message: MailMessage,
     val role: MailboxRole?,
     val onCompose: (ComposeRequest) -> Unit,
+    val scheduled: ScheduledActions? = null,
+)
+
+/** What a message waiting in Scheduled can do: go back to Write with its time ([edit]), or go now ([sendNow]). */
+class ScheduledActions(
+    val edit: (MailMessage) -> Unit,
+    val sendNow: (MailMessage) -> Unit,
 )
 
 /**
@@ -99,6 +109,10 @@ private fun ActionSubject.offer(action: MailAction): OfferedAction? =
 
         MailAction.Send, MailAction.Attach, MailAction.Discard -> {
             draft?.offer(action)
+        }
+
+        MailAction.EditScheduled, MailAction.SendNow -> {
+            page?.offerScheduled(action)
         }
 
         MailAction.AllActions -> {
@@ -173,6 +187,13 @@ private fun PageSubject.offer(action: MailAction): OfferedAction? {
             else -> null
         }
     return request?.let { plainOffer(action) { onCompose(it) } }
+}
+
+/** Edit and Send now of a message waiting in Scheduled, which [offer] routes here. */
+private fun PageSubject.offerScheduled(action: MailAction): OfferedAction? {
+    val actions = scheduled?.takeIf { role == MailboxRole.Scheduled } ?: return null
+    val run = if (action == MailAction.EditScheduled) actions.edit else actions.sendNow
+    return OfferedAction(action.label, action.symbol, leaves = true) { run(message) }
 }
 
 /** The list's own actions, which [offer] routes here. */

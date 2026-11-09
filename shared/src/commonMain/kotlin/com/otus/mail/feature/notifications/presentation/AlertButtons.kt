@@ -76,5 +76,6 @@ private fun MailAction.alertRun(): AlertRun? =
         MailAction.SuggestedMove, MailAction.RuleForSender, MailAction.ReplyAll, MailAction.Forward,
         MailAction.FollowUp, MailAction.NewMail, MailAction.Search, MailAction.Filters, MailAction.MarkAllRead,
         MailAction.EmptyFolder, MailAction.Send, MailAction.Attach, MailAction.Discard, MailAction.AllActions,
+        MailAction.EditScheduled, MailAction.SendNow,
         -> null
     }

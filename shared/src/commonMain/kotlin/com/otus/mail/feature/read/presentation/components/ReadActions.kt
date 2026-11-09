@@ -2,9 +2,7 @@ package com.otus.mail.feature.read.presentation.components
 
 import androidx.compose.runtime.Composable
 import com.otus.mail.core.messages.domain.ActionBarPlace
-import com.otus.mail.core.messages.domain.ComposeRequest
 import com.otus.mail.core.messages.domain.MailMessage
-import com.otus.mail.core.messages.domain.OwnAddresses
 import com.otus.mail.core.messages.domain.replyAction
 import com.otus.mail.core.messages.presentation.MessageActions
 import com.otus.mail.core.messages.presentation.actions.ActionSubject
@@ -19,6 +17,7 @@ import com.otus.mail.core.messages.presentation.components.MailActionBar
 import com.otus.mail.core.messages.presentation.components.MoveChoice
 import com.otus.mail.core.messages.presentation.components.rememberSuggestedMove
 import com.otus.mail.core.messages.presentation.components.replyContext
+import com.otus.mail.feature.read.presentation.ReadReplies
 
 /**
  * What the Read view's actions work on: filing acts on the [row], the whole conversation, while
@@ -35,10 +34,9 @@ internal class ReadActions(
 internal fun rememberReadActions(
     row: MailMessage,
     page: MailMessage,
-    own: OwnAddresses,
+    replies: ReadReplies,
     actions: MessageActions?,
     moveChoice: MoveChoice,
-    onCompose: (ComposeRequest) -> Unit,
 ): ReadActions {
     val role = actions?.cleanup?.role?.invoke(row)
     val saved = actions?.saved()
@@ -49,7 +47,10 @@ internal fun rememberReadActions(
             actions,
             listOf(row),
             moves = MoveOptions(moveChoice::choose, suggestion),
-            page = PageSubject(page, role, onCompose),
+            page = PageSubject(page, role, replies.onCompose, replies.scheduled),
         )
-    return ReadActions(subject, saved?.barFor(ActionBarPlace.Message, role, subject::offer, page.replyAction(own)))
+    return ReadActions(
+        subject,
+        saved?.barFor(ActionBarPlace.Message, role, subject::offer, page.replyAction(replies.own)),
+    )
 }

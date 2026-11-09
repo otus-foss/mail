@@ -5,6 +5,9 @@ import com.otus.accounts.presentation.AccountsState
 import com.otus.avatar.ui.presentation.OwnAvatarsState
 import com.otus.dateformat.DateFormatter
 import com.otus.mail.core.messages.domain.ComposeRequest
+import com.otus.mail.core.messages.domain.HeldSend
+import com.otus.mail.core.messages.domain.MailMessage
+import com.otus.mail.core.messages.domain.SentMessage
 import com.otus.mail.core.messages.domain.accountId
 import com.otus.mail.core.settings.presentation.MailBehaviorState
 import com.otus.mail.feature.compose.presentation.ComposeAccount
@@ -69,6 +72,16 @@ internal class ComposeStates(
         SignaturesState(services.drafts, services.signatures, services.pickers.signatureImages, scope) {
             accounts.accounts.map { ComposeAccount(it.id, it.name) }
         }
+
+    /** The send still waiting for [message]; null when none waits or the server cannot say. */
+    suspend fun held(message: MailMessage): HeldSend? =
+        services.scheduled.held(message.location.accountId, message.emailId)
+
+    /** Cancels [message], a held or scheduled send, and makes its copy a draft again. */
+    suspend fun cancel(message: SentMessage): Result<Unit> = services.scheduled.cancel(message)
+
+    /** Sends [message], a held or scheduled send, at once. */
+    suspend fun sendNow(message: SentMessage): Result<Unit> = services.scheduled.sendNow(message)
 
     /** Moves scheduled mail the server has sent to Sent, in every account, in the process's scope. */
     fun fileScheduled() {

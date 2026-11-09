@@ -106,7 +106,7 @@ class ComposeState(
     private var delayLimits by mutableStateOf<Map<String, Long>>(emptyMap())
 
     /** When Send has the server send the draft, as chosen in Send later; null sends it now. */
-    var sendAt by mutableStateOf<LocalDateTime?>(null)
+    var sendAt by mutableStateOf((request as? ComposeRequest.Resume)?.sendAt)
 
     /** How far ahead the draft's account may schedule it, in seconds; 0 hides Schedule send. */
     val maxDelaySeconds: Long get() = delayLimits[draft.accountId] ?: 0L
@@ -297,4 +297,4 @@ private const val SAVE_DELAY_MILLIS = 2_000L
 
 /** The request that opens this draft again as it is, such as after Undo. */
 fun ComposeState.reopening(): ComposeRequest.Resume =
-    ComposeRequest.Resume(draft, (request as? ComposeRequest.Resume)?.from ?: request, attachments.sourceFiles)
+    ComposeRequest.Resume(draft, (request as? ComposeRequest.Resume)?.from ?: request, attachments.sourceFiles, sendAt)
