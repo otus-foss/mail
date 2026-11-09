@@ -122,7 +122,7 @@ private fun MailMessage.rowModel(
         )
     return ConversationRowModel(
         text,
-        read = !attributes.unread && !attributes.draft && location.mailboxRole?.holdsOwnMail != true,
+        read = looksRead,
         badge =
             receivedOn?.let {
                 look.ownAvatars[location.accountId to EmailAddressKey(it)]
@@ -215,3 +215,7 @@ private val PreviewLines.lines: Int
 
 private const val MAX_FOLDERS = 2
 private const val NO_SUBJECT = "(No subject)"
+
+/** Whether the row fades as read mail does; drafts and mail in Drafts, Scheduled, and Sent never fade. */
+private val MailMessage.looksRead: Boolean
+    get() = !attributes.unread && !attributes.draft && location.mailboxRole?.holdsOwnMail != true

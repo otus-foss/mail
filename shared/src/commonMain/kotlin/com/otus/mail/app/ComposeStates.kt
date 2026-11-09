@@ -31,7 +31,6 @@ internal class ComposeStates(
     private val accounts: AccountsState,
     private val ownAvatars: OwnAvatarsState,
     dates: () -> DateFormatter,
-    private val onFiled: () -> Unit,
 ) {
     /**
      * A draft for [request] from the account it names, or else the first one; null without
@@ -100,6 +99,5 @@ internal class ComposeStates(
             services.scheduled,
             services.outbox,
             dates,
-            onFiled = onFiled,
         ) { behavior.behavior.write.undoSendSeconds.seconds.inWholeMilliseconds }
 }

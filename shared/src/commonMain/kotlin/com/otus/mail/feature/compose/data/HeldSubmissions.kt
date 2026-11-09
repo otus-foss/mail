@@ -1,5 +1,6 @@
 package com.otus.mail.feature.compose.data
 
+import com.otus.jmap.JmapException
 import com.otus.jmap.QueryMethod
 import com.otus.jmap.SetError
 import com.otus.jmap.SetMethod
@@ -8,14 +9,19 @@ import com.otus.jmap.filterCondition
 import com.otus.jmap.jmapCallOr
 import com.otus.jmap.noneOf
 import com.otus.mail.core.mail.EmailSubmissionType
+import com.otus.mail.core.mail.EmailType
+import com.otus.mail.core.mail.Keywords
 import com.otus.mail.core.mail.MailAccount
 import com.otus.mail.core.mail.MailFailure
+import com.otus.mail.core.messages.data.EmailChangeQueue
+import com.otus.mail.core.messages.domain.DraftRestoreException
 import com.otus.mail.core.messages.domain.SendFailure
 import com.otus.mail.core.messages.domain.SentMessage
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
+import kotlinx.serialization.json.putJsonObject
 
 /** Cancels [message]'s submission; why not, when the server did not confirm it. */
 internal suspend fun MailAccount.cancelSubmission(message: SentMessage): SendFailure? {
@@ -85,5 +91,28 @@ private suspend fun MailAccount.liveSubmissions(
                 limit = limit,
             ),
         ).ids
+
+/**
+ * Marks the copy of a canceled [message] as a draft again, back in Drafts if it moved to Sent,
+ * and then takes back the mark its send gave the original it answered.
+ */
+internal suspend fun MailAccount.restoreCanceledDraft(
+    message: SentMessage,
+    changes: EmailChangeQueue,
+) {
+    val emailId = message.emailId
+    val patch =
+        buildJsonObject {
+            put("keywords/${Keywords.DRAFT}", true)
+            if (message.draftsId != null) putJsonObject("mailboxIds") { put(message.draftsId, true) }
+        }
+    try {
+        val restored = connection.call(SetMethod(EmailType, id, update = mapOf(emailId to patch)))
+        if (emailId !in restored.updated || emailId in restored.notUpdated) throw DraftRestoreException()
+    } catch (error: JmapException) {
+        throw DraftRestoreException(error)
+    }
+    message.marked?.let { changes.mark(login.id, it, on = false) }
+}
 
 private const val RESUBMISSION = "send"

@@ -1,7 +1,6 @@
 package com.otus.mail.feature.compose.data
 
 import com.otus.mail.core.mail.Keywords
-import com.otus.mail.core.mail.utcDate
 import com.otus.mail.core.messages.domain.Draft
 import com.otus.mail.core.messages.domain.DraftAttachment
 import com.otus.mail.core.messages.domain.MailSender
@@ -12,7 +11,6 @@ import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
 import kotlinx.serialization.json.putJsonObject
-import kotlin.time.Instant
 
 /**
  * The Email object `Email/set` creates for this draft in the [draftsId] mailbox (RFC 8621,
@@ -55,13 +53,6 @@ internal fun Draft.toEmail(
             }
         writeBody(shown, files)
     }
-
-/**
- * This email dated [at], when a scheduled send goes: its arrival in the account and its Date
- * header, so lists show and sort it by that time and recipients see it too.
- */
-internal fun JsonObject.sendingAt(at: Instant): JsonObject =
-    JsonObject(this + mapOf("receivedAt" to JsonPrimitive(at.utcDate()), "sentAt" to JsonPrimitive(at.utcDate())))
 
 private fun JsonObjectBuilder.writeBody(
     html: EmailHtml?,

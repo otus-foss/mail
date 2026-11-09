@@ -85,7 +85,7 @@ internal class MailStates(
         }
 
     val compose =
-        ComposeStates(services, scope, behavior, accounts, ownAvatars, dates) { list.refreshPages(keepReport = true) }
+        ComposeStates(services, scope, behavior, accounts, ownAvatars, dates)
 
     val moveToasts: MoveToasts get() = services.moveToasts
 

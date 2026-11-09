@@ -169,15 +169,13 @@ internal suspend fun MailAccount.pendingSubmission(emailId: String): PendingSubm
                     ),
                 )
         }
-    val submission = response[submissions].list.firstOrNull() ?: return null
-
-    fun text(name: String) = submission[name]?.jsonPrimitive?.contentOrNull
-    return PendingSubmission(
-        id = text("id") ?: return null,
-        identityId = text("identityId").orEmpty(),
-        at = text("sendAt")?.let { runCatching { Instant.parse(it) }.getOrNull() } ?: return null,
-    )
+    val submission = response[submissions].list.firstOrNull()
+    val id = submission?.text("id")
+    val at = submission?.text("sendAt")?.let { runCatching { Instant.parse(it) }.getOrNull() }
+    return if (id != null && at != null) PendingSubmission(id, submission.text("identityId").orEmpty(), at) else null
 }
+
+private fun JsonObject.text(name: String): String? = this[name]?.jsonPrimitive?.contentOrNull
 
 /** A held submission [id], sent as [identityId] at [at]. */
 internal data class PendingSubmission(

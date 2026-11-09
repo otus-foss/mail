@@ -2,9 +2,12 @@ package com.otus.mail.feature.compose.data
 
 import com.otus.jmap.JmapException
 import com.otus.jmap.SetError
+import com.otus.jmap.SetMethod
 import com.otus.jmap.jmapPatch
 import com.otus.mail.core.mail.EmailAddressKey
+import com.otus.mail.core.mail.EmailSubmissionType
 import com.otus.mail.core.mail.Keywords
+import com.otus.mail.core.mail.MailAccount
 import com.otus.mail.core.mail.MailFailure
 import com.otus.mail.core.mail.toMailFailure
 import com.otus.mail.core.mail.utcDate
@@ -12,6 +15,7 @@ import com.otus.mail.core.messages.domain.AnsweredMessage
 import com.otus.mail.core.messages.domain.Draft
 import com.otus.mail.core.messages.domain.SendException
 import com.otus.mail.core.messages.domain.SendFailure
+import com.otus.mail.core.messages.domain.SendTime
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.addJsonObject
@@ -94,3 +98,52 @@ private fun sendFailure(type: String): SendFailure =
     }
 
 private val FORBIDDEN = setOf("forbidden", "forbiddenFrom", "forbiddenMailFrom", "forbiddenToSend")
+
+/**
+ * The submission of the stored [copy] in [folder]. A held or scheduled one carries an envelope
+ * with its time. A scheduled copy stays in [folder], only losing `$draft`, since the server
+ * sends it much later, and Mail moves it to Sent once it went; any other moves at once.
+ */
+internal fun MailAccount.submission(
+    route: SendRoute,
+    folder: String,
+    copy: String,
+    draft: Draft,
+    time: SendTime,
+) = SetMethod(
+    EmailSubmissionType,
+    id,
+    create =
+        mapOf(
+            SUBMISSION to
+                buildJsonObject {
+                    put("emailId", copy)
+                    put("identityId", route.identityId)
+                    when (time) {
+                        SendTime.Now -> Unit
+                        is SendTime.Held -> put("envelope", draft.heldEnvelope(time.at))
+                        is SendTime.Scheduled -> put("envelope", draft.heldEnvelope(time.at))
+                    }
+                },
+        ),
+    extra =
+        mapOf(
+            "onSuccessUpdateEmail" to
+                buildJsonObject {
+                    put(
+                        "#$SUBMISSION",
+                        if (time is SendTime.Scheduled) route.heldPatch() else route.sentPatch(folder),
+                    )
+                },
+        ),
+)
+
+/**
+ * This email dated [at], when a scheduled send goes: its arrival in the account and its Date
+ * header, so lists show and sort it by that time and recipients see it too.
+ */
+internal fun JsonObject.sendingAt(at: Instant): JsonObject =
+    JsonObject(this + mapOf("receivedAt" to JsonPrimitive(at.utcDate()), "sentAt" to JsonPrimitive(at.utcDate())))
+
+/** The creation id of a send's submission. */
+internal const val SUBMISSION = "send"

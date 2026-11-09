@@ -136,45 +136,6 @@ class JmapDraftSender internal constructor(
         return SentMessage(draft.accountId, copy, submissionId, route.drafts, route.identityId)
     }
 
-    /**
-     * The submission of the stored [copy] in [folder]. A held or scheduled one carries an envelope
-     * with its time. A scheduled copy stays in [folder], only losing `$draft`, since the server
-     * sends it much later, and [fileSent] moves it to Sent once it went; any other moves at once.
-     */
-    private fun MailAccount.submission(
-        route: SendRoute,
-        folder: String,
-        copy: String,
-        draft: Draft,
-        time: SendTime,
-    ) = SetMethod(
-        EmailSubmissionType,
-        id,
-        create =
-            mapOf(
-                SUBMISSION to
-                    buildJsonObject {
-                        put("emailId", copy)
-                        put("identityId", route.identityId)
-                        when (time) {
-                            SendTime.Now -> Unit
-                            is SendTime.Held -> put("envelope", draft.heldEnvelope(time.at))
-                            is SendTime.Scheduled -> put("envelope", draft.heldEnvelope(time.at))
-                        }
-                    },
-            ),
-        extra =
-            mapOf(
-                "onSuccessUpdateEmail" to
-                    buildJsonObject {
-                        put(
-                            "#$SUBMISSION",
-                            if (time is SendTime.Scheduled) route.heldPatch() else route.sentPatch(folder),
-                        )
-                    },
-            ),
-    )
-
     override suspend fun maxDelaySeconds(accountId: String): Long =
         jmapCallOr(0L) {
             connections
@@ -201,7 +162,7 @@ class JmapDraftSender internal constructor(
         submissionCall(message) { account ->
             val refusal = account.cancelSubmission(message)
             if (refusal != null) failSend(refusal)
-            account.restoreCanceledDraft(message)
+            account.restoreCanceledDraft(message, changes)
         }
 
     /**
@@ -224,11 +185,11 @@ class JmapDraftSender internal constructor(
                 } catch (error: JmapException) {
                     // When the server cannot be asked, a later run decides, so the copy stays as it is.
                     if (account.isSubmitted(message.emailId) ?: throw error) return@submissionCall
-                    account.restoreCanceledDraft(message)
+                    account.restoreCanceledDraft(message, changes)
                     throw error
                 }
             if (refusal != null) {
-                account.restoreCanceledDraft(message)
+                account.restoreCanceledDraft(message, changes)
                 failSend(refusal.toSendFailure())
             }
         }
@@ -251,29 +212,8 @@ class JmapDraftSender internal constructor(
             Result.failure(SendException(SendFailure.Mail(MailFailure.ServerProblem), error))
         }
 
-    /**
-     * Marks the copy of a canceled [message] as a draft again, back in Drafts if it moved to Sent,
-     * and then takes back the mark its send gave the original it answered.
-     */
-    private suspend fun MailAccount.restoreCanceledDraft(message: SentMessage) {
-        val emailId = message.emailId
-        val patch =
-            buildJsonObject {
-                put("keywords/${Keywords.DRAFT}", true)
-                if (message.draftsId != null) putJsonObject("mailboxIds") { put(message.draftsId, true) }
-            }
-        try {
-            val restored = connection.call(SetMethod(EmailType, id, update = mapOf(emailId to patch)))
-            if (emailId !in restored.updated || emailId in restored.notUpdated) throw DraftRestoreException()
-        } catch (error: JmapException) {
-            throw DraftRestoreException(error)
-        }
-        message.marked?.let { changes.mark(login.id, it, on = false) }
-    }
-
     private companion object {
         const val EMAIL = "draft"
-        const val SUBMISSION = "send"
     }
 }
 

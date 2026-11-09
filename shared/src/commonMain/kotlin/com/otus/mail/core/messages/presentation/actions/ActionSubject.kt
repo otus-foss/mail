@@ -48,12 +48,6 @@ internal class PageSubject(
     val scheduled: ScheduledActions? = null,
 )
 
-/** What a message waiting in Scheduled can do: go back to Write with its time ([edit]), or go now ([sendNow]). */
-class ScheduledActions(
-    val edit: (MailMessage) -> Unit,
-    val sendNow: (MailMessage) -> Unit,
-)
-
 /**
  * The message list with nothing selected: Mark all read marks the unread [results] on screen, and
  * New mail starts through [onCompose] from [accountId] when the list shows one account.
@@ -187,13 +181,6 @@ private fun PageSubject.offer(action: MailAction): OfferedAction? {
             else -> null
         }
     return request?.let { plainOffer(action) { onCompose(it) } }
-}
-
-/** Edit and Send now of a message waiting in Scheduled, which [offer] routes here. */
-private fun PageSubject.offerScheduled(action: MailAction): OfferedAction? {
-    val actions = scheduled?.takeIf { role == MailboxRole.Scheduled } ?: return null
-    val run = if (action == MailAction.EditScheduled) actions.edit else actions.sendNow
-    return OfferedAction(action.label, action.symbol, leaves = true) { run(message) }
 }
 
 /** The list's own actions, which [offer] routes here. */

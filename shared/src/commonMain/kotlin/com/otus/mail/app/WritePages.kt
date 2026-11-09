@@ -51,6 +51,7 @@ internal fun ComposePage(
                             draft,
                             compose.reopening(),
                             before,
+                            filed = { states.list.refreshPages(keepReport = true) },
                         ) { states.requests.pages.show(page.copy(request = it)) }
                     with(states.compose.outgoing) { if (at == null) send(outgoing) else schedule(outgoing, at) }
                     onClose()
