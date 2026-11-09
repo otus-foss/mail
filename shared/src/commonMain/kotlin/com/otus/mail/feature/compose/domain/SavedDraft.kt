@@ -42,19 +42,15 @@ fun String.savedParts(): SavedText {
 }
 
 /**
- * The formatted body alone from a saved draft's [html], when its text had a signature or a quote
- * after the body: Write stores those after a `<br>`, the signature in a `<div>` and the quote as a
- * blockquote or its header line (see `Draft.htmlContent`).
+ * The formatted body alone from a saved draft's HTML: what comes before the signature or the quote,
+ * which Write marks with [SIGNATURE_CLASS] and [QUOTE_CLASS] (see `Draft.htmlContent`). Null when
+ * the HTML has neither mark, as from another app, so none of it can be told from the body.
  */
-fun String.savedHtmlBody(endsEarly: Boolean): String =
-    if (!endsEarly) {
-        this
-    } else {
-        HTML_TAILS
-            .mapNotNull { tail -> indexOf(tail).takeIf { it >= 0 } }
-            .minOrNull()
-            ?.let(::take) ?: this
-    }
+fun String.savedHtmlBody(): String? =
+    listOf("<br><div class=\"$SIGNATURE_CLASS\">", "<div class=\"$QUOTE_CLASS\">")
+        .mapNotNull { mark -> indexOf(mark).takeIf { it >= 0 } }
+        .minOrNull()
+        ?.let(::take)
 
 /** Whether line [this] of [lines] opens a reply's quote or a forward, after a blank line. */
 private fun Int.startsQuote(lines: List<String>): Boolean =
@@ -64,4 +60,8 @@ private fun Int.startsQuote(lines: List<String>): Boolean =
 /** The line RFC 3676 puts before a signature, so readers can tell it apart. */
 const val SIGNATURE_MARK = "-- "
 
-private val HTML_TAILS = listOf("<br><div>", "<br><blockquote>", "<br>On ", "<br>$FORWARD_HEADER")
+/** The class of the signature's `<div>` in the HTML Write stores, which the user's text never has. */
+const val SIGNATURE_CLASS = "otus-signature"
+
+/** The class of the quote's `<div>` in the HTML Write stores. */
+const val QUOTE_CLASS = "otus-quote"

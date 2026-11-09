@@ -34,7 +34,7 @@ internal fun rememberScheduledActions(
         ScheduledActions(
             edit = { message ->
                 scope.launch {
-                    val (held, draft) = states.unscheduled(message, whole = false) ?: return@launch
+                    val (held, draft) = states.unscheduled(message) ?: return@launch
                     open(
                         ComposeRequest.Resume(
                             draft,
@@ -47,10 +47,12 @@ internal fun rememberScheduledActions(
             },
             sendNow = { message ->
                 scope.launch {
-                    val (_, draft) = states.unscheduled(message, whole = true) ?: return@launch
+                    // The copy goes as it is; Undo opens it split, as Write expects.
+                    val sent = states.compose.savedDraft(message, whole = true) ?: return@launch states.changeFailed()
+                    val (_, draft) = states.unscheduled(message) ?: return@launch
                     states.compose.outgoing.send(
                         Outgoing(
-                            OutgoingDraft(ready = { draft }, answered = null, sent = {}),
+                            OutgoingDraft(ready = { sent }, answered = null, sent = {}),
                             ComposeRequest.Resume(draft, ComposeRequest.New(draft.accountId)),
                             filed = { states.list.refreshPages(keepReport = true) },
                             open = open,
@@ -63,18 +65,19 @@ internal fun rememberScheduledActions(
 }
 
 /**
- * [message]'s held send and the draft its copy holds, [whole] or split for Write, once its send is
- * canceled; null after a toast when the copy could not be loaded or the send not canceled.
+ * [message]'s held send and the draft its copy holds, split for Write, once its send is canceled;
+ * null after a toast when the copy could not be loaded or the send not canceled.
  */
-private suspend fun MailStates.unscheduled(
-    message: MailMessage,
-    whole: Boolean,
-): Pair<HeldSend, Draft>? {
+private suspend fun MailStates.unscheduled(message: MailMessage): Pair<HeldSend, Draft>? {
     val held = compose.held(message)
-    val draft = held?.let { compose.savedDraft(message, whole) }
+    val draft = held?.let { compose.savedDraft(message, whole = false) }
     if (held == null || draft == null || compose.cancel(held.message).isFailure) {
-        moveToasts.toasts.show(ToastMessage("Couldn't change scheduled mail"))
+        changeFailed()
         return null
     }
     return held to draft
+}
+
+private fun MailStates.changeFailed() {
+    moveToasts.toasts.show(ToastMessage("Couldn't change scheduled mail"))
 }
