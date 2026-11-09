@@ -3,6 +3,7 @@ package com.otus.mail.feature.compose.presentation
 import com.otus.mail.core.messages.domain.AnsweredMessage
 import com.otus.mail.core.messages.domain.ComposeRequest
 import com.otus.mail.core.messages.domain.Draft
+import com.otus.mail.core.messages.domain.ScheduledSends
 import kotlinx.datetime.LocalDateTime
 
 /**
@@ -30,6 +31,25 @@ internal class Outgoing(
     val open: suspend (ComposeRequest) -> Unit,
 )
 
-/** The request that opens this draft again as it is, such as after Undo. */
-fun ComposeState.reopening(): ComposeRequest.Resume =
-    ComposeRequest.Resume(draft, (request as? ComposeRequest.Resume)?.from ?: request, attachments.sourceFiles, sendAt)
+/**
+ * This draft once the scheduled send it edits is canceled, which makes that send's copy a draft the
+ * new send replaces. The draft itself when it edits none; null when the cancel failed, so the send
+ * still waits as it was.
+ */
+internal suspend fun Outgoing.released(scheduled: ScheduledSends): Outgoing? {
+    val held = reopen.held ?: return this
+    return Outgoing(draft, reopen.copy(held = null), scheduledBefore, filed, open)
+        .takeIf { scheduled.cancel(held).isSuccess }
+}
+
+/** The request that opens this draft again as it is, such as after Undo; it keeps the send it edits. */
+fun ComposeState.reopening(): ComposeRequest.Resume {
+    val resumed = request as? ComposeRequest.Resume
+    return ComposeRequest.Resume(
+        draft,
+        resumed?.from ?: request,
+        attachments.sourceFiles,
+        sendAt,
+        held = resumed?.held,
+    )
+}

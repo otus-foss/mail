@@ -32,6 +32,7 @@ internal abstract class OutgoingMailFixture {
     protected val cancelled = mutableListOf<SentMessage>()
     protected val sentNow = mutableListOf<SentMessage>()
     protected var sendNowFailure: SendFailure? = null
+    protected var cancelFails = false
     protected val checks = mutableListOf<Boolean>()
     protected var failure: SendFailure? = null
     protected var check = SendCheck.NotSent
@@ -43,7 +44,11 @@ internal abstract class OutgoingMailFixture {
         object : ScheduledSends {
             override suspend fun maxDelaySeconds(accountId: String) = serverDelaySeconds
 
-            override suspend fun cancel(message: SentMessage) = Result.success(Unit).also { cancelled += message }
+            override suspend fun cancel(message: SentMessage): Result<Unit> {
+                if (cancelFails) return Result.failure(IllegalStateException("The send already went"))
+                cancelled += message
+                return Result.success(Unit)
+            }
 
             override suspend fun sendNow(message: SentMessage): Result<Unit> {
                 sentNow += message

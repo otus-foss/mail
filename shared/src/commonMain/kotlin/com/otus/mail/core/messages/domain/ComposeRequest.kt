@@ -38,7 +38,8 @@ sealed interface ComposeRequest {
     /**
      * A [draft] opened again as it was, such as after Undo on a discarded one; [from] says what it
      * began as, and [sendAt] the time it was scheduled for, which Send keeps. A draft [asSaved] is
-     * its stored copy exactly, so leaving Write without a change saves nothing.
+     * its stored copy exactly, so leaving Write without a change saves nothing. One that edits a
+     * scheduled send names it as [held]: the send keeps waiting unchanged until Send replaces it.
      */
     data class Resume(
         val draft: Draft,
@@ -46,6 +47,7 @@ sealed interface ComposeRequest {
         val attachmentSources: Map<String, PickedFile> = emptyMap(),
         val sendAt: LocalDateTime? = null,
         val asSaved: Boolean = false,
+        val held: SentMessage? = null,
     ) : ComposeRequest
 }
 

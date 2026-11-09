@@ -15,6 +15,7 @@ import com.otus.mail.feature.compose.presentation.ComposeAccount
 import com.otus.mail.feature.compose.presentation.ComposeOrigin
 import com.otus.mail.feature.compose.presentation.ComposeServices
 import com.otus.mail.feature.compose.presentation.ComposeState
+import com.otus.mail.feature.compose.presentation.HeldEdits
 import com.otus.mail.feature.compose.presentation.OutgoingMail
 import com.otus.mail.feature.compose.presentation.SignaturesState
 import kotlinx.coroutines.CoroutineScope
@@ -104,4 +105,7 @@ internal class ComposeStates(
             services.outbox,
             dates,
         ) { behavior.behavior.write.undoSendSeconds.seconds.inWholeMilliseconds }
+
+    /** Send and Discard for a draft, which first cancel the scheduled send it edits. */
+    val heldEdits = HeldEdits(services.work, services.moveToasts.toasts, services.scheduled, outgoing)
 }
