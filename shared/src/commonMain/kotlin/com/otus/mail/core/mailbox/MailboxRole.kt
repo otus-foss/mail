@@ -22,6 +22,10 @@ enum class MailboxRole(
     val holdsUnsent: Boolean
         get() = this == Drafts || this == Scheduled
 
+    /** Drafts, Scheduled, and Sent hold the user's own mail, which never looks read. */
+    val holdsOwnMail: Boolean
+        get() = holdsUnsent || this == Sent
+
     /** Trash and Spam, where discarded mail goes. */
     val isBin: Boolean
         get() = this == Junk || this == Trash

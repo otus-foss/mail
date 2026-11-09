@@ -122,7 +122,7 @@ private fun MailMessage.rowModel(
         )
     return ConversationRowModel(
         text,
-        read = !attributes.unread,
+        read = !attributes.unread && !attributes.draft && location.mailboxRole?.holdsOwnMail != true,
         badge =
             receivedOn?.let {
                 look.ownAvatars[location.accountId to EmailAddressKey(it)]
