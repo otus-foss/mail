@@ -151,11 +151,9 @@ private fun LazyItemScope.ConversationItem(
     SwipeActions(
         startToEnd = swipes?.let { subject.swipe(it.startToEnd) },
         endToStart = swipes?.let { subject.swipe(it.endToStart) },
-        // Inset outside the swipe, so its accent card sits exactly behind the row's card.
-        modifier =
-            Modifier
-                .animateItem(motionTween(), motionTween(), motionTween())
-                .padding(horizontal = InboxTokens.pageInset),
+        modifier = Modifier.animateItem(motionTween(), motionTween(), motionTween()),
+        // The swipe insets the row itself, so its accent band reaches the screen edges.
+        edgeInset = InboxTokens.pageInset,
         // A swiped row the list keeps, such as one moved but still matching a search, settles once it changes.
         settledBy = message,
     ) {
