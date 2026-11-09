@@ -31,6 +31,7 @@ internal class ComposeStates(
     private val accounts: AccountsState,
     private val ownAvatars: OwnAvatarsState,
     dates: () -> DateFormatter,
+    private val onFiled: () -> Unit,
 ) {
     /**
      * A draft for [request] from the account it names, or else the first one; null without
@@ -93,7 +94,12 @@ internal class ComposeStates(
      * process's scope, so a send outlives a recreated activity.
      */
     val outgoing =
-        OutgoingMail(services.work, services.moveToasts.toasts, services.scheduled, services.outbox, dates) {
-            behavior.behavior.write.undoSendSeconds.seconds.inWholeMilliseconds
-        }
+        OutgoingMail(
+            services.work,
+            services.moveToasts.toasts,
+            services.scheduled,
+            services.outbox,
+            dates,
+            onFiled = onFiled,
+        ) { behavior.behavior.write.undoSendSeconds.seconds.inWholeMilliseconds }
 }

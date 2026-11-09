@@ -35,7 +35,8 @@ import kotlin.time.Instant
  * it is sent, with Undo, which opens it again; a hold of 0 sends at once. Where the server can hold
  * mail that long, the message goes to the server at once and the server holds it; Undo cancels it
  * there. Elsewhere the device holds it. Swiping the toast away sends it at once. A scheduled one
- * goes to the server at once too. A failure stays as a toast with Retry.
+ * goes to the server at once too. A failure stays as a toast with Retry. [onFiled] runs once a
+ * scheduled message is filed in Scheduled or back in Drafts, so open lists can show it.
  */
 internal class OutgoingMail(
     private val scope: CoroutineScope,
@@ -44,6 +45,7 @@ internal class OutgoingMail(
     private val outbox: MailOutbox,
     private val dates: () -> DateFormatter,
     private val now: () -> Instant = { Clock.System.now() },
+    private val onFiled: () -> Unit = {},
     private val holdMillis: () -> Long,
 ) {
     fun send(outgoing: Outgoing) {
@@ -136,6 +138,7 @@ internal class OutgoingMail(
         outbox.send(id).fold(
             onSuccess = { sent ->
                 outgoing.draft.sent()
+                onFiled()
                 val undo = sent?.let { UiAction("Undo") { scope.launch { unschedule(outgoing, it) } } }
                 toasts.show(ToastMessage(dates().scheduledToast(at, outgoing.scheduledBefore), undo))
             },
@@ -255,6 +258,7 @@ internal class OutgoingMail(
         scheduled.cancel(sent).fold(
             onSuccess = {
                 val reopen = outgoing.reopen
+                onFiled()
                 outgoing.open(reopen.copy(draft = reopen.draft.copy(emailId = sent.emailId)))
             },
             onFailure = { error ->

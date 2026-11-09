@@ -84,7 +84,8 @@ internal class MailStates(
             NotificationSettingsState(it, scope, services.stores.alerts.previews) { accounts.accounts }
         }
 
-    val compose = ComposeStates(services, scope, behavior, accounts, ownAvatars, dates)
+    val compose =
+        ComposeStates(services, scope, behavior, accounts, ownAvatars, dates) { list.refreshPages(keepReport = true) }
 
     val moveToasts: MoveToasts get() = services.moveToasts
 
