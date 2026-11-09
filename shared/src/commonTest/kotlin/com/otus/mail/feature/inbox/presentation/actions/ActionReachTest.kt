@@ -124,7 +124,7 @@ class ActionReachTest {
         actions(role),
         messages,
         moves = MoveOptions(suggestion = folders.last()),
-        page = page?.let { PageSubject(it, role) {} },
+        page = page?.let { PageSubject(it, role, onCompose = {}) },
     )
 
     private fun actions(role: MailboxRole) =
