@@ -26,7 +26,7 @@ import com.otus.designsystem.resources.symbol_bookmark
 import com.otus.designsystem.resources.symbol_bookmark_fill
 import com.otus.designsystem.resources.symbol_self_improvement
 import com.otus.designsystem.shared.controls.elements.IconPill
-import com.otus.designsystem.shared.dates.components.DateChip
+import com.otus.designsystem.shared.dates.elements.DatePill
 import com.otus.designsystem.shared.panels.components.ChipPlacement
 import com.otus.designsystem.shared.panels.components.ContextPanel
 import com.otus.designsystem.shared.panels.components.PanelMotion
@@ -50,7 +50,8 @@ import com.otus.mail.core.messages.presentation.components.chipAvatar
 /**
  * The Read view's control panel: Back and the [subject] alone, over pills for the [page]'s sender
  * and date, the bookmark, zen mode, and ⋯. Its [motion] grows it into the quick view and details.
- * The date reads [dateLabel] and opens [fullDate]; the sender's name gives way first, so the date
+ * The date reads [dateLabel], and screen readers read [fullDate]; like the sender pill, it shows or
+ * hides the details, which hold the full date. The sender's name gives way first, so the date
  * never shortens.
  */
 @Composable
@@ -74,8 +75,8 @@ internal fun ReadHeader(
                     horizontalArrangement = Arrangement.spacedBy(Spacing.inlineGap),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    item(SENDER) { SenderPill(page, labelMax, actions.senderOpen, actions.onSender) }
-                    item(DATE) { DateChip(dateLabel, fullDate) }
+                    item(SENDER) { SenderPill(page, labelMax, actions.senderOpen, actions.onDetails) }
+                    item(DATE) { DatePill(dateLabel, fullDate, actions.onDetails) }
                     Spacer(Modifier.weight(1f))
                     actions.readLater?.let { change -> item(BOOKMARK) { Bookmark(change) } }
                     item(ZEN) { ZenPill(actions.zen, actions.onZen) }
