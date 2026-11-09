@@ -29,6 +29,7 @@ internal fun ComposePage(
     onClose: () -> Unit,
 ) {
     val compose = remember(page) { states.compose.draft(page.request) } ?: return LaunchedEffect(page) { onClose() }
+    val resumed = page.request as? ComposeRequest.Resume
     val exits =
         remember(compose) {
             object : ComposeExits {
@@ -37,7 +38,8 @@ internal fun ComposePage(
                 override fun discarded(delete: () -> Unit) {
                     val pages = states.requests.pages
                     val undo = UiAction("Undo") { pages.showLater(page.copy(request = compose.reopening())) }
-                    states.moveToasts.toasts.show(ToastMessage("Draft discarded", undo, onClose = delete))
+                    val remove = { states.compose.discard(resumed?.held, delete) }
+                    states.moveToasts.toasts.show(ToastMessage("Draft discarded", undo, onClose = remove))
                     onClose()
                 }
 
@@ -45,15 +47,14 @@ internal fun ComposePage(
                     draft: OutgoingDraft,
                     at: LocalDateTime?,
                 ) {
-                    val before = (page.request as? ComposeRequest.Resume)?.sendAt
                     val outgoing =
                         Outgoing(
                             draft,
                             compose.reopening(),
-                            before,
+                            resumed?.sendAt,
                             filed = { states.list.refreshPages(keepReport = true) },
                         ) { states.requests.pages.show(page.copy(request = it)) }
-                    with(states.compose.outgoing) { if (at == null) send(outgoing) else schedule(outgoing, at) }
+                    states.compose.send(outgoing, at)
                     onClose()
                 }
             }

@@ -135,8 +135,8 @@ class ComposeState(
     /** Whether the draft is still its stored copy as opened, which needs no save. */
     private var asOpened = (request as? ComposeRequest.Resume)?.asSaved == true
 
-    /** Set once the draft is discarded or sent; nothing saves after that. */
-    private var finished = false
+    /** Nothing saves once set: the draft was discarded or sent, or it edits a send that still waits. */
+    private var finished = (request as? ComposeRequest.Resume)?.held != null
 
     /** Loads every account's identities and picks the one to send from, unless the user already chose. */
     fun loadIdentities() {
