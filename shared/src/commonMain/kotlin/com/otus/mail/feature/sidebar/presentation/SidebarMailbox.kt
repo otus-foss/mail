@@ -45,9 +45,9 @@ internal fun sidebarMailboxes(
 
 /**
  * Every mailbox the accounts can pin, in the order Settings offers them: the Inbox, counting the
- * folders [inbox] lists, Read later while it is on,
- * Conversations once an account has a Sent folder, each system folder some account has, then the
- * user's folders, parents before their nested ones.
+ * folders [inbox] lists, Read later while it is on, Conversations once an account has a Sent
+ * folder, each system folder some account has, Scheduled even before one has it, then the user's
+ * folders, parents before their nested ones.
  */
 internal fun pinnableMailboxes(
     accounts: List<AccountFolders>,
@@ -66,7 +66,11 @@ internal fun pinnableMailboxes(
             add(pinned(SidebarPin.Conversations, emptyList()))
         }
         add(pinned(SidebarPin.Contacts, emptyList()))
-        combinedFolders(accounts).forEach { (role, folders) -> add(pinned(SidebarPin.Role(role), folders)) }
+        val combined = combinedFolders(accounts)
+        // Scheduled shows before any account has the folder, which the first scheduled send makes.
+        MailboxRole.combined
+            .filter { it in combined || it == MailboxRole.Scheduled }
+            .forEach { role -> add(pinned(SidebarPin.Role(role), combined[role].orEmpty())) }
         sharedFolders(accounts).flatMap { it.flatten() }.forEach { folder ->
             add(
                 SidebarMailbox(
