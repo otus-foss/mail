@@ -61,10 +61,9 @@ private fun PageRequestEffects(
     show: (MailPage) -> Unit,
 ) {
     LaunchedEffect(services) { services.requests.pages.collect { show(it) } }
-    LaunchedEffect(states) {
-        states.compose.outgoing.resume { states.requests.pages.show(MailPage.Compose(it)) }
-        states.compose.fileScheduled()
-    }
+    LaunchedEffect(states) { states.compose.outgoing.resume { states.requests.pages.show(MailPage.Compose(it)) } }
+    // Accounts load after launch, so filing scheduled mail waits for them.
+    LaunchedEffect(states.accounts.accounts.map { it.id }) { states.compose.fileScheduled() }
 }
 
 /**

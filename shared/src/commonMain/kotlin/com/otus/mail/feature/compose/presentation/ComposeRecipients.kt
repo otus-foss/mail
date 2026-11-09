@@ -148,3 +148,7 @@ internal fun Draft.withRecipients(
         RecipientField.Cc -> copy(cc = people)
         RecipientField.Bcc -> copy(bcc = people)
     }
+
+/** Every recipient once, in line order, for the bar's context. */
+val Draft.recipients: List<MailSender>
+    get() = (to + cc + bcc).distinctBy { EmailAddressKey(it.address) }

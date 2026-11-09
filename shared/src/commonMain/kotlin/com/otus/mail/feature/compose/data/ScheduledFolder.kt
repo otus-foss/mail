@@ -32,12 +32,10 @@ import kotlinx.serialization.json.put
 import kotlin.time.Instant
 
 /**
- * The folder scheduled mail waits in: the one with the `scheduled` role (IANA IMAP Mailbox Name
- * Attributes), else a top-level folder of the user's named Scheduled.
+ * The folder scheduled mail waits in, the one with the `scheduled` role (IANA IMAP Mailbox Name
+ * Attributes), which the sidebar and the Scheduled page show.
  */
-internal fun List<MailFolder>.scheduledFolder(): MailFolder? =
-    firstOrNull { it.role == MailboxRole.Scheduled }
-        ?: firstOrNull { it.isCustom && it.parentId == null && it.name.equals(SCHEDULED_NAME, ignoreCase = true) }
+internal fun List<MailFolder>.scheduledFolder(): MailFolder? = firstOrNull { it.role == MailboxRole.Scheduled }
 
 /** Creates the Scheduled folder with its role; null when the server refused it or could not be reached. */
 internal suspend fun MailAccount.createScheduledFolder(): String? =
@@ -70,7 +68,7 @@ internal suspend fun MailAccount.heldSend(
  * Files scheduled mail by its submission (RFC 8621, section 7): a copy whose send finished
  * (`undoStatus` `final`) moves from [scheduled] to [sent], since some servers send held mail but
  * leave its copy where it was. A copy still waiting that an older Mail left in [drafts] without
- * `$draft` moves to [scheduled], which is made then if the account has none.
+ * `$draft` moves to [scheduled], once the account has it: only a scheduled send makes the folder.
  */
 internal suspend fun MailAccount.fileScheduled(
     drafts: String?,
@@ -82,14 +80,13 @@ internal suspend fun MailAccount.fileScheduled(
     val inDrafts = drafts?.let { emailsIn(it, notKeyword = Keywords.DRAFT) }.orEmpty()
     val status = submissionStatus((inScheduled + inDrafts).toList())
     val waiting = inDrafts.filter { status[it] == PENDING }
-    val target = scheduled ?: if (waiting.isEmpty()) null else createScheduledFolder()
     val moves =
         buildMap {
             status.filterValues { it == FINAL }.keys.forEach { email ->
                 val from = if (email in inDrafts) drafts else scheduled
                 if (from != null) put(email, move(from, sent))
             }
-            if (drafts != null && target != null) waiting.forEach { put(it, move(drafts, target)) }
+            if (drafts != null && scheduled != null) waiting.forEach { put(it, move(drafts, scheduled)) }
         }
     if (moves.isNotEmpty()) connection.call(SetMethod(EmailType, id, update = moves))
 }

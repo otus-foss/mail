@@ -135,6 +135,9 @@ private const val FORWARD_PREFIX = "Fwd:"
 
 internal const val QUOTE = ">"
 
+/** The line [quoted] puts before a quote, which a saved draft's quote starts with. */
+internal val QUOTE_INTRO = Regex("^On .+ wrote:$")
+
 /** The line a forward's copy of the original starts with. */
 internal const val FORWARD_HEADER = "---------- Forwarded message ----------"
 

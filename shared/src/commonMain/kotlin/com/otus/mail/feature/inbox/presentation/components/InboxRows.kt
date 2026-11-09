@@ -10,6 +10,7 @@ import androidx.compose.runtime.setValue
 import androidx.navigationevent.NavigationEventInfo
 import androidx.navigationevent.compose.NavigationBackHandler
 import androidx.navigationevent.compose.rememberNavigationEventState
+import com.otus.mail.core.mailbox.MailboxRole
 import com.otus.mail.core.messages.domain.MailMessage
 import com.otus.mail.core.messages.presentation.MessageActions
 import com.otus.mail.feature.inbox.presentation.OpenRequest
@@ -26,8 +27,8 @@ internal class InboxRows(
 
 /**
  * Which of [messages] is open or selected; system back clears a selection. A tapped draft goes to
- * [openDraft] instead of opening. [opening] opens its row as a tap would, marking it read when the
- * saved behavior asks.
+ * [openDraft] instead of opening. Rows in Scheduled never select, since nothing acts on them
+ * there. [opening] opens its row as a tap would, marking it read when the saved behavior asks.
  */
 @Composable
 internal fun rememberInboxRows(
@@ -56,8 +57,8 @@ internal fun rememberInboxRows(
         rowGestures(
             actions,
             selected,
-            onToggle = { selectedIds = selectedIds.toggled(it.id) },
-            onSelect = { selectedIds = it.toList() },
+            onToggle = { if (actions.selects()) selectedIds = selectedIds.toggled(it.id) },
+            onSelect = { if (actions.selects()) selectedIds = it.toList() },
         ) { if (it.attributes.draft) openDraft(it) else openId = it.id }
     return InboxRows(
         messages.firstOrNull { it.id == openId },
@@ -71,3 +72,6 @@ internal fun rememberInboxRows(
 /** The selection the control panel shows while rows are selected, with Select all taking [shown]; null otherwise. */
 internal fun InboxRows.panelSelection(shown: List<MailMessage>): PanelSelection? =
     selected.size.takeIf { it > 0 }?.let { count -> PanelSelection(count, clearSelection) { selectAll(shown) } }
+
+/** Whether rows can be selected: everywhere but Scheduled, whose mail only its Read view edits or sends. */
+private fun MessageActions?.selects(): Boolean = this?.cleanup?.listRole?.invoke() != MailboxRole.Scheduled

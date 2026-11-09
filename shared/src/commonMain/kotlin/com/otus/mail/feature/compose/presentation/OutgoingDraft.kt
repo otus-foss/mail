@@ -29,3 +29,7 @@ internal class Outgoing(
     val filed: () -> Unit = {},
     val open: suspend (ComposeRequest) -> Unit,
 )
+
+/** The request that opens this draft again as it is, such as after Undo. */
+fun ComposeState.reopening(): ComposeRequest.Resume =
+    ComposeRequest.Resume(draft, (request as? ComposeRequest.Resume)?.from ?: request, attachments.sourceFiles, sendAt)
