@@ -252,11 +252,10 @@ class JmapDraftSenderTest {
             assertEquals(Json.parseToJsonElement("""{"sc": true}"""), stored["mailboxIds"])
             assertEquals("2026-10-19T06:00:00Z", stored.text("receivedAt"))
             val submission = methods(calls[3])[0].arguments
-            val envelope = submission.at("create", "send").getValue("envelope").jsonObject
             val expected =
                 """{"mailFrom": {"email": "ada@example.org", "parameters": {"HOLDUNTIL": "2026-10-19T06:00:00Z"}},
                 "rcptTo": [{"email": "grace@example.org"}, {"email": "babbage@example.org"}]}"""
-            assertEquals(Json.parseToJsonElement(expected), envelope)
+            assertEquals(Json.parseToJsonElement(expected), submission.at("create", "send")["envelope"])
             val held = """{"#send": {"keywords/${'$'}draft": null}}"""
             assertEquals(Json.parseToJsonElement(held), submission["onSuccessUpdateEmail"])
         }
