@@ -9,6 +9,7 @@ import com.otus.mail.core.messages.domain.Draft
 import com.otus.mail.core.messages.domain.HeldSend
 import com.otus.mail.core.messages.domain.MailMessage
 import com.otus.mail.core.messages.presentation.actions.ScheduledActions
+import com.otus.mail.feature.compose.presentation.COULD_NOT_CHANGE
 import com.otus.mail.feature.compose.presentation.Outgoing
 import com.otus.mail.feature.compose.presentation.OutgoingDraft
 import kotlinx.coroutines.launch

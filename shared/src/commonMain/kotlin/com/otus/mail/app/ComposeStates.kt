@@ -4,8 +4,6 @@ import com.otus.accounts.domain.ownAddresses
 import com.otus.accounts.presentation.AccountsState
 import com.otus.avatar.ui.presentation.OwnAvatarsState
 import com.otus.dateformat.DateFormatter
-import com.otus.designsystem.shared.controls.elements.UiAction
-import com.otus.designsystem.shared.feedback.components.ToastMessage
 import com.otus.mail.core.messages.domain.ComposeRequest
 import com.otus.mail.core.messages.domain.Draft
 import com.otus.mail.core.messages.domain.HeldSend
@@ -17,13 +15,11 @@ import com.otus.mail.feature.compose.presentation.ComposeAccount
 import com.otus.mail.feature.compose.presentation.ComposeOrigin
 import com.otus.mail.feature.compose.presentation.ComposeServices
 import com.otus.mail.feature.compose.presentation.ComposeState
-import com.otus.mail.feature.compose.presentation.Outgoing
+import com.otus.mail.feature.compose.presentation.HeldEdits
 import com.otus.mail.feature.compose.presentation.OutgoingMail
 import com.otus.mail.feature.compose.presentation.SignaturesState
-import com.otus.mail.feature.compose.presentation.released
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
-import kotlinx.datetime.LocalDateTime
 import kotlin.time.Duration.Companion.seconds
 
 /**
@@ -98,37 +94,6 @@ internal class ComposeStates(
     }
 
     /**
-     * Sends [mail] now, or [at] a time. A draft that edits a scheduled send cancels that send
-     * first; when that fails the send still waits as it was, and a toast offers the draft again.
-     */
-    fun send(
-        mail: Outgoing,
-        at: LocalDateTime?,
-    ) {
-        services.work.launch {
-            val free = mail.released(services.scheduled) ?: return@launch offerAgain(mail)
-            if (at == null) outgoing.send(free) else outgoing.schedule(free, at)
-        }
-    }
-
-    private fun offerAgain(mail: Outgoing) {
-        val open = UiAction("Open") { services.work.launch { mail.open(mail.reopen) } }
-        services.moveToasts.toasts.show(ToastMessage(COULD_NOT_CHANGE, open))
-    }
-
-    /**
-     * Runs [delete], which removes a discarded draft's copy. A draft that edited the scheduled send
-     * [held] cancels it first, as its copy is that send's message.
-     */
-    fun discard(
-        held: SentMessage?,
-        delete: () -> Unit,
-    ) {
-        if (held == null) return delete()
-        services.work.launch { if (services.scheduled.cancel(held).isSuccess) delete() }
-    }
-
-    /**
      * Sends drafts after their page closes, with Undo and the outcome in a toast. It runs in the
      * process's scope, so a send outlives a recreated activity.
      */
@@ -140,7 +105,7 @@ internal class ComposeStates(
             services.outbox,
             dates,
         ) { behavior.behavior.write.undoSendSeconds.seconds.inWholeMilliseconds }
-}
 
-/** What a toast says when a scheduled mail could not be loaded or its send not canceled. */
-internal const val COULD_NOT_CHANGE = "Couldn't change scheduled mail"
+    /** Send and Discard for a draft, which first cancel the scheduled send it edits. */
+    val heldEdits = HeldEdits(services.work, services.moveToasts.toasts, services.scheduled, outgoing)
+}
