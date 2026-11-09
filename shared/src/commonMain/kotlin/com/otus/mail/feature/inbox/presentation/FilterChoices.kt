@@ -16,29 +16,31 @@ import com.otus.mail.core.messages.domain.MailScopeChoice
 import com.otus.mail.core.messages.domain.OwnAddress
 import com.otus.mail.core.settings.domain.FilterLayout
 import com.otus.mail.feature.inbox.domain.InboxFilters
+import com.otus.mail.feature.inbox.domain.ListKind
 import com.otus.mail.feature.inbox.domain.MailQuery
 import com.otus.mail.feature.inbox.domain.folderIds
 
 /**
  * What the filter panel offers on a page of the [accounts] "Show mail from" picks, [choice]: their
- * [addresses], or only the picked one, and their folders in [colorOf]. Only a page [byFolder]
- * filters by folder.
+ * [addresses], or only the picked one, and their folders in [colorOf]. The page's [kind] decides
+ * which filters it offers; only the Inbox filters by folder, as a folder's page already shows one.
  */
 fun filterOptions(
     accounts: List<AccountFolders>,
     addresses: List<AccountAddresses>,
     choice: MailScopeChoice,
     colorOf: (MailFolder) -> FolderColor,
-    byFolder: Boolean,
+    kind: ListKind,
     layout: FilterLayout,
 ): FilterOptions {
     val shown = accounts.filter { it.failure == null && (choice.accountId == null || it.accountId == choice.accountId) }
     return FilterOptions(
         addresses = filterAddresses(addresses, choice),
         accounts = shown.map { it.filterAccount(colorOf) },
-        folders = byFolder,
+        folders = kind == ListKind.Inbox,
         readLater = shown.any { it.readLaterId != null },
         layout = layout,
+        kind = kind,
     )
 }
 

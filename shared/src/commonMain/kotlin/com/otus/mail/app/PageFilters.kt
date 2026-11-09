@@ -87,7 +87,7 @@ internal fun rememberFilterOptions(
     applied: InboxFilters,
 ): FilterOptions =
     remember(
-        base.byFolder,
+        base.kind,
         applied,
         states.folders.all.accounts,
         states.accounts.accounts,
@@ -101,7 +101,7 @@ internal fun rememberFilterOptions(
             states.accountAddresses(),
             states.mailScope,
             { FolderColor.named(states.folders.colors.colorOf(it)) },
-            base.byFolder,
+            base.kind,
             states.behavior.behavior.list.filters,
         )
     }

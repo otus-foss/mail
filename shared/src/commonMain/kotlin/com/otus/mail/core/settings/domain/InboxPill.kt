@@ -85,7 +85,3 @@ sealed interface InboxPill {
         }
     }
 }
-
-/** Whether this filter means anything in a folder of [role]: mail not sent yet only has attachments. */
-fun InboxPill.Filter.fits(role: MailboxRole?): Boolean =
-    role?.holdsUnsent != true || this == InboxPill.Filter.Attachments

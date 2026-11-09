@@ -12,12 +12,13 @@ import com.otus.mail.core.settings.presentation.InboxPills
 import com.otus.mail.core.settings.presentation.title
 import com.otus.mail.feature.inbox.domain.InboxFilters
 import com.otus.mail.feature.inbox.domain.InboxSearch
+import com.otus.mail.feature.inbox.domain.ListKind
 
 /**
  * What a list page calls itself, by [title] and when it is empty by [emptyTitle], what its search
- * starts from and can widen to, its row of [pills], the filters it opens with, whether its
- * filter panel offers folders, [byFolder], and the [categories] that sort its mail into pills, null
- * on a page that shows none.
+ * starts from and can widen to, its row of [pills], the filters it opens with, the [kind] of list
+ * that decides which filters it offers, and the [categories] that sort its mail into pills, null on
+ * a page that shows none.
  */
 data class ListBase(
     val title: String,
@@ -26,7 +27,7 @@ data class ListBase(
     val mailboxSearch: MailboxSearch,
     val pills: InboxPills,
     val startingFilters: InboxFilters = InboxFilters(),
-    val byFolder: Boolean = false,
+    val kind: ListKind = ListKind.Folder,
     val categories: InboxCategories? = null,
 ) {
     companion object {
@@ -47,14 +48,18 @@ data class ListBase(
                 defaultSearch = InboxSearch(mailboxes = contents.mailboxScopes().toSet()),
                 mailboxSearch = mailboxSearch,
                 pills = pills,
-                byFolder = true,
+                kind = ListKind.Inbox,
                 categories = categories.takeIf { it.enabled },
             )
 
-        /** A folder's page shows only the filter pills of [pills]: folder pills would leave the folder. */
+        /**
+         * A folder's page shows only the filter pills of [pills] that its [kind] offers: folder
+         * pills would leave the folder.
+         */
         fun folder(
             name: String,
             pills: List<InboxPill>,
+            kind: ListKind = ListKind.Folder,
             startingFilters: InboxFilters = InboxFilters(),
         ): ListBase =
             ListBase(
@@ -62,8 +67,9 @@ data class ListBase(
                 emptyTitle = "$name is empty",
                 defaultSearch = InboxSearch(mailboxes = emptySet()),
                 mailboxSearch = MailboxSearch(),
-                pills = InboxPills(pills.filterIsInstance<InboxPill.Filter>()),
+                pills = InboxPills(pills.filterIsInstance<InboxPill.Filter>().filter(kind::offers)),
                 startingFilters = startingFilters,
+                kind = kind,
             )
 
         /** Conversations, which opens on conversations only. */
@@ -71,6 +77,7 @@ data class ListBase(
             folder(
                 checkNotNull(SidebarPin.Conversations.title),
                 pills,
+                ListKind.Conversations,
                 InboxFilters(quick = setOf(QuickFacet.Conversations)),
             )
     }
