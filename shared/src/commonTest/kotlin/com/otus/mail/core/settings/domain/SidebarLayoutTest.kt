@@ -45,13 +45,20 @@ class SidebarLayoutTest {
     }
 
     @Test
-    fun aLayoutSavedBeforeContactsAndTheInboxPinnedPinsThemOnce() {
+    fun aLayoutSavedBeforeContactsTheInboxAndScheduledPinsThemOnce() {
         val saved = SidebarLayout.decode("pinned=read_later,role:sent")
+        val scheduled = SidebarPin.Role(MailboxRole.Scheduled)
         assertEquals(
-            listOf(SidebarPin.Inbox, SidebarPin.ReadLater, SidebarPin.Role(MailboxRole.Sent), SidebarPin.Contacts),
+            listOf(
+                SidebarPin.Inbox,
+                SidebarPin.ReadLater,
+                SidebarPin.Role(MailboxRole.Sent),
+                SidebarPin.Contacts,
+                scheduled,
+            ),
             saved.pinned,
         )
-        val unpinned = saved.copy(pinned = saved.pinned - SidebarPin.Contacts - SidebarPin.Inbox)
+        val unpinned = saved.copy(pinned = saved.pinned - SidebarPin.Contacts - SidebarPin.Inbox - scheduled)
         assertEquals(unpinned, SidebarLayout.decode(SidebarLayout.encode(unpinned)))
     }
 

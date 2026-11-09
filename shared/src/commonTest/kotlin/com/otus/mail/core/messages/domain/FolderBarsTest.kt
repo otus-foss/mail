@@ -6,6 +6,7 @@ import com.otus.mail.core.messages.domain.ActionBarPlace.Inbox
 import com.otus.mail.core.messages.domain.ActionBarPlace.Message
 import com.otus.mail.core.messages.domain.ActionBarPlace.Selection
 import com.otus.mail.core.messages.domain.MailAction.DeleteForever
+import com.otus.mail.core.messages.domain.MailAction.EditScheduled
 import com.otus.mail.core.messages.domain.MailAction.EmptyFolder
 import com.otus.mail.core.messages.domain.MailAction.Filters
 import com.otus.mail.core.messages.domain.MailAction.FollowUp
@@ -14,6 +15,7 @@ import com.otus.mail.core.messages.domain.MailAction.NewMail
 import com.otus.mail.core.messages.domain.MailAction.NotSpam
 import com.otus.mail.core.messages.domain.MailAction.Restore
 import com.otus.mail.core.messages.domain.MailAction.Search
+import com.otus.mail.core.messages.domain.MailAction.SendNow
 import com.otus.mail.core.settings.domain.ActionBehavior
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -59,9 +61,17 @@ class FolderBarsTest {
     @Test
     fun theSameEverywhereBarIgnoresTheFolder() {
         val fixed = behavior.copy(barMode = ActionBarMode.Fixed)
-        MailboxRole.entries.forEach { role ->
+        (MailboxRole.entries - MailboxRole.Scheduled).forEach { role ->
             assertEquals(ActionBarPlace.Everywhere.defaultLayout, fixed.barLayout(Message, role))
         }
+    }
+
+    @Test
+    fun scheduledMailKeepsEditAndSendNowInEveryMode() {
+        val own = ActionBarLayout(listOf(SendNow), EditScheduled)
+        assertEquals(own, behavior.copy(barMode = ActionBarMode.Fixed).barLayout(Message, MailboxRole.Scheduled))
+        assertEquals(own, behavior.barLayout(Message, MailboxRole.Scheduled))
+        assertTrue(EditScheduled !in ActionBarPlace.Everywhere.actions && SendNow !in Message.actions)
     }
 
     @Test

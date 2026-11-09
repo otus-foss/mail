@@ -231,7 +231,7 @@ class MailBehaviorFormatsTest {
                         "sections=folders,mailboxes",
                         "hidden=folders",
                         "pinned=inbox,role:junk,folder:clients/acme",
-                        "offered=contacts,inbox",
+                        "offered=contacts,inbox,role:scheduled",
                         "sizes=wide:role:junk",
                         "mailboxes=rows",
                         "counts=total",
