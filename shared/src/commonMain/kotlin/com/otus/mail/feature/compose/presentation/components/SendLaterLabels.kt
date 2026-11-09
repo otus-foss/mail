@@ -30,5 +30,11 @@ internal fun DateFormatter.sendLaterLabel(
 internal fun DateFormatter.scheduledLabel(at: LocalDateTime): String =
     "Scheduled for ${datedDay(at)}, ${clockTime(at.time)}"
 
+/** The toast after scheduling for [at]: an edit that kept its time, [before], says only that. */
+internal fun DateFormatter.scheduledToast(
+    at: LocalDateTime,
+    before: LocalDateTime?,
+): String = if (at == before) "Edited scheduled mail" else scheduledLabel(at)
+
 private fun DateFormatter.datedDay(at: LocalDateTime): String =
     "${shortWeekday(at.dayOfWeek)} ${formatNamedDay(at.date)}"
