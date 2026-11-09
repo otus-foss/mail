@@ -52,6 +52,7 @@ internal fun ListPage(
                 mailboxSearch = base.mailboxSearch,
                 pills = base.pills,
                 onCompose = { navigation.go(MailPage.Compose(it, parent = page)) },
+                onOpenDraft = rememberDraftOpener(states, navigation, page),
                 filters = filters,
                 filterOptions = rememberFilterOptions(states, base, filters.applied),
                 rowLook = rowLook,

@@ -4,6 +4,7 @@ import com.otus.mail.core.mail.EmailAddress
 import com.otus.mail.core.mail.EmailBodyPart
 import com.otus.mail.core.mail.EmailObject
 import com.otus.mail.core.mail.isAnswered
+import com.otus.mail.core.mail.isDraft
 import com.otus.mail.core.mail.isFlagged
 import com.otus.mail.core.mail.isForwarded
 import com.otus.mail.core.mail.isSeen
@@ -47,6 +48,7 @@ internal fun EmailObject.toMessage(
                 invite = hasInvite,
                 answered = isAnswered,
                 forwarded = isForwarded,
+                draft = isDraft,
                 hasAttachment = hasFile,
             ),
         emailId = id,

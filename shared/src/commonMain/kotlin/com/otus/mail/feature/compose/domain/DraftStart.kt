@@ -112,7 +112,7 @@ internal fun OriginalMessage.quoted(text: String): String =
 
 private fun OriginalMessage.forwardBody(): String =
     buildList {
-        add("---------- Forwarded message ----------")
+        add(FORWARD_HEADER)
         add("From: ${from.recipientText()}")
         add("Date: $sentLabel")
         add("Subject: $subject")
@@ -134,6 +134,9 @@ private const val REPLY_PREFIX = "Re:"
 private const val FORWARD_PREFIX = "Fwd:"
 
 internal const val QUOTE = ">"
+
+/** The line a forward's copy of the original starts with. */
+internal const val FORWARD_HEADER = "---------- Forwarded message ----------"
 
 /** Ends a quoted or forwarded body that stops early, so no reader takes it for the whole message. */
 private const val TRUNCATED_NOTE = "[The rest of the original message is not included.]"

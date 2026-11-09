@@ -60,6 +60,7 @@ internal class InboxContextBuilder {
     var mailboxSearch = MailboxSearch()
     var pills = InboxPills()
     var onCompose: (ComposeRequest) -> Unit = {}
+    var onOpenDraft: (MailMessage) -> Unit = {}
     var filters: InboxFilterState? = null
     var filterOptions = FilterOptions()
     var rowLook = RowLook()
@@ -79,6 +80,7 @@ internal class InboxContextBuilder {
             mailboxSearch = mailboxSearch,
             pills = pills,
             onCompose = onCompose,
+            onOpenDraft = onOpenDraft,
             filters = filters,
             filterOptions = filterOptions,
             rowLook = rowLook,

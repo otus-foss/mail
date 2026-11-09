@@ -109,6 +109,8 @@ data class MailAttributes(
     val answered: Boolean = false,
     /** The message has the `$forwarded` keyword. */
     val forwarded: Boolean = false,
+    /** The message has the `$draft` keyword: a saved draft, which opens in Write instead of Read. */
+    val draft: Boolean = false,
     /**
      * Whether any email of the conversation has a file other than a calendar invitation, even when
      * this one has none. Invitations get their own mark from [invite] and [MailConversation.invite].
