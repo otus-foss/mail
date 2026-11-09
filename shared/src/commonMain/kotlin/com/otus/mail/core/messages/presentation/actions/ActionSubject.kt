@@ -37,11 +37,15 @@ internal class MoveOptions(
     val suggestion: MoveTarget? = null,
 )
 
-/** The open [message] replies answer, in a folder of [role]; drafts start through [onCompose]. */
+/**
+ * The open [message] replies answer, in a folder of [role]; drafts start through [onCompose], and
+ * a message in Scheduled is edited or sent through [scheduled].
+ */
 internal class PageSubject(
     val message: MailMessage,
     val role: MailboxRole?,
     val onCompose: (ComposeRequest) -> Unit,
+    val scheduled: ScheduledActions? = null,
 )
 
 /**
@@ -99,6 +103,10 @@ private fun ActionSubject.offer(action: MailAction): OfferedAction? =
 
         MailAction.Send, MailAction.Attach, MailAction.Discard -> {
             draft?.offer(action)
+        }
+
+        MailAction.EditScheduled, MailAction.SendNow -> {
+            page?.offerScheduled(action)
         }
 
         MailAction.AllActions -> {

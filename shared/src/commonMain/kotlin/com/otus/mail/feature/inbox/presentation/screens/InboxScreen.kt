@@ -64,7 +64,7 @@ fun InboxScreen(
     messageActions: MessageActions? = null,
 ) {
     val state = rememberInboxState(context.defaultSearch)
-    val rows = rememberInboxRows(messages, messageActions, context.opening)
+    val rows = rememberInboxRows(messages, messageActions, context.onOpenDraft, context.opening)
     val filters = context.filters ?: remember { InboxFilterState() }
     val sorted = rememberCategoryView(context, state, messages, status, filters)
     val unreadCount = rememberUnreadCount(sorted.listed, status.loading)

@@ -61,7 +61,10 @@ private fun PageRequestEffects(
     show: (MailPage) -> Unit,
 ) {
     LaunchedEffect(services) { services.requests.pages.collect { show(it) } }
-    LaunchedEffect(states) { states.compose.outgoing.resume { states.requests.pages.show(MailPage.Compose(it)) } }
+    LaunchedEffect(states) {
+        states.compose.outgoing.resume { states.requests.pages.show(MailPage.Compose(it)) }
+        states.compose.fileScheduled()
+    }
 }
 
 /**
@@ -78,6 +81,7 @@ private fun ServerChangeEffects(
 ) {
     LaunchedEffect(states) {
         reloadWhileShown(services.serverChanges.changes, services.visibility.shown) {
+            states.compose.fileScheduled()
             states.folders.all.refresh()
             states.list.refreshPages(keepReport = true)
             if (inboxShown()) states.list.feed.refresh(keepReport = true)

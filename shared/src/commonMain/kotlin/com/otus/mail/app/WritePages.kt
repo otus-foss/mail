@@ -5,6 +5,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import com.otus.designsystem.shared.controls.elements.UiAction
 import com.otus.designsystem.shared.feedback.components.ToastMessage
+import com.otus.mail.core.messages.domain.ComposeRequest
 import com.otus.mail.core.messages.domain.SendIdentityKey
 import com.otus.mail.feature.compose.presentation.ComposeExits
 import com.otus.mail.feature.compose.presentation.Outgoing
@@ -44,8 +45,14 @@ internal fun ComposePage(
                     draft: OutgoingDraft,
                     at: LocalDateTime?,
                 ) {
+                    val before = (page.request as? ComposeRequest.Resume)?.sendAt
                     val outgoing =
-                        Outgoing(draft, compose.reopening()) { states.requests.pages.show(page.copy(request = it)) }
+                        Outgoing(
+                            draft,
+                            compose.reopening(),
+                            before,
+                            filed = { states.list.refreshPages(keepReport = true) },
+                        ) { states.requests.pages.show(page.copy(request = it)) }
                     with(states.compose.outgoing) { if (at == null) send(outgoing) else schedule(outgoing, at) }
                     onClose()
                 }

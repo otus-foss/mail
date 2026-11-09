@@ -2,6 +2,7 @@ package com.otus.mail.feature.inbox.presentation
 
 import com.otus.mail.core.categories.domain.InboxCategories
 import com.otus.mail.core.messages.domain.ComposeRequest
+import com.otus.mail.core.messages.domain.MailMessage
 import com.otus.mail.core.messages.presentation.ListNudge
 import com.otus.mail.core.messages.presentation.components.MailScopeSwitch
 import com.otus.mail.core.messages.presentation.empty
@@ -25,6 +26,8 @@ data class InboxContext(
     val pills: InboxPills,
     /** Opens a draft for a new message, reply, or forward. */
     val onCompose: (ComposeRequest) -> Unit,
+    /** Opens a saved draft's row in Write, where a tap on any other row opens Read. */
+    val onOpenDraft: (MailMessage) -> Unit,
     /** The page's filters, which outlive the screen; null keeps them with the screen. */
     val filters: InboxFilterState?,
     val filterOptions: FilterOptions,

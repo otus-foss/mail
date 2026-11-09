@@ -6,6 +6,7 @@ import com.otus.mail.core.messages.domain.ComposeRequest
 import com.otus.mail.core.messages.domain.OwnAddresses
 import com.otus.mail.core.messages.presentation.MailEdits
 import com.otus.mail.core.messages.presentation.MessageActions
+import com.otus.mail.core.messages.presentation.actions.ScheduledActions
 import com.otus.mail.core.settings.domain.allowingSender
 import com.otus.mail.core.settings.presentation.MailBehaviorState
 import com.otus.mail.feature.folders.presentation.FolderDialog
@@ -68,6 +69,7 @@ internal class ReadWiring(
         person: PersonSheet?,
         own: OwnAddresses,
         sorted: Boolean,
+        scheduled: ScheduledActions,
         onCompose: (ComposeRequest) -> Unit,
     ): ReadContext =
         ReadContext(
@@ -103,7 +105,7 @@ internal class ReadWiring(
                     quickView = { behavior.behavior.read.quickView },
                     setZen = { on -> behavior.updateRead { it.copy(zen = on) } },
                 ),
-            replies = ReadReplies(own, onCompose),
+            replies = ReadReplies(own, onCompose, scheduled),
         )
 }
 
@@ -121,9 +123,10 @@ internal fun rememberReadView(
     own: OwnAddresses,
     sorted: Boolean,
 ): ReadView {
+    val scheduled = rememberScheduledActions(states, navigation, page)
     val read =
         remember(states, feed, own, sorted) {
-            states.reading.context(feed, contactSheet(states.contacts.cards, navigation), own, sorted) {
+            states.reading.context(feed, contactSheet(states.contacts.cards, navigation), own, sorted, scheduled) {
                 navigation.go(MailPage.Compose(it, parent = page))
             }
         }

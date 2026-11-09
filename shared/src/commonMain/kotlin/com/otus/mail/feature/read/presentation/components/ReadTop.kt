@@ -117,7 +117,7 @@ private fun headerActions(
     return ReadHeaderActions(
         onBack = parts::close,
         senderOpen = expansion.expanded,
-        onSender = { if (expansion.expanded) expansion.collapse() else expansion.expandTo(GROWN_EXPANDED_STOP) },
+        onDetails = { if (expansion.expanded) expansion.collapse() else expansion.expandTo(GROWN_EXPANDED_STOP) },
         zen = read.display.zen(),
         onZen = {
             val on = !read.display.zen()

@@ -25,13 +25,15 @@ internal class InboxRows(
 )
 
 /**
- * Which of [messages] is open or selected; system back clears a selection. [opening] opens its row
- * as a tap would, marking it read when the saved behavior asks.
+ * Which of [messages] is open or selected; system back clears a selection. A tapped draft goes to
+ * [openDraft] instead of opening. [opening] opens its row as a tap would, marking it read when the
+ * saved behavior asks.
  */
 @Composable
 internal fun rememberInboxRows(
     messages: List<MailMessage>,
     actions: MessageActions?,
+    openDraft: (MailMessage) -> Unit,
     opening: OpenRequest? = null,
 ): InboxRows {
     var openId by rememberSaveable { mutableStateOf<String?>(null) }
@@ -56,7 +58,7 @@ internal fun rememberInboxRows(
             selected,
             onToggle = { selectedIds = selectedIds.toggled(it.id) },
             onSelect = { selectedIds = it.toList() },
-        ) { openId = it.id }
+        ) { if (it.attributes.draft) openDraft(it) else openId = it.id }
     return InboxRows(
         messages.firstOrNull { it.id == openId },
         selected,

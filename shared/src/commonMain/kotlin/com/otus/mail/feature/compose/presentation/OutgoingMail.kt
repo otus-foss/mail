@@ -13,7 +13,7 @@ import com.otus.mail.core.messages.domain.SendFailure
 import com.otus.mail.core.messages.domain.SentMessage
 import com.otus.mail.feature.compose.domain.MailOutbox
 import com.otus.mail.feature.compose.domain.OutboxProblem
-import com.otus.mail.feature.compose.presentation.components.scheduledLabel
+import com.otus.mail.feature.compose.presentation.components.scheduledToast
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.async
@@ -28,16 +28,6 @@ import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Duration.Companion.seconds
 import kotlin.time.Instant
-
-/**
- * A draft handed over for sending, and [open], which shows [reopen] for Undo. [open] returns once a
- * page has taken the draft, so a message leaves the outbox only then.
- */
-internal class Outgoing(
-    val draft: OutgoingDraft,
-    val reopen: ComposeRequest.Resume,
-    val open: suspend (ComposeRequest) -> Unit,
-)
 
 /**
  * Sends drafts after the compose page has closed, with toasts that say how it went. Each draft goes
@@ -146,8 +136,9 @@ internal class OutgoingMail(
         outbox.send(id).fold(
             onSuccess = { sent ->
                 outgoing.draft.sent()
+                outgoing.filed()
                 val undo = sent?.let { UiAction("Undo") { scope.launch { unschedule(outgoing, it) } } }
-                toasts.show(ToastMessage(dates().scheduledLabel(at), undo))
+                toasts.show(ToastMessage(dates().scheduledToast(at, outgoing.scheduledBefore), undo))
             },
             onFailure = { error ->
                 val retry = UiAction("Retry") { scope.launch { schedule(outgoing, id, at) } }
@@ -265,6 +256,7 @@ internal class OutgoingMail(
         scheduled.cancel(sent).fold(
             onSuccess = {
                 val reopen = outgoing.reopen
+                outgoing.filed()
                 outgoing.open(reopen.copy(draft = reopen.draft.copy(emailId = sent.emailId)))
             },
             onFailure = { error ->

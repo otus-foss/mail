@@ -303,7 +303,10 @@ the page stays open, and a notice above the bar says "Scheduled for Mon 19 Oct, 
 which opens the sheet again; once a time is set the sheet also offers Send now. The main button
 then reads "Sends to" with the schedule-send symbol. Send sends with an explicit envelope whose `mailFrom`
 carries `HOLDUNTIL` (RFC 4865), closes the page, and shows "Scheduled for Mon 19 Oct, 8:00" with Undo.
-The scheduled copy stays in Drafts without `$draft` until the server sends it. Undo sets the
+The scheduled copy waits in the Scheduled folder without `$draft`. Mail finds that folder by the
+`scheduled` role, or a top-level folder named Scheduled, and makes one with that role when the account
+has none. When the app starts, refreshes, or gets a push, Mail moves copies whose submission is `final` to
+Sent, and moves copies an older build left in Drafts while their submission is `pending` to Scheduled. Undo sets the
 submission's `undoStatus` to `canceled`. Only after the server confirms cancellation does Mail
 mark the copy `$draft` again, take back the original's mark as for a held send, and open it. If restoring the draft fails, Mail reports that the
 send was canceled but the draft could not be restored.

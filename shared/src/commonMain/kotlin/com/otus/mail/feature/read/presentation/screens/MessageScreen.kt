@@ -115,7 +115,7 @@ fun MessageScreen(
     val page = state.pages[index].withContent(parts.content(state.pages[index]))
     SideEffect { state.shownId = page.id }
     val look = rememberPageLook(parts)
-    val readActions = rememberReadActions(message, page, read.replies.own, actions, moveChoice, read.replies.onCompose)
+    val readActions = rememberReadActions(message, page, read.replies, actions, moveChoice)
     val confirmation = rememberConfirmation()
     val menu =
         rememberReadMenu(parts, look, readActions, page, index) { action ->

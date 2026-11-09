@@ -1,6 +1,7 @@
 package com.otus.mail.core.messages.domain
 
 import com.otus.mail.core.files.PickedFile
+import kotlinx.datetime.LocalDateTime
 
 /** What a draft starts from: a new message, a reply, a follow-up, a forward, or an earlier draft. */
 sealed interface ComposeRequest {
@@ -34,11 +35,15 @@ sealed interface ComposeRequest {
         val original: OriginalMessage,
     ) : ComposeRequest
 
-    /** A [draft] opened again as it was, such as after Undo on a discarded one; [from] says what it began as. */
+    /**
+     * A [draft] opened again as it was, such as after Undo on a discarded one; [from] says what it
+     * began as, and [sendAt] the time it was scheduled for, which Send keeps.
+     */
     data class Resume(
         val draft: Draft,
         val from: ComposeRequest,
         val attachmentSources: Map<String, PickedFile> = emptyMap(),
+        val sendAt: LocalDateTime? = null,
     ) : ComposeRequest
 }
 

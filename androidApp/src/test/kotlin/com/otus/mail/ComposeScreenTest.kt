@@ -69,6 +69,13 @@ class ComposeScreenTest {
             override suspend fun cancel(message: SentMessage) = Result.success(Unit)
 
             override suspend fun sendNow(message: SentMessage) = Result.success(Unit)
+
+            override suspend fun fileSent(accountId: String) = Unit
+
+            override suspend fun held(
+                accountId: String,
+                emailId: String,
+            ) = null
         }
     private var discarded = false
 

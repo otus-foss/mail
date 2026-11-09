@@ -127,4 +127,5 @@ private val ActionTarget.title: String
             ActionTarget.List -> "Message list"
             ActionTarget.Draft -> "Writing"
             ActionTarget.Anywhere -> "Anywhere"
+            ActionTarget.Scheduled -> "Scheduled mail"
         }

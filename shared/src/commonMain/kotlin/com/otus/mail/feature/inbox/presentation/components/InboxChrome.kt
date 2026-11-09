@@ -1,6 +1,7 @@
 package com.otus.mail.feature.inbox.presentation.components
 
 import androidx.compose.runtime.Composable
+import com.otus.mail.core.mailbox.MailboxRole
 import com.otus.mail.core.messages.domain.ComposeRequest
 import com.otus.mail.core.messages.domain.MailMessage
 import com.otus.mail.core.messages.presentation.MessageActions
@@ -9,7 +10,8 @@ import com.otus.mail.feature.inbox.presentation.InboxState
 /**
  * The bar under the list: the selection's while rows are selected, none while searching, and the
  * list's otherwise. A minimized bar stays while searching, so it can sink under the keyboard
- * instead of vanishing. Without [actions] there is no bar. While the [header] panel shows every
+ * instead of vanishing. Without [actions] there is no bar, and Scheduled has none: its mail is
+ * edited or sent from its Read view. While the [header] panel shows every
  * filter, its Show button takes the bar's place, and while it shows a typed search, the search's.
  */
 internal fun inboxBar(
@@ -29,7 +31,9 @@ internal fun inboxBar(
             { SearchResultsBar(listed, state) { header.expansion.let { !it.moving && it.position >= 1f } } }
         }
 
-        actions == null || (state.searching && !actions.saved().minimizedBar) -> {
+        actions == null ||
+            (state.searching && !actions.saved().minimizedBar) ||
+            actions.cleanup?.listRole?.invoke() == MailboxRole.Scheduled -> {
             null
         }
 

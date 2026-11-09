@@ -4,6 +4,7 @@ import com.otus.mail.core.mail.EmailAddress
 import com.otus.mail.core.mail.EmailBodyPart
 import com.otus.mail.core.mail.EmailObject
 import com.otus.mail.core.mail.isAnswered
+import com.otus.mail.core.mail.isDraft
 import com.otus.mail.core.mail.isFlagged
 import com.otus.mail.core.mail.isForwarded
 import com.otus.mail.core.mail.isSeen
@@ -41,12 +42,13 @@ internal fun EmailObject.toMessage(
         location = place.copy(mailboxIds = mailboxIds.filterValues { it }.keys),
         attributes =
             MailAttributes(
-                unread = !isSeen,
+                unread = !isSeen && !isDraft && place.mailboxRole?.holdsUnsent != true,
                 attachments = if (hasAttachment) attachments.orEmpty().map { it.displayName() } else emptyList(),
                 flagged = isFlagged,
                 invite = hasInvite,
                 answered = isAnswered,
                 forwarded = isForwarded,
+                draft = isDraft,
                 hasAttachment = hasFile,
             ),
         emailId = id,

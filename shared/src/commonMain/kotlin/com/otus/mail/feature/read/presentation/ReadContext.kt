@@ -12,6 +12,7 @@ import com.otus.mail.core.messages.domain.MessageFolder
 import com.otus.mail.core.messages.domain.OwnAddresses
 import com.otus.mail.core.messages.domain.RemoteImages
 import com.otus.mail.core.messages.domain.SenderBlocks
+import com.otus.mail.core.messages.presentation.actions.ScheduledActions
 import com.otus.mail.core.messages.presentation.empty
 import com.otus.mail.core.settings.domain.ReadQuickModule
 import com.otus.mail.feature.read.domain.ConversationMessages
@@ -49,10 +50,14 @@ class ReadLoads(
     val content: suspend (MailMessage) -> MessageContent?,
 )
 
-/** The user's [own] addresses, which replies leave out, and [onCompose], which opens a draft for a reply or forward. */
+/**
+ * The user's [own] addresses, which replies leave out, [onCompose], which opens a draft for a reply
+ * or forward, and what a message waiting in Scheduled can do instead, [scheduled].
+ */
 class ReadReplies(
     val own: OwnAddresses,
     val onCompose: (ComposeRequest) -> Unit,
+    val scheduled: ScheduledActions? = null,
 )
 
 /**
