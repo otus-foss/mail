@@ -14,6 +14,7 @@ import com.otus.mail.feature.compose.presentation.ComposeState
 import com.otus.mail.feature.compose.presentation.OutgoingMail
 import com.otus.mail.feature.compose.presentation.SignaturesState
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.launch
 import kotlin.time.Duration.Companion.seconds
 
 /**
@@ -68,6 +69,11 @@ internal class ComposeStates(
         SignaturesState(services.drafts, services.signatures, services.pickers.signatureImages, scope) {
             accounts.accounts.map { ComposeAccount(it.id, it.name) }
         }
+
+    /** Moves scheduled mail the server has sent to Sent, in every account, in the process's scope. */
+    fun fileScheduled() {
+        services.work.launch { accounts.accounts.forEach { services.scheduled.fileSent(it.id) } }
+    }
 
     /**
      * Sends drafts after their page closes, with Undo and the outcome in a toast. It runs in the

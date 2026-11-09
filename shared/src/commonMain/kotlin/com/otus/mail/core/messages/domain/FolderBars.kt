@@ -21,6 +21,7 @@ fun ActionBarPlace.folderDefault(role: MailboxRole): ActionBarLayout? =
         MailboxRole.Junk -> cleanupBar(NotSpam)
         MailboxRole.Trash -> cleanupBar(Restore)
         MailboxRole.Sent -> ActionBarLayout(listOf(Forward), FollowUp).takeIf { this == ActionBarPlace.Message }
+        MailboxRole.Scheduled -> ActionBarLayout(emptyList(), Forward).takeIf { this == ActionBarPlace.Message }
         MailboxRole.Inbox, MailboxRole.Drafts, MailboxRole.Archive -> null
     }
 

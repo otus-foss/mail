@@ -92,13 +92,15 @@ class JmapDraftSender internal constructor(
             identityId = response[identities].list.sendingAs(from) { it.email }?.id ?: failSend(SendFailure.NoIdentity),
             drafts = folders.firstOrNull { it.role == MailboxRole.Drafts }?.id,
             sent = folders.firstOrNull { it.role == MailboxRole.Sent }?.id,
+            scheduled = folders.scheduledFolder()?.id,
         )
     }
 
     /**
      * Stores the draft, tells [stored] the copy's id, and then submits that copy, so a submission
      * whose answer is lost can be looked up by the id. A refused submission destroys the copy, so
-     * Drafts keeps only the draft's earlier copy.
+     * Drafts keeps only the draft's earlier copy. A scheduled copy waits in Scheduled, made when the
+     * account has none, so Drafts holds only drafts.
      */
     private suspend fun MailAccount.submit(
         draft: Draft,
@@ -106,7 +108,12 @@ class JmapDraftSender internal constructor(
         time: SendTime,
         stored: suspend (emailId: String) -> Unit,
     ): SentMessage {
-        val folder = route.drafts ?: route.sent ?: failSend(SendFailure.Mail(MailFailure.ServerProblem))
+        val folder =
+            route.scheduled.takeIf { time is SendTime.Scheduled }
+                ?: createScheduledFolder().takeIf { time is SendTime.Scheduled }
+                ?: route.drafts
+                ?: route.sent
+                ?: failSend(SendFailure.Mail(MailFailure.ServerProblem))
         val email = draft.toEmail(folder, inlineImages(draft.htmlContent(), copies.images))
         val created = connection.call(SetMethod(EmailType, id, create = mapOf(EMAIL to email)))
         val creationFailure = created.notCreated[EMAIL]
@@ -128,7 +135,7 @@ class JmapDraftSender internal constructor(
     /**
      * The submission of the stored [copy] in [folder]. A held or scheduled one carries an envelope
      * with its time. A scheduled copy stays in [folder], only losing `$draft`, since the server
-     * sends it much later; any other moves to Sent at once.
+     * sends it much later, and [fileSent] moves it to Sent once it went; any other moves at once.
      */
     private fun MailAccount.submission(
         route: SendRoute,
@@ -171,6 +178,16 @@ class JmapDraftSender internal constructor(
                 ?.takeIf { it.mayUse(JmapCapability.SUBMISSION) }
                 ?.delayedSendSeconds() ?: 0L
         }
+
+    override suspend fun fileSent(accountId: String) {
+        jmapCallOr(Unit) {
+            val account = connections.mailAccount(accountId) ?: return@jmapCallOr
+            val folders = copies.mailboxes.sendFresh(account) {}.first
+            val sent = folders.firstOrNull { it.role == MailboxRole.Sent }?.id ?: return@jmapCallOr
+            val drafts = folders.firstOrNull { it.role == MailboxRole.Drafts }?.id
+            account.fileScheduled(drafts, folders.scheduledFolder()?.id, sent)
+        }
+    }
 
     override suspend fun cancel(message: SentMessage): Result<Unit> =
         submissionCall(message) { account ->

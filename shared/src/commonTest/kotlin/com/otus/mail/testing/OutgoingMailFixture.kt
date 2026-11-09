@@ -49,6 +49,8 @@ internal abstract class OutgoingMailFixture {
                 sentNow += message
                 return sendNowFailure?.let { Result.failure(SendException(it)) } ?: Result.success(Unit)
             }
+
+            override suspend fun fileSent(accountId: String) = Unit
         }
 
     protected val checker =

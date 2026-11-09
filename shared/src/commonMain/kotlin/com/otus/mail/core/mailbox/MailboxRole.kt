@@ -12,6 +12,7 @@ enum class MailboxRole(
     Inbox("inbox", "Inbox"),
     Drafts("drafts", "Drafts"),
     Sent("sent", "Sent"),
+    Scheduled("scheduled", "Scheduled"),
     Archive("archive", "Archive"),
     Junk("junk", "Spam"),
     Trash("trash", "Trash"),

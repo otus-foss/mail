@@ -54,7 +54,7 @@ sealed interface SidebarPin {
          * Pins added to [defaults] after layouts were saved. A layout saved before one of them pins it
          * once; after that the user's choice stays. The Inbox was always shown before it became a pin.
          */
-        val introduced: List<SidebarPin> = listOf(Contacts, Inbox)
+        val introduced: List<SidebarPin> = listOf(Contacts, Inbox, Role(MailboxRole.Scheduled))
 
         /** [pins] saved as one value without commas or line breaks, so it fits one layout line. */
         fun encode(pins: List<SidebarPin>): String = pins.joinToString(SEPARATOR) { it.storageValue }

@@ -21,11 +21,12 @@ import kotlinx.serialization.json.putJsonArray
 import kotlinx.serialization.json.putJsonObject
 import kotlin.time.Instant
 
-/** The identity a message is sent as, and the account's Drafts and Sent folders when it has them. */
+/** The identity a message is sent as, and the account's Drafts, Sent, and Scheduled folders when it has them. */
 internal data class SendRoute(
     val identityId: String,
     val drafts: String?,
     val sent: String?,
+    val scheduled: String? = null,
 ) {
     /**
      * The patch that files the sent copy, stored in [folder]: it leaves Drafts for Sent and loses
