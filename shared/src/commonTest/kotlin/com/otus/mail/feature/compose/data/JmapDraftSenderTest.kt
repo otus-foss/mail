@@ -59,6 +59,12 @@ class JmapDraftSenderTest {
                         )
                     }
 
+                    "Mailbox/set" in body -> {
+                        responses(
+                            """["Mailbox/set", {"newState": "m2", "created": {"scheduled": {"id": "sc"}}}, "c0"]""",
+                        )
+                    }
+
                     "EmailSubmission/set" in body -> {
                         responses("""["EmailSubmission/set", {"newState": "s2", $submitted}, "c0"]""")
                     }
@@ -236,12 +242,16 @@ class JmapDraftSenderTest {
     private fun Result<*>.failure(): SendFailure? = (exceptionOrNull() as? SendException)?.failure
 
     @Test
-    fun aScheduledSendHoldsTheMessageAndLeavesItsCopyInDrafts() =
+    fun aScheduledSendMakesTheScheduledFolderAndHoldsItsCopyThere() =
         runTest {
             val at = kotlin.time.Instant.parse("2026-10-19T06:00:00.500Z")
             val sent = sender().send(reply, answered = null, SendTime.Scheduled(at)).getOrThrow()
             assertEquals(SentMessage("ada", "e9", "s1", draftsId = "dr", identityId = "i1"), sent)
-            val submission = methods(calls[2])[0].arguments
+            assertEquals("Mailbox/set", methods(calls[1])[0].name)
+            val stored = methods(calls[2])[0].arguments.at("create", "draft")
+            assertEquals(Json.parseToJsonElement("""{"sc": true}"""), stored["mailboxIds"])
+            assertEquals("2026-10-19T06:00:00Z", stored.text("receivedAt"))
+            val submission = methods(calls[3])[0].arguments
             val envelope = submission.at("create", "send").getValue("envelope").jsonObject
             val expected =
                 """{"mailFrom": {"email": "ada@example.org", "parameters": {"HOLDUNTIL": "2026-10-19T06:00:00Z"}},
@@ -249,6 +259,13 @@ class JmapDraftSenderTest {
             assertEquals(Json.parseToJsonElement(expected), envelope)
             val held = """{"#send": {"keywords/${'$'}draft": null}}"""
             assertEquals(Json.parseToJsonElement(held), submission["onSuccessUpdateEmail"])
+        }
+
+    @Test
+    fun aSendForNowMakesNoScheduledFolder() =
+        runTest {
+            sender().send(reply, answered = null, SendTime.Now).getOrThrow()
+            assertTrue(calls.none { "Mailbox/set" in it })
         }
 
     @Test

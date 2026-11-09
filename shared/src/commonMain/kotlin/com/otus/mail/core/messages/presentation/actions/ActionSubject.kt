@@ -86,7 +86,8 @@ private fun ActionSubject.offer(action: MailAction): OfferedAction? =
         MailAction.Spam, MailAction.NotSpam, MailAction.Restore, MailAction.DeleteForever, MailAction.Move,
         MailAction.SuggestedMove, MailAction.RuleForSender,
         -> {
-            offerOnMessages(action)
+            // Filing scheduled mail would leave its send running; Edit and Send now handle it.
+            if (messages.any { it.location.mailboxRole == MailboxRole.Scheduled }) null else offerOnMessages(action)
         }
 
         MailAction.Reply, MailAction.ReplyAll, MailAction.Forward, MailAction.FollowUp -> {

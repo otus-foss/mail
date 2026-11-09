@@ -1,4 +1,4 @@
-package com.otus.mail.feature.read.data
+package com.otus.mail.core.messages.data
 
 /**
  * The character a code point names, as in browsers: U+FFFD for zero, a surrogate, or a value beyond

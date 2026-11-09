@@ -1,4 +1,4 @@
-package com.otus.mail.feature.read.data
+package com.otus.mail.core.messages.data
 
 import kotlin.test.Test
 import kotlin.test.assertEquals
