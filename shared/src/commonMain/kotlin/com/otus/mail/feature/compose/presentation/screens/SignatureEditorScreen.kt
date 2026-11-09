@@ -113,7 +113,7 @@ fun SignatureEditorScreen(
             onDismiss = { removing = false },
         )
     }
-    if (linking) LinkSheet(editor.text::addLink) { linking = false }
+    if (linking) LinkSheet(editor.text.selectedText, editor.text::addLink) { linking = false }
 }
 
 /** The text and the images under it, in one `bgDark` box with a neutral outline, focused or not. */
