@@ -114,7 +114,10 @@ class JmapDraftSender internal constructor(
                 ?: route.drafts
                 ?: route.sent
                 ?: failSend(SendFailure.Mail(MailFailure.ServerProblem))
-        val email = draft.toEmail(folder, inlineImages(draft.htmlContent(), copies.images))
+        val email =
+            draft
+                .toEmail(folder, inlineImages(draft.htmlContent(), copies.images))
+                .let { if (time is SendTime.Scheduled) it.sendingAt(time.at) else it }
         val created = connection.call(SetMethod(EmailType, id, create = mapOf(EMAIL to email)))
         val creationFailure = created.notCreated[EMAIL]
         if (creationFailure != null) failSend(creationFailure.toSendFailure())
