@@ -6,8 +6,8 @@ import com.otus.designsystem.shared.feedback.components.ToastMessage
 import com.otus.designsystem.shared.feedback.components.ToastState
 import com.otus.mail.core.mail.MailFailure
 import com.otus.mail.core.messages.domain.ComposeRequest
-import com.otus.mail.core.messages.domain.DraftRestoreException
 import com.otus.mail.core.messages.domain.ScheduledSends
+import com.otus.mail.core.messages.domain.SendCancel
 import com.otus.mail.core.messages.domain.SendException
 import com.otus.mail.core.messages.domain.SendFailure
 import com.otus.mail.core.messages.domain.SentMessage
@@ -75,7 +75,7 @@ internal class OutgoingMail(
                     when {
                         sent != null -> unschedule(outgoing, sent)
                         outbox.cancel(id.await()) -> outgoing.open(outgoing.reopen)
-                        else -> toasts.show(ToastMessage("Already sent", group = group))
+                        else -> toasts.show(ToastMessage(ALREADY_SENT, group = group))
                     }
                 }
             }
@@ -253,22 +253,27 @@ internal class OutgoingMail(
         outgoing: Outgoing,
         sent: SentMessage,
     ) {
-        scheduled.cancel(sent).fold(
-            onSuccess = {
+        when (scheduled.cancel(sent)) {
+            SendCancel.Stopped -> {
                 val reopen = outgoing.reopen
                 outgoing.filed()
+                // A copy that is not a draft again yet still opens: its first save replaces it.
                 outgoing.open(reopen.copy(draft = reopen.draft.copy(emailId = sent.emailId)))
-            },
-            onFailure = { error ->
-                val message =
-                    if (error is DraftRestoreException) {
-                        "Send canceled. Couldn't restore the draft."
-                    } else {
-                        "Couldn't confirm cancellation."
-                    }
-                toasts.show(ToastMessage(message))
-            },
-        )
+            }
+
+            SendCancel.Final -> {
+                toasts.show(ToastMessage(ALREADY_SENT))
+            }
+
+            SendCancel.Unknown -> {
+                toasts.show(ToastMessage(NOT_CONFIRMED))
+            }
+
+            SendCancel.Waiting -> {
+                val retry = UiAction("Retry") { scope.launch { unschedule(outgoing, sent) } }
+                toasts.show(ToastMessage("Couldn't cancel", retry, sticky = true))
+            }
+        }
     }
 }
 

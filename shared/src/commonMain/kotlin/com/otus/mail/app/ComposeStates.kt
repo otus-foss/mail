@@ -8,7 +8,6 @@ import com.otus.mail.core.messages.domain.ComposeRequest
 import com.otus.mail.core.messages.domain.Draft
 import com.otus.mail.core.messages.domain.HeldSend
 import com.otus.mail.core.messages.domain.MailMessage
-import com.otus.mail.core.messages.domain.SentMessage
 import com.otus.mail.core.messages.domain.accountId
 import com.otus.mail.core.settings.presentation.MailBehaviorState
 import com.otus.mail.feature.compose.presentation.ComposeAccount
@@ -17,6 +16,7 @@ import com.otus.mail.feature.compose.presentation.ComposeServices
 import com.otus.mail.feature.compose.presentation.ComposeState
 import com.otus.mail.feature.compose.presentation.HeldEdits
 import com.otus.mail.feature.compose.presentation.OutgoingMail
+import com.otus.mail.feature.compose.presentation.ScheduledSendNow
 import com.otus.mail.feature.compose.presentation.SignaturesState
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
@@ -85,9 +85,6 @@ internal class ComposeStates(
     suspend fun held(message: MailMessage): HeldSend? =
         services.scheduled.held(message.location.accountId, message.emailId)
 
-    /** Cancels [message], a held or scheduled send, and makes its copy a draft again. */
-    suspend fun cancel(message: SentMessage): Result<Unit> = services.scheduled.cancel(message)
-
     /** Moves scheduled mail the server has sent to Sent, in every account, in the process's scope. */
     fun fileScheduled() {
         services.work.launch { accounts.accounts.forEach { services.scheduled.fileSent(it.id) } }
@@ -107,5 +104,8 @@ internal class ComposeStates(
         ) { behavior.behavior.write.undoSendSeconds.seconds.inWholeMilliseconds }
 
     /** Send and Discard for a draft, which first cancel the scheduled send it edits. */
-    val heldEdits = HeldEdits(services.work, services.moveToasts.toasts, services.scheduled, outgoing)
+    val heldEdits = HeldEdits(services.work, services.moveToasts.toasts, services.scheduled, services.drafts, outgoing)
+
+    /** Send now for a message waiting in Scheduled, which first cancels its send. */
+    val sendNow = ScheduledSendNow(services.work, services.moveToasts.toasts, services.scheduled, outgoing)
 }
