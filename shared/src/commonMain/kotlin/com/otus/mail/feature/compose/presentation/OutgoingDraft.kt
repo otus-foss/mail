@@ -37,7 +37,7 @@ internal fun Outgoing.released(): Outgoing = Outgoing(draft, reopen.copy(held = 
 fun ComposeState.reopening(): ComposeRequest.Resume {
     val resumed = request as? ComposeRequest.Resume
     return ComposeRequest.Resume(
-        draft,
+        draft.copy(signature = signature),
         resumed?.from ?: request,
         attachments.sourceFiles,
         sendAt,
