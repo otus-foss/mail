@@ -15,6 +15,7 @@ import com.otus.mail.core.mail.MailAccount
 import com.otus.mail.core.mail.MailFailure
 import com.otus.mail.core.messages.data.EmailChangeQueue
 import com.otus.mail.core.messages.domain.DraftRestoreException
+import com.otus.mail.core.messages.domain.SendCancel
 import com.otus.mail.core.messages.domain.SendFailure
 import com.otus.mail.core.messages.domain.SentMessage
 import kotlinx.serialization.json.JsonArray
@@ -113,6 +114,22 @@ internal suspend fun MailAccount.restoreCanceledDraft(
         throw DraftRestoreException(error)
     }
     message.marked?.let { changes.mark(login.id, it, on = false) }
+}
+
+/**
+ * [restoreCanceledDraft] for a send the server canceled. It stays stopped when the restore fails,
+ * as filing Scheduled makes the copy a draft later.
+ */
+internal suspend fun MailAccount.restoredAfterCancel(
+    message: SentMessage,
+    changes: EmailChangeQueue,
+): SendCancel {
+    try {
+        restoreCanceledDraft(message, changes)
+    } catch (expected: DraftRestoreException) {
+        // The send is gone all the same.
+    }
+    return SendCancel.Stopped
 }
 
 private const val RESUBMISSION = "send"

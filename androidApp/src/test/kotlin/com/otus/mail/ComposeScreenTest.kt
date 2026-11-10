@@ -27,6 +27,7 @@ import com.otus.mail.core.messages.domain.Draft
 import com.otus.mail.core.messages.domain.MailSender
 import com.otus.mail.core.messages.domain.OriginalMessage
 import com.otus.mail.core.messages.domain.ScheduledSends
+import com.otus.mail.core.messages.domain.SendCancel
 import com.otus.mail.core.messages.domain.SentMessage
 import com.otus.mail.core.settings.domain.ActionBehavior
 import com.otus.mail.feature.compose.domain.earliestPick
@@ -66,7 +67,7 @@ class ComposeScreenTest {
         object : ScheduledSends {
             override suspend fun maxDelaySeconds(accountId: String) = THIRTY_DAYS
 
-            override suspend fun cancel(message: SentMessage) = Result.success(Unit)
+            override suspend fun cancel(message: SentMessage) = SendCancel.Stopped
 
             override suspend fun sendNow(message: SentMessage) = Result.success(Unit)
 

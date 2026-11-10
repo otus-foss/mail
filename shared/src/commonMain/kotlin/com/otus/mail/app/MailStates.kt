@@ -33,6 +33,9 @@ internal class MailStates(
     val chooseScope: (MailScopeChoice) -> Unit,
     dates: () -> DateFormatter,
 ) {
+    /** Work that outlives a screen, such as a toast's Retry. */
+    val work: CoroutineScope get() = services.work
+
     /** Whose mail the pages show. A removed account's choice falls back to every account. */
     val mailScope: MailScopeChoice
         get() = chosenScope().within(accounts.accounts.map { it.id })

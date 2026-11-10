@@ -12,7 +12,6 @@ import com.otus.jmap.allOf
 import com.otus.jmap.filterCondition
 import com.otus.jmap.jmapCallOr
 import com.otus.jmap.jmapPatch
-import com.otus.jmap.noneOf
 import com.otus.mail.core.mail.EmailSubmissionType
 import com.otus.mail.core.mail.EmailType
 import com.otus.mail.core.mail.Keywords
@@ -69,6 +68,8 @@ internal suspend fun MailAccount.heldSend(
  * (`undoStatus` `final`) moves from [scheduled] to [sent], since some servers send held mail but
  * leave its copy where it was. A copy still waiting that an older Mail left in [drafts] without
  * `$draft` moves to [scheduled], once the account has it: only a scheduled send makes the folder.
+ * A copy in [scheduled] whose every send was canceled, as when making it a draft again failed,
+ * goes back to [drafts] as a draft, since nothing would send or file it.
  */
 internal suspend fun MailAccount.fileScheduled(
     drafts: String?,
@@ -76,17 +77,26 @@ internal suspend fun MailAccount.fileScheduled(
     sent: String,
 ) {
     if (!mayUse(JmapCapability.SUBMISSION)) return
-    val inScheduled = scheduled?.let { emailsIn(it) }.orEmpty()
+    val inScheduled = scheduled?.let { emailsIn(it, notKeyword = Keywords.DRAFT) }.orEmpty()
     val inDrafts = drafts?.let { emailsIn(it, notKeyword = Keywords.DRAFT) }.orEmpty()
     val status = submissionStatus((inScheduled + inDrafts).toList())
-    val waiting = inDrafts.filter { status[it] == PENDING }
     val moves =
         buildMap {
-            status.filterValues { it == FINAL }.keys.forEach { email ->
+            status.filterValues { FINAL in it }.keys.forEach { email ->
                 val from = if (email in inDrafts) drafts else scheduled
                 if (from != null) put(email, move(from, sent))
             }
-            if (drafts != null && scheduled != null) waiting.forEach { put(it, move(drafts, scheduled)) }
+            if (drafts != null && scheduled != null) {
+                inDrafts.filter { status[it]?.contains(PENDING) == true }.forEach { put(it, move(drafts, scheduled)) }
+            }
+            if (scheduled != null) {
+                val draftAgain =
+                    jmapPatch {
+                        set(JsonPrimitive(true), "keywords", Keywords.DRAFT)
+                        if (drafts != null) include(move(scheduled, drafts))
+                    }
+                inScheduled.filter { status[it] == ONLY_CANCELED }.forEach { put(it, draftAgain) }
+            }
         }
     if (moves.isNotEmpty()) connection.call(SetMethod(EmailType, id, update = moves))
 }
@@ -101,22 +111,19 @@ private suspend fun MailAccount.emailsIn(
     return connection.call(QueryMethod(EmailType, id, filter)).ids.toSet()
 }
 
-/** The `undoStatus` of the live submission of each of [emailIds] that has one. */
-private suspend fun MailAccount.submissionStatus(emailIds: List<String>): Map<String, String> {
+/** The `undoStatus` of every submission of each of [emailIds] that has one. */
+private suspend fun MailAccount.submissionStatus(emailIds: List<String>): Map<String, Set<String>> {
     if (emailIds.isEmpty()) return emptyMap()
-    lateinit var live: JmapCall<QueryResult>
+    lateinit var all: JmapCall<QueryResult>
     lateinit var submissions: JmapCall<GetResult<JsonObject>>
     val response =
         connection.send {
-            live =
+            all =
                 call(
                     QueryMethod(
                         EmailSubmissionType,
                         id,
-                        allOf(
-                            filterCondition("emailIds", JsonArray(emailIds.map(::JsonPrimitive))),
-                            noneOf(filterCondition("undoStatus", JsonPrimitive("canceled"))),
-                        ),
+                        filterCondition("emailIds", JsonArray(emailIds.map(::JsonPrimitive))),
                     ),
                 )
             submissions =
@@ -124,7 +131,7 @@ private suspend fun MailAccount.submissionStatus(emailIds: List<String>): Map<St
                     GetMethod(
                         EmailSubmissionType,
                         id,
-                        JmapIds.Result(live.resultOf("/ids")),
+                        JmapIds.Result(all.resultOf("/ids")),
                         listOf("emailId", "undoStatus"),
                     ),
                 )
@@ -132,10 +139,11 @@ private suspend fun MailAccount.submissionStatus(emailIds: List<String>): Map<St
     return response[submissions]
         .list
         .mapNotNull { submission ->
-            val email = submission["emailId"]?.jsonPrimitive?.contentOrNull
-            val undo = submission["undoStatus"]?.jsonPrimitive?.contentOrNull
+            val email = submission.text("emailId")
+            val undo = submission.text("undoStatus")
             if (email != null && undo != null && email in emailIds) email to undo else null
-        }.toMap()
+        }.groupBy({ it.first }, { it.second })
+        .mapValues { it.value.toSet() }
 }
 
 /** The submission of [emailId] the server still holds, with its identity and when it goes; null when none waits. */
@@ -190,9 +198,8 @@ private fun move(
         set(JsonPrimitive(true), "mailboxIds", to)
     }
 
-private const val FINAL = "final"
-
-private const val PENDING = "pending"
+/** The submissions of a copy whose every send was canceled. */
+private val ONLY_CANCELED = setOf(CANCELED)
 
 private const val SCHEDULED_NAME = "Scheduled"
 

@@ -9,11 +9,9 @@ import com.otus.jmap.JmapException
 import com.otus.jmap.SetMethod
 import com.otus.jmap.jmapCallOr
 import com.otus.jmap.login.LoginStoreException
-import com.otus.mail.core.mail.EmailSubmissionType
 import com.otus.mail.core.mail.EmailType
 import com.otus.mail.core.mail.IdentityObject
 import com.otus.mail.core.mail.IdentityType
-import com.otus.mail.core.mail.Keywords
 import com.otus.mail.core.mail.MailAccount
 import com.otus.mail.core.mail.MailFailure
 import com.otus.mail.core.mail.SubmissionCapability
@@ -26,15 +24,13 @@ import com.otus.mail.core.messages.domain.DraftRestoreException
 import com.otus.mail.core.messages.domain.DraftSender
 import com.otus.mail.core.messages.domain.HeldSend
 import com.otus.mail.core.messages.domain.ScheduledSends
+import com.otus.mail.core.messages.domain.SendCancel
 import com.otus.mail.core.messages.domain.SendException
 import com.otus.mail.core.messages.domain.SendFailure
 import com.otus.mail.core.messages.domain.SendTime
 import com.otus.mail.core.messages.domain.SentMessage
 import com.otus.mail.core.messages.domain.sendingAs
 import kotlinx.serialization.SerializationException
-import kotlinx.serialization.json.buildJsonObject
-import kotlinx.serialization.json.put
-import kotlinx.serialization.json.putJsonObject
 
 /**
  * Sends a draft with `EmailSubmission/set` (RFC 8621, section 7.5). One request stores the draft
@@ -157,11 +153,38 @@ class JmapDraftSender internal constructor(
         }
     }
 
-    override suspend fun cancel(message: SentMessage): Result<Unit> =
-        submissionCall(message) { account ->
-            val refusal = account.cancelSubmission(message)
-            if (refusal != null) failSend(refusal)
-            account.restoreCanceledDraft(message, changes)
+    /**
+     * A cancel the server does not confirm, whether refused or with its answer lost, is checked
+     * against what the server now knows of the copy, so a send canceled in a lost request is not
+     * taken for one that still waits.
+     */
+    override suspend fun cancel(message: SentMessage): SendCancel =
+        try {
+            val account = connections.mailAccount(message.accountId)
+            val refusal =
+                account?.let {
+                    try {
+                        it.cancelSubmission(message)
+                    } catch (error: JmapException) {
+                        error.toSendFailure()
+                    }
+                }
+            when {
+                account == null -> {
+                    SendCancel.Waiting
+                }
+
+                refusal == null -> {
+                    account.restoredAfterCancel(message, changes)
+                }
+
+                else -> {
+                    jmapCallOr(SendCancel.Waiting) { account.copyState(message.emailId).afterRefusal(refusal) }
+                        ?: account.restoredAfterCancel(message, changes)
+                }
+            }
+        } catch (expected: LoginStoreException) {
+            SendCancel.Waiting
         }
 
     /**
