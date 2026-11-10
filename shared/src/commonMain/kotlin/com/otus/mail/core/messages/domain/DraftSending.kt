@@ -2,6 +2,7 @@ package com.otus.mail.core.messages.domain
 
 import com.otus.mail.core.mail.MailFailure
 import kotlinx.serialization.Serializable
+import kotlin.time.Duration.Companion.seconds
 import kotlin.time.Instant
 
 /** The message a draft answers; [forwarded] when the draft passes it on rather than replying. */
@@ -66,6 +67,9 @@ data class SentMessage(
     val identityId: String = "",
     val marked: AnsweredMessage? = null,
 )
+
+/** Time for the request to reach the server and for its clock to differ from the device's. */
+internal val SERVER_SPARE = 2.seconds
 
 /** When the server sends a message, and where its copy waits until then. */
 sealed interface SendTime {

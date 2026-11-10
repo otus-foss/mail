@@ -1,17 +1,12 @@
 package com.otus.mail.feature.compose.data
 
-import com.otus.jmap.JmapClient
-import com.otus.jmap.JmapConnections
-import com.otus.jmap.login.InMemoryLoginStore
-import com.otus.mail.core.mail.mailAccount
-import com.otus.mail.testing.ADA_LOGIN
-import com.otus.mail.testing.SUBMISSION_SESSION
-import com.otus.mail.testing.stalwartLike
+import com.otus.mail.core.mailbox.MailFolder
+import com.otus.mail.core.mailbox.MailboxRole
+import com.otus.mail.testing.FakeSubmission
+import com.otus.mail.testing.FakeSubmissionServer
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonElement
-import kotlinx.serialization.json.jsonArray
-import kotlinx.serialization.json.jsonObject
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
@@ -20,143 +15,143 @@ import kotlin.time.Duration.Companion.seconds
 import kotlin.time.Instant
 
 class ScheduledFilingTest {
-    private val calls = mutableListOf<String>()
-
     @Test
-    fun mailAnotherClientScheduledMovesFromSentToScheduled() =
+    fun mailAnotherClientScheduledMovesFromSentToScheduledButHeldSendsStay() =
         runTest {
-            val pending = listOf(Pending("web", NOW + 2.days, "se"), Pending("held", NOW + 20.seconds, "se"))
-            file(pending, scheduled = "sc")
-            assertEquals(mapOf("web" to moved("se", "sc")), updates(), "A send held for Undo stays in Sent")
+            val server =
+                FakeSubmissionServer(
+                    copies =
+                        mapOf(
+                            "web" to setOf("se"),
+                            "held" to setOf("se"),
+                            "edge" to setOf("se"),
+                            "past" to setOf("se"),
+                        ),
+                    submissions =
+                        listOf(
+                            pending("web", NOW + 2.days),
+                            pending("held", NOW + 32.seconds),
+                            pending("edge", NOW + 62.seconds),
+                            pending("past", NOW + 63.seconds),
+                        ),
+                )
+            server.file(scheduled = "sc")
+            assertEquals(mapOf("web" to moved("se", "sc"), "past" to moved("se", "sc")), server.updates.toMap())
         }
 
     @Test
-    fun aScheduledCopyInDraftsOrSentMakesTheScheduledFolder() =
+    fun aScheduledCopyMakesTheScheduledFolderWhenThereIsNone() =
         runTest {
-            file(listOf(Pending("web", NOW + 2.days, "dr")), scheduled = null)
-            assertTrue(calls.any { "Mailbox/set" in it })
-            assertEquals(mapOf("web" to moved("dr", "made")), updates())
+            val server = FakeSubmissionServer(mapOf("web" to setOf("dr")), listOf(pending("web", NOW + 2.days)))
+            server.file(scheduled = null)
+            assertEquals(mapOf("web" to moved("dr", "made")), server.updates.toMap())
         }
 
     @Test
     fun nothingScheduledMakesNoFolderAndMovesNothing() =
         runTest {
-            file(listOf(Pending("held", NOW + 20.seconds, "se")), scheduled = null)
-            assertTrue(calls.none { "Mailbox/set" in it || "Email/set" in it })
+            val server = FakeSubmissionServer(mapOf("held" to setOf("se")), listOf(pending("held", NOW + 20.seconds)))
+            server.file(scheduled = null)
+            assertTrue(server.folderChanges.isEmpty() && server.updates.isEmpty())
         }
 
     @Test
-    fun aCopyAlreadyInScheduledStaysAndASentOneMovesToSent() =
+    fun anEmptyFolderNamedScheduledGetsTheRoleInsteadOfASecondFolder() =
         runTest {
-            file(listOf(Pending("waits", NOW + 2.days, "sc")), scheduled = "sc", inScheduled = listOf("waits", "gone"))
-            assertEquals(mapOf("gone" to moved("sc", "se")), updates())
+            val server = FakeSubmissionServer(mapOf("web" to setOf("se")), listOf(pending("web", NOW + 2.days)))
+            val own = MailFolder("ada", "own", "Scheduled")
+            ScheduledFiling().file(server.account(), FOLDERS + own, NOW)
+            assertEquals(
+                Json.parseToJsonElement("""{"own": {"role": "scheduled"}}"""),
+                server.folderChanges.single()["update"],
+            )
+            assertEquals(mapOf("web" to moved("se", "own")), server.updates.toMap())
         }
 
-    /** One pending submission of [emailId], sent at [at], whose copy is in [mailbox]. */
-    private class Pending(
-        val emailId: String,
-        val at: Instant,
-        val mailbox: String,
-    )
+    @Test
+    fun aFolderTheServerRefusedIsNotAskedForAgain() =
+        runTest {
+            val server =
+                FakeSubmissionServer(
+                    mapOf("web" to setOf("se")),
+                    listOf(pending("web", NOW + 2.days)),
+                    refuseFolders = true,
+                )
+            val filing = ScheduledFiling()
+            filing.file(server.account(), FOLDERS, NOW)
+            filing.file(server.account(), FOLDERS, NOW)
+            assertEquals(1, server.folderChanges.size)
+            assertTrue(server.updates.isEmpty(), "The copy stays in Sent")
+        }
 
-    /**
-     * Files Ada's scheduled mail on a server whose pending submissions are [pending] and whose
-     * Scheduled folder, when there is one, is [scheduled] and holds [inScheduled]. Of those, only
-     * a [pending] one waits: the others' sends are final.
-     */
-    private suspend fun file(
-        pending: List<Pending>,
-        scheduled: String?,
-        inScheduled: List<String> = emptyList(),
-    ) {
-        val store = InMemoryLoginStore().apply { save(ADA_LOGIN, "secret") }
-        val engine =
-            stalwartLike(SUBMISSION_SESSION) { body ->
-                calls += body
-                when {
-                    "Email/get" in body -> {
-                        val submissions =
-                            pending.joinToString {
-                                """{"emailId": "${it.emailId}", "sendAt": "${it.at}"}"""
-                            }
-                        val copies =
-                            pending.joinToString {
-                                """{"id": "${it.emailId}", "mailboxIds": {"${it.mailbox}": true}, "receivedAt": "$NOW"}"""
-                            }
-                        responses(
-                            """["EmailSubmission/query", {"queryState": "q", "ids": [], "position": 0}, "c0"]""",
-                            """["EmailSubmission/get", {"state": "s", "list": [$submissions]}, "c1"]""",
-                            """["Email/get", {"state": "e", "list": [$copies]}, "c2"]""",
-                        )
-                    }
+    @Test
+    fun aCopyLeavesScheduledOnceItsSendIsOver() =
+        runTest {
+            val copies = listOf("sent", "canceled", "gone", "waits", "again", "stored").associateWith { setOf("sc") }
+            val server =
+                FakeSubmissionServer(
+                    copies,
+                    listOf(
+                        FakeSubmission("sent", "final", NOW),
+                        FakeSubmission("canceled", "canceled", NOW + 2.days),
+                        pending("waits", NOW + 10.seconds),
+                        FakeSubmission("again", "canceled", NOW),
+                        pending("again", NOW + 10.seconds),
+                    ),
+                    drafts = setOf("stored"),
+                )
+            server.file(scheduled = "sc")
+            val expected =
+                mapOf(
+                    "sent" to moved("sc", "se"),
+                    "canceled" to
+                        Json.parseToJsonElement(
+                            """{"mailboxIds/sc": null, "mailboxIds/dr": true, "keywords/${'$'}draft": true}""",
+                        ),
+                    "gone" to moved("sc", "se"),
+                )
+            assertEquals(expected, server.updates.toMap(), "A pending send and a draft Mail has not submitted stay")
+        }
 
-                    "EmailSubmission/query" in body -> {
-                        val waiting = pending.map { it.emailId }
-                        val status =
-                            inScheduled.joinToString {
-                                val undo = if (it in waiting) "pending" else "final"
-                                """{"emailId": "$it", "undoStatus": "$undo"}"""
-                            }
-                        responses(
-                            """["EmailSubmission/query", {"queryState": "q", "ids": [], "position": 0}, "c0"]""",
-                            """["EmailSubmission/get", {"state": "s", "list": [$status]}, "c1"]""",
-                        )
-                    }
+    @Test
+    fun aCutShortAnswerTakesNoCopyForGone() =
+        runTest {
+            val copies = mapOf("sent" to setOf("sc"), "gone" to setOf("sc"))
+            val server = FakeSubmissionServer(copies, listOf(FakeSubmission("sent", "final", NOW)), submissionLimit = 1)
+            server.file(scheduled = "sc")
+            assertTrue(server.updates.isEmpty())
+        }
 
-                    "Email/query" in body -> {
-                        val ids = if (""""inMailbox":"sc"""" in body) inScheduled else emptyList()
-                        val found = ids.joinToString { "\"$it\"" }
-                        responses("""["Email/query", {"queryState": "q", "ids": [$found], "position": 0}, "c0"]""")
-                    }
+    @Test
+    fun aCopyAnOlderMailLeftInDraftsGoesToSentOrBecomesADraft() =
+        runTest {
+            val copies = listOf("sent", "canceled", "gone").associateWith { setOf("dr") }
+            val submissions = listOf(FakeSubmission("sent", "final", NOW), FakeSubmission("canceled", "canceled", NOW))
+            val server = FakeSubmissionServer(copies, submissions)
+            server.file(scheduled = "sc")
+            val draft = Json.parseToJsonElement("""{"keywords/${'$'}draft": true}""")
+            assertEquals(mapOf("sent" to moved("dr", "se"), "canceled" to draft), server.updates.toMap())
+        }
 
-                    "Mailbox/set" in body -> {
-                        responses(
-                            """["Mailbox/set", {"newState": "m2", "created": {"scheduled": {"id": "made"}}}, "c0"]""",
-                        )
-                    }
+    private suspend fun FakeSubmissionServer.file(scheduled: String?) =
+        account().fileScheduled(drafts = "dr", scheduled = scheduled, sent = "se", now = NOW) { "made" }
 
-                    "Email/set" in body -> {
-                        val updated = updatesIn(body).keys.joinToString { "\"$it\": null" }
-                        responses("""["Email/set", {"newState": "e2", "updated": {$updated}}, "c0"]""")
-                    }
-
-                    else -> {
-                        error("Unexpected call: $body")
-                    }
-                }
-            }
-        JmapConnections(JmapClient(engine), store)
-            .mailAccount(ADA_LOGIN)
-            .fileScheduled(drafts = "dr", scheduled = scheduled, sent = "se", now = NOW)
-    }
-
-    /** The email updates of the one `Email/set` the filing sent; none when it sent none. */
-    private fun updates(): Map<String, JsonElement> =
-        calls
-            .filter { "Email/set" in it }
-            .map(::updatesIn)
-            .fold(emptyMap()) { all, update -> all + update }
-
-    private fun updatesIn(body: String): Map<String, JsonElement> =
-        Json
-            .parseToJsonElement(body)
-            .jsonObject
-            .getValue("methodCalls")
-            .jsonArray
-            .single()
-            .jsonArray[1]
-            .jsonObject
-            .getValue("update")
-            .jsonObject
+    private fun pending(
+        emailId: String,
+        at: Instant,
+    ) = FakeSubmission(emailId, "pending", at)
 
     private fun moved(
         from: String,
         to: String,
     ): JsonElement = Json.parseToJsonElement("""{"mailboxIds/$from": null, "mailboxIds/$to": true}""")
 
-    private fun responses(vararg items: String) = """{"methodResponses": [${items.joinToString()}]}"""
-
     private companion object {
         val NOW = Instant.parse("2026-11-10T12:00:00Z")
+        val FOLDERS =
+            listOf(
+                MailFolder("ada", "dr", "Drafts", role = MailboxRole.Drafts),
+                MailFolder("ada", "se", "Sent", role = MailboxRole.Sent),
+            )
     }
 }

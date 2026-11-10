@@ -3,6 +3,7 @@ package com.otus.mail.feature.inbox.data
 import com.otus.jmap.login.InMemoryLoginStore
 import com.otus.mail.core.cache.InMemoryMailCache
 import com.otus.mail.core.mail.MailFailure
+import com.otus.mail.core.mailbox.MailboxRole
 import com.otus.mail.core.messages.data.receivedAt
 import com.otus.mail.core.messages.domain.MailScope
 import com.otus.mail.feature.inbox.domain.MailQuery
@@ -63,6 +64,23 @@ class SyncFollowTest {
         }
 
     @Test
+    fun aScheduledListFollowsEachEmailApart() =
+        runTest {
+            val scheduled = """, {"id": "sc", "name": "Scheduled", "role": "scheduled"}"""
+            val server = FakeMailServer(INBOX + scheduled, scheduledReply("s1", 10) + ", " + scheduledReply("s2", 9))
+            server.followsQueries = true
+            val source = server.source(store, cache)
+            val scope = MailScope.Role(MailboxRole.Scheduled)
+            val listed = suspend { source.messages(scope, MailQuery()).messages.map { it.emailId } }
+            assertEquals(listOf("s1", "s2"), listed())
+            server.add(scheduledReply("s3", 11))
+            val calls = server.calls.size
+            assertEquals(listOf("s3", "s1", "s2"), listed())
+            val followed = server.calls.drop(calls).single { it.first == "Email/queryChanges" }
+            assertEquals("false", followed.second.getValue("collapseThreads").toString())
+        }
+
+    @Test
     fun anAccountThatCannotLoadSaysWhenItsMailLastMatchedTheServer() =
         runTest {
             server.down = true
@@ -83,6 +101,12 @@ class SyncFollowTest {
         }
 
     private companion object {
+        /** A reply in Scheduled, in one thread with the other replies. */
+        fun scheduledReply(
+            id: String,
+            hour: Int,
+        ) = email(id, hour).replace("t-$id", "t-replies").replace("\"a\": true", "\"sc\": true")
+
         const val INBOX = """{"id": "a", "name": "Inbox", "role": "inbox"}, {"id": "r", "name": "Receipts"}"""
 
         fun email(

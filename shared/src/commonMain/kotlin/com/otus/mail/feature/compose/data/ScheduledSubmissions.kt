@@ -3,35 +3,24 @@ package com.otus.mail.feature.compose.data
 import com.otus.jmap.GetMethod
 import com.otus.jmap.GetResult
 import com.otus.jmap.JmapCall
-import com.otus.jmap.JmapCapability
 import com.otus.jmap.JmapIds
 import com.otus.jmap.QueryMethod
 import com.otus.jmap.QueryResult
-import com.otus.jmap.SetMethod
 import com.otus.jmap.allOf
 import com.otus.jmap.filterCondition
-import com.otus.jmap.jmapCallOr
-import com.otus.jmap.jmapPatch
-import com.otus.jmap.noneOf
 import com.otus.mail.core.mail.EmailObject
 import com.otus.mail.core.mail.EmailSubmissionType
 import com.otus.mail.core.mail.EmailType
-import com.otus.mail.core.mail.Keywords
 import com.otus.mail.core.mail.MailAccount
-import com.otus.mail.core.mail.MailboxType
-import com.otus.mail.core.mailbox.MailFolder
-import com.otus.mail.core.mailbox.MailboxRole
 import com.otus.mail.core.messages.data.boxes
-import com.otus.mail.core.messages.domain.HeldSend
-import com.otus.mail.core.messages.domain.SentMessage
+import com.otus.mail.core.messages.domain.SERVER_SPARE
+import com.otus.mail.core.settings.domain.UNDO_SEND_CHOICES
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
-import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.contentOrNull
 import kotlinx.serialization.json.jsonPrimitive
-import kotlinx.serialization.json.put
-import kotlin.time.Duration.Companion.minutes
+import kotlin.time.Duration.Companion.seconds
 import kotlin.time.Instant
 
 /**
@@ -76,22 +65,38 @@ internal suspend fun MailAccount.scheduledCopies(now: Instant): Map<String, Set<
         .associate { it.id to it.boxes }
 }
 
-/** The `undoStatus` of the live submission of each of [emailIds] that has one. */
-internal suspend fun MailAccount.submissionStatus(emailIds: List<String>): Map<String, String> {
+/** What became of a copy's send, by its submissions; the first that fits wins. */
+internal enum class SendState {
+    /** A submission still waits to go. */
+    Pending,
+
+    /** A submission went (`undoStatus` `final`). */
+    Sent,
+
+    /** Every submission was canceled. */
+    Canceled,
+
+    /** The server keeps no submission of it, as when it destroyed one that went. */
+    Gone,
+}
+
+/**
+ * The [SendState] of each of [emailIds] that has a submission, from all of them, canceled ones
+ * too; an email left out has none. Null when the server cut the answer short at its limit, so a
+ * missing email may still have one.
+ */
+internal suspend fun MailAccount.sendStates(emailIds: List<String>): Map<String, SendState>? {
     if (emailIds.isEmpty()) return emptyMap()
-    lateinit var live: JmapCall<QueryResult>
+    lateinit var found: JmapCall<QueryResult>
     lateinit var submissions: JmapCall<GetResult<JsonObject>>
     val response =
         connection.send {
-            live =
+            found =
                 call(
                     QueryMethod(
                         EmailSubmissionType,
                         id,
-                        allOf(
-                            filterCondition("emailIds", JsonArray(emailIds.map(::JsonPrimitive))),
-                            noneOf(filterCondition("undoStatus", JsonPrimitive("canceled"))),
-                        ),
+                        filterCondition("emailIds", JsonArray(emailIds.map(::JsonPrimitive))),
                     ),
                 )
             submissions =
@@ -99,18 +104,22 @@ internal suspend fun MailAccount.submissionStatus(emailIds: List<String>): Map<S
                     GetMethod(
                         EmailSubmissionType,
                         id,
-                        JmapIds.Result(live.resultOf("/ids")),
+                        JmapIds.Result(found.resultOf("/ids")),
                         listOf("emailId", "undoStatus"),
                     ),
                 )
         }
+    val query = response[found]
+    val cutShort = query.limit?.let { query.ids.size >= it } == true
     return response[submissions]
         .list
         .mapNotNull { submission ->
-            val email = submission["emailId"]?.jsonPrimitive?.contentOrNull
-            val undo = submission["undoStatus"]?.jsonPrimitive?.contentOrNull
-            if (email != null && undo != null && email in emailIds) email to undo else null
-        }.toMap()
+            val email = submission.text("emailId")?.takeIf { it in emailIds }
+            val state = UNDO_STATES[submission.text("undoStatus")]
+            if (email != null && state != null) email to state else null
+        }.groupBy({ it.first }, { it.second })
+        .mapValues { (_, states) -> states.min() }
+        .takeUnless { cutShort }
 }
 
 /** The submission of [emailId] the server still holds, with its identity and when it goes; null when none waits. */
@@ -163,5 +172,17 @@ internal data class PendingSubmission(
 
 private const val PENDING = "pending"
 
-/** Longer than the longest time Mail holds a send for Undo, 30 seconds. */
-private val UNDO_HOLD = 1.minutes
+private val UNDO_STATES =
+    mapOf(
+        PENDING to SendState.Pending,
+        "final" to SendState.Sent,
+        "canceled" to SendState.Canceled,
+    )
+
+private val CLOCK_SLACK = 30.seconds
+
+/**
+ * Longer than any send Mail holds for Undo, with slack for another device's clock and for servers
+ * that round the hold up: a send scheduled from elsewhere for less than this stays in Sent.
+ */
+private val UNDO_HOLD = UNDO_SEND_CHOICES.max().seconds + SERVER_SPARE + CLOCK_SLACK

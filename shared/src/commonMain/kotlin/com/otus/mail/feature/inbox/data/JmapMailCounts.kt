@@ -18,7 +18,8 @@ import kotlinx.serialization.json.JsonPrimitive
 import kotlin.time.Clock
 
 /**
- * Counts the conversations a query finds on the server, for the filter panel. The cache can't:
+ * Counts the rows a query finds on the server, for the filter panel: conversations, or emails in
+ * folders that list each email apart, such as Scheduled. The cache can't:
  * it holds only the pages loaded so far.
  */
 internal class JmapMailCounts(
@@ -52,15 +53,14 @@ internal class JmapMailCounts(
     ): Long? =
         try {
             val account = connections.mailAccount(login)
-            val ids =
-                scope
-                    .chosen(mailboxes.of(account), login.id, query)
-                    .map { it.id }
-            if (ids.isEmpty()) {
+            val chosen = scope.chosen(mailboxes.of(account), login.id, query)
+            if (chosen.isEmpty()) {
                 0L
             } else {
+                val conversations = chosen.any { it.role?.listsConversations != false }
+                val filter = mailFilter(chosen.map { it.id }, conditions)
                 account.connection
-                    .call(QueryMethod(EmailType, account.id, mailFilter(ids, conditions), limit = 0, extra = COUNT))
+                    .call(QueryMethod(EmailType, account.id, filter, limit = 0, extra = count(conversations)))
                     .total
             }
         } catch (expected: JmapException) {
@@ -69,7 +69,8 @@ internal class JmapMailCounts(
         }
 
     private companion object {
-        /** Only the number of matching conversations (RFC 8620, section 5.5; RFC 8621, section 4.4.3). */
-        val COUNT = mapOf("calculateTotal" to JsonPrimitive(true), "collapseThreads" to JsonPrimitive(true))
+        /** Only the number of matching conversations or emails (RFC 8620, section 5.5; RFC 8621, section 4.4.3). */
+        fun count(conversations: Boolean) =
+            mapOf("calculateTotal" to JsonPrimitive(true), "collapseThreads" to JsonPrimitive(conversations))
     }
 }
