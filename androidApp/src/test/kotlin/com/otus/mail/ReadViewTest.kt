@@ -17,6 +17,7 @@ import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.swipe
@@ -121,18 +122,23 @@ class ReadViewTest {
     }
 
     @Test
-    fun theThreadStripCardStaysWhileItsContentSlides() {
+    fun theThreadStripNamesTheNextMessageOnceLettingGoWouldTurn() {
         showThread()
-        val strip = strip("Grace Hopper, message 1 of 6")
-        val bounds = strip.getBoundsInRoot()
-        strip.performTouchInput {
-            down(center)
-            repeat(DRAG_STEPS) { moveBy(Offset(-width / 3f / DRAG_STEPS, 0f)) }
+        val first = strip("Grace Hopper, message 1 of 6")
+        val bounds = first.getBoundsInRoot()
+        val start = first.fetchSemanticsNode().boundsInRoot.center
+        val root = compose.onRoot()
+        // The strip turns after a fifth of the width: a tenth is short of it, a tenth and a quarter past it.
+        root.performTouchInput {
+            down(start)
+            repeat(DRAG_STEPS) { moveBy(Offset(-width / 10f / DRAG_STEPS, 0f)) }
         }
-        compose.waitForIdle()
-        assertEquals("The card stays put while its content slides", bounds, strip.getBoundsInRoot())
-        strip.performTouchInput { up() }
-        strip("Alex Doe, message 2 of 6").assertIsDisplayed()
+        first.assertIsDisplayed()
+        root.performTouchInput { repeat(DRAG_STEPS) { moveBy(Offset(-width / 4f / DRAG_STEPS, 0f)) } }
+        val next = strip("Alex Doe, message 2 of 6")
+        assertEquals("The card stays put while a drag turns the page", bounds, next.getBoundsInRoot())
+        root.performTouchInput { up() }
+        next.assertIsDisplayed()
     }
 
     @Test

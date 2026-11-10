@@ -51,7 +51,7 @@ internal fun ReadThreadOverlay(
         if (unfold.fraction > 0f) Scrim("Fold messages", unfold.fraction, fold)
         val dates = LocalDateFormatter.current
         val entries = state.pages.map { page -> threadEntry(page, own, source.today, dates) }
-        val still = StripGestures(Modifier, { current.toFloat() }, Modifier)
+        val still = StripGestures(Modifier, { null }, Modifier)
         // It grows from the thread strip's own height, so its top edge starts at the strip's.
         UnfoldingStripCard(
             unfold,

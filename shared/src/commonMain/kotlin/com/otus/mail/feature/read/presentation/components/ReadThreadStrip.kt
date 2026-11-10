@@ -10,7 +10,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.graphics.Color
 import com.otus.designsystem.mail.folders.components.FolderHint
 import com.otus.designsystem.mail.read.components.PositionPage
-import com.otus.designsystem.mail.read.components.SlidingPositionStrip
+import com.otus.designsystem.mail.read.components.TurningPositionStrip
 import com.otus.designsystem.resources.Res
 import com.otus.designsystem.resources.symbol_flag
 import com.otus.designsystem.shared.controls.elements.Symbol
@@ -28,8 +28,9 @@ import com.otus.mail.core.messages.presentation.components.chipAvatar
 
 /**
  * The thread strip, newest first: "Latest" on the newest page, else the sender, with the position
- * and date of each page that [pageAt] gives, [current] on screen of [count]. Its card stays while
- * each page's content slides inside it as [slide] turns the pages, and a drag on it turns them too.
+ * and date of each page that [pageAt] gives, [current] on screen of [count]. It keeps still while
+ * [slide] turns the pages: the dot of the page a drag heads to swells, and the strip shows that
+ * page once letting go would turn to it. A drag on the strip turns the pages too.
  * Its end names the conversation's other [folders], and a flag when it is [flagged] and the list
  * gave no folder context. Screen readers hear the sender, the position, the date, and the folders,
  * such as "Grace Hopper, message 1 of 6, 12 Oct, also in Invoices".
@@ -45,10 +46,10 @@ internal fun ReadThreadStrip(
     slide: StripGestures,
 ) {
     val flag = flagged && !folders.also
-    SlidingPositionStrip(
+    TurningPositionStrip(
         count,
         current,
-        slide.position,
+        slide.turn(),
         { index ->
             val position = pageAt(index)
             val page = position.page

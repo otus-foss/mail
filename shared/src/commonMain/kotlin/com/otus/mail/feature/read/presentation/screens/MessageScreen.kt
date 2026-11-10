@@ -25,6 +25,7 @@ import androidx.compose.ui.unit.dp
 import androidx.navigationevent.NavigationEventInfo
 import androidx.navigationevent.compose.NavigationBackHandler
 import androidx.navigationevent.compose.rememberNavigationEventState
+import com.otus.designsystem.mail.read.components.TurnDotsPill
 import com.otus.designsystem.shared.actionbar.components.ActionBarHost
 import com.otus.designsystem.shared.overlays.components.LocalSheetPull
 import com.otus.designsystem.shared.overlays.components.OptionsItem
@@ -54,20 +55,20 @@ import com.otus.mail.feature.read.presentation.components.ReadQuickView
 import com.otus.mail.feature.read.presentation.components.ReadSheets
 import com.otus.mail.feature.read.presentation.components.ReadStripActions
 import com.otus.mail.feature.read.presentation.components.ReadStripSource
+import com.otus.mail.feature.read.presentation.components.ReadSwipes
 import com.otus.mail.feature.read.presentation.components.ReadThreadOverlay
 import com.otus.mail.feature.read.presentation.components.ReadTop
 import com.otus.mail.feature.read.presentation.components.ReadTopText
 import com.otus.mail.feature.read.presentation.components.StripFolds
 import com.otus.mail.feature.read.presentation.components.StripGestures
-import com.otus.mail.feature.read.presentation.components.SwipeFeel
 import com.otus.mail.feature.read.presentation.components.openLink
 import com.otus.mail.feature.read.presentation.components.readDetailsHeight
 import com.otus.mail.feature.read.presentation.components.rememberFoldSwipe
 import com.otus.mail.feature.read.presentation.components.rememberPageLook
-import com.otus.mail.feature.read.presentation.components.rememberPageSwipe
 import com.otus.mail.feature.read.presentation.components.rememberReadActions
 import com.otus.mail.feature.read.presentation.components.rememberReadExpansion
 import com.otus.mail.feature.read.presentation.components.rememberReadMenu
+import com.otus.mail.feature.read.presentation.components.rememberReadSwipes
 import com.otus.mail.feature.read.presentation.components.rememberStripFolds
 import com.otus.mail.feature.read.presentation.components.rememberUnfoldDrag
 import com.otus.settings.presentation.components.LocalDateFormatter
@@ -195,25 +196,24 @@ private fun ReadLayout(
     // A screen reader finds only the grown panel, not the page and strips it covers.
     val covered = expansion.expanded
     Box(Modifier.fillMaxSize()) {
-        val swipe = rememberPageSwipe(layout.pager)
+        val swipes = rememberReadSwipes(layout.pager)
         ReadPages(
             state,
-            layout.pager,
+            swipes,
             layout.look,
             read.loads.content,
             { expansion.expandTo(GROWN_LAST_STOP) },
-            Modifier.fillMaxSize().then(swipe).hiddenWhen(covered),
+            Modifier.fillMaxSize().then(swipes.pages).hiddenWhen(covered),
             PaddingValues(top = headerHeight.value, bottom = bottomInset),
         )
 
         val pager = layout.pager
-        val stripSwipe = rememberPageSwipe(pager, SwipeFeel.Strip)
         val threadSwipe =
-            stripSwipe.then(rememberFoldSwipe(rememberUnfoldDrag(layout.folds.thread) { state.threadOpen = it }))
+            swipes.strip.then(rememberFoldSwipe(rememberUnfoldDrag(layout.folds.thread) { state.threadOpen = it }))
         val slide =
             StripGestures(
                 threadSwipe,
-                { pager.currentPage + pager.currentPageOffsetFraction },
+                swipes.turn,
                 rememberFoldSwipe(layout.folds.folders),
             )
         ReadBottomStack(
@@ -230,11 +230,25 @@ private fun ReadLayout(
                 .hiddenWhen(covered),
             onFoldedHeight = { stripsHeight = it },
         )
+        // Zen hides the thread strip, so a drag shows its dots alone where the strip was.
+        if (zen) ZenTurnDots(layout.index, swipes, Modifier.align(Alignment.BottomCenter).padding(padding))
         ReadTop(
             parts,
             ReadTopText(page, date, notice, layout.menu),
             ReadQuickView(expansion, modules, layout.look, layout.pager, quickHeight),
             headerHeight,
         )
+    }
+}
+
+/** The dots of the page at [current] while a drag of [swipes] is turning the page; nothing otherwise. */
+@Composable
+private fun ZenTurnDots(
+    current: Int,
+    swipes: ReadSwipes,
+    modifier: Modifier,
+) {
+    swipes.turn()?.let {
+        TurnDotsPill(swipes.pager.pageCount, current, it, modifier.padding(PageTokens.pageInset * 2))
     }
 }

@@ -5,7 +5,6 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.pager.HorizontalPager
-import androidx.compose.foundation.pager.PagerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -21,6 +20,8 @@ import com.otus.designsystem.resources.symbol_hide_image
 import com.otus.designsystem.resources.symbol_image
 import com.otus.designsystem.shared.controls.elements.UiAction
 import com.otus.designsystem.shared.pages.elements.holdsSpace
+import com.otus.designsystem.shared.pages.elements.turnDim
+import com.otus.designsystem.shared.pages.elements.turnSeam
 import com.otus.designsystem.shared.rows.components.DetailLine
 import com.otus.designsystem.shared.swipe.components.SwipeToDismiss
 import com.otus.mail.core.mail.EmailAddressKey
@@ -159,21 +160,22 @@ internal class ReadPageLook(
  * The conversation's pages side by side, newest first and leftmost; swiping left goes back in
  * time. Each page loads its body with [loadContent] as it or its neighbor shows, so swiping is
  * instant. The sender details show on the page on screen while [ReadState.details] is on; the pill
- * of a quoted person they list opens them.
+ * of a quoted person they list opens them. While a drag of [swipes] heads to another page, the page
+ * that letting go lands on is the bright one, and a line marks the edge between the two.
  */
 @Composable
 internal fun ReadPages(
     state: ReadState,
-    pager: PagerState,
+    swipes: ReadSwipes,
     look: ReadPageLook,
     loadContent: suspend (MailMessage) -> MessageContent?,
     onDetails: () -> Unit,
     modifier: Modifier = Modifier,
     insets: PaddingValues = PaddingValues(),
 ) {
-    // The pager's own drag is off: [rememberPageSwipe] in [modifier] turns the pages, more strictly.
+    // The pager's own drag is off: [ReadSwipes.pages] in [modifier] turns the pages, more strictly.
     HorizontalPager(
-        pager,
+        swipes.pager,
         modifier,
         beyondViewportPageCount = 1,
         userScrollEnabled = false,
@@ -184,7 +186,8 @@ internal fun ReadPages(
         val body = state.bodies.body(page)
         val showPerson = { address: String -> onDetails.takeIf { page.shows(address) } }
         val quotes = PageQuotes(look.hidesQuote(index), showPerson)
-        ReadPageBody(page, body, look.images(page, body), Modifier.fillMaxSize(), quotes, insets) {
+        val turning = Modifier.fillMaxSize().turnSeam(index, swipes.turn).turnDim(index, swipes.turn)
+        ReadPageBody(page, body, look.images(page, body), turning, quotes, insets) {
             look.Banner(page, body)
         }
     }
