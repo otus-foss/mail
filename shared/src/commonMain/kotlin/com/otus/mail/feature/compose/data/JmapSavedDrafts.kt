@@ -50,7 +50,8 @@ internal class JmapSavedDrafts(
 
 /**
  * The draft this saved Email holds, [whole] or split for Write, which adds the identity's signature.
- * A split draft keeps the signature it was saved with, so Write knows to sign it again. Only HTML
+ * A split draft keeps the signature it was saved with, so Write knows to sign it again; a text-only
+ * signature comes back with the HTML `Draft.htmlContent` made of it. Only HTML
  * that Write marked can be split; other HTML stays whole, so nothing of it is lost. Images only the
  * cut-off signature or quote showed are dropped, since Write adds those again.
  */

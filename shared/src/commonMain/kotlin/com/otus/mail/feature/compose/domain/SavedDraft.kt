@@ -6,8 +6,8 @@ import com.otus.mail.core.messages.domain.Draft
 fun interface SavedDrafts {
     /**
      * The draft [emailId] of [accountId] holds, keeping that id, so a save or send replaces the
-     * copy; null when it could not be loaded. Unless [whole], its signature is dropped and its quote
-     * split off, as Write expects; a [whole] draft holds the copy's text and HTML as they are.
+     * copy; null when it could not be loaded. Unless [whole], its signature and quote are split off
+     * the body, as Write expects; a [whole] draft holds the copy's text and HTML as they are.
      */
     suspend fun load(
         accountId: String,
@@ -33,12 +33,13 @@ data class SavedText(
  */
 fun String.savedParts(): SavedText {
     val lines = lines()
-    val signature = lines.indexOf(SIGNATURE_MARK).takeIf { it >= 0 }
-    val quote =
-        lines.indices
-            .drop(signature ?: 0)
-            .firstOrNull { it.startsQuote(lines) }
-    val bodyEnd = listOfNotNull(signature, quote).minOrNull() ?: lines.size
+    val quote = lines.indices.firstOrNull { it.startsQuote(lines) }
+    val signature =
+        lines
+            .take(quote ?: lines.size)
+            .indexOf(SIGNATURE_MARK)
+            .takeIf { it >= 0 }
+    val bodyEnd = signature ?: quote ?: lines.size
     return SavedText(
         body = lines.take(bodyEnd).joinToString("\n").trimEnd(),
         quote = quote?.let { lines.drop(it).joinToString("\n").trimEnd() }.orEmpty(),
@@ -62,14 +63,26 @@ fun String.savedHtmlBody(): String? =
 
 /** The signature's HTML in a saved draft's HTML, without the `<div>` Write wraps it in; empty without one. */
 fun String.savedHtmlSignature(): String =
-    substringAfter(SIGNATURE_OPEN, "")
-        .substringBefore(QUOTE_OPEN)
+    substringBefore(QUOTE_OPEN)
+        .substringAfter(SIGNATURE_OPEN, "")
         .removeSuffix("</div>")
 
-/** Whether line [this] of [lines] opens a reply's quote or a forward, after a blank line. */
-private fun Int.startsQuote(lines: List<String>): Boolean =
-    lines.getOrNull(this - 1).isNullOrBlank() &&
-        (QUOTE_INTRO.matches(lines[this]) || lines[this] == FORWARD_HEADER)
+/**
+ * Whether line [this] of [lines] opens a reply's quote or a forward, after a blank line. Each opens
+ * the way Write writes it, so a line the user wrote, such as "On Monday we wrote:", stays body.
+ */
+private fun Int.startsQuote(lines: List<String>): Boolean {
+    val next = lines.getOrNull(this + 1).orEmpty()
+    return lines.getOrNull(this - 1).isNullOrBlank() &&
+        when {
+            QUOTE_INTRO.matches(lines[this]) -> next.startsWith(QUOTE)
+            lines[this] == FORWARD_HEADER -> next.startsWith(FORWARD_FROM)
+            else -> false
+        }
+}
+
+/** The start of the line after [FORWARD_HEADER] in a forward Write made. */
+private const val FORWARD_FROM = "From: "
 
 /** The line RFC 3676 puts before a signature, so readers can tell it apart. */
 const val SIGNATURE_MARK = "-- "

@@ -1,16 +1,14 @@
 package com.otus.mail.feature.compose.presentation
 
-import com.otus.mail.core.mail.EmailAddress
-import com.otus.mail.core.mail.EmailBodyPart
-import com.otus.mail.core.mail.EmailBodyValue
-import com.otus.mail.core.mail.EmailObject
 import com.otus.mail.core.messages.domain.ComposeRequest
+import com.otus.mail.core.messages.domain.Draft
 import com.otus.mail.core.messages.domain.DraftRepository
 import com.otus.mail.core.messages.domain.MailSender
 import com.otus.mail.core.messages.domain.SendIdentity
 import com.otus.mail.core.messages.domain.SentMessage
-import com.otus.mail.feature.compose.data.toDraft
+import com.otus.mail.core.messages.domain.Signature
 import com.otus.mail.testing.FakeDrafts
+import com.otus.mail.testing.reopened
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runCurrent
@@ -20,47 +18,39 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
-/** A saved copy opened again in Write keeps its signature, even while replies leave it out. */
+/** A saved copy opened again in Write keeps the signature it had, whatever the reply setting says. */
 @OptIn(ExperimentalCoroutinesApi::class)
 class SavedSignatureTest {
-    private val text = EmailBodyPart(partId = "t", type = "text/plain")
-    private val html = EmailBodyPart(partId = "h", type = "text/html")
+    private val work = SendIdentity("w", MailSender("Me", "me@example.com", "a1"), textSignature = "Work")
+    private val alias = SendIdentity("a", MailSender("Me", "alias@example.com", "a1"), textSignature = "Alias")
+    private val bare = SendIdentity("b", MailSender("Me", "bare@example.com", "a1"))
+    private val signed = Draft("a1", from = work.sender, body = "Hi", signature = Signature(text = "Work"))
+    private val quote = "On Monday, Ada wrote:\n> Noon?"
 
-    private fun saved(
-        plain: String,
-        formatted: String = "",
-    ) = EmailObject(
-        id = "d1",
-        receivedAt = "2026-11-10T10:00:00Z",
-        from = listOf(EmailAddress("Me", "me@example.com")),
-        textBody = listOf(text),
-        htmlBody = listOf(html),
-        bodyValues = mapOf("t" to EmailBodyValue(plain), "h" to EmailBodyValue(formatted)),
-    ).toDraft("a1", whole = false)
-
-    private fun TestScope.opened(request: ComposeRequest) =
-        ComposeState(
-            ComposeServices(Signed(), { _, _ -> emptyList() }),
-            backgroundScope,
-            request,
-            ComposeOrigin(
-                "a1",
-                listOf(ComposeAccount("a1", "Work")),
-                listOf("me@example.com"),
-                signatureInReplies = false,
-            ),
-        ).also {
-            it.loadIdentities()
-            runCurrent()
-        }
+    private fun TestScope.opened(
+        draft: Draft,
+        inReplies: Boolean = false,
+        drafts: DraftRepository = Identities(listOf(work, alias, bare)),
+        held: SentMessage? = null,
+    ) = ComposeState(
+        ComposeServices(drafts, { _, _ -> emptyList() }),
+        backgroundScope,
+        ComposeRequest.Resume(draft.reopened(), ComposeRequest.New("a1"), asSaved = held == null, held = held),
+        ComposeOrigin(
+            "a1",
+            listOf(ComposeAccount("a1", "Work")),
+            listOf("me@example.com"),
+            signatureInReplies = inReplies,
+        ),
+    ).also {
+        it.loadIdentities()
+        runCurrent()
+    }
 
     @Test
     fun aReopenedDraftKeepsItsSignature() =
         runTest {
-            val draft = saved("Hi\n\n-- \nWork", "Hi<br><div class=\"otus-signature\">Work</div>")
-            assertEquals("Hi", draft.body)
-            assertEquals("Hi", draft.html)
-            val state = opened(ComposeRequest.Resume(draft, ComposeRequest.New("a1"), asSaved = true))
+            val state = opened(signed)
             assertTrue(state.signatureOn)
             assertEquals("Work", state.signature.text)
         }
@@ -68,43 +58,76 @@ class SavedSignatureTest {
     @Test
     fun aReopenedReplyDraftKeepsItsSignatureAndQuote() =
         runTest {
-            val draft = saved("Sure\n\n-- \nWork\n\nOn Monday Ada wrote:\n> Noon?")
-            assertEquals("Sure", draft.body)
-            assertEquals("On Monday Ada wrote:\n> Noon?", draft.quote)
-            val state = opened(ComposeRequest.Resume(draft, ComposeRequest.New("a1"), asSaved = true))
-            assertTrue(state.signatureOn)
+            val state = opened(signed.copy(quote = quote))
             assertEquals("Work", state.signature.text)
+            assertEquals(quote, state.draft.quote)
         }
 
     @Test
-    fun anEditedScheduledMailKeepsItsSignature() =
+    fun anEditedScheduledMailKeepsItsSignatureThroughUndo() =
         runTest {
-            val draft = saved("Dinner at 8\n\n-- \nWork")
-            val held = SentMessage("a1", "d1", "s1")
-            val state = opened(ComposeRequest.Resume(draft, ComposeRequest.New("a1"), held = held))
-            assertTrue(state.signatureOn)
+            val state = opened(signed, held = SentMessage("a1", "d1", "s1"))
+            assertEquals("Work", state.signature.text)
             assertEquals(
                 "Work",
                 state
                     .reopening()
                     .draft.signature.text,
-                "Undo opens it signed too",
             )
         }
 
     @Test
-    fun aDraftSavedWithoutASignatureStaysUnsigned() =
+    fun anUnsignedCopyStaysUnsignedWhileRepliesAreSigned() =
         runTest {
-            val state = opened(ComposeRequest.Resume(saved("Hi"), ComposeRequest.New("a1"), asSaved = true))
+            val state = opened(signed.copy(signature = Signature()), inReplies = true)
             assertFalse(state.signatureOn)
             assertTrue(state.signature.isEmpty)
         }
 
-    private class Signed : DraftRepository by FakeDrafts() {
-        override suspend fun identities(accountId: String) = listOf(SendIdentity("w", me, textSignature = "Work"))
-    }
+    @Test
+    fun anotherIdentityBringsItsOwnSignature() =
+        runTest {
+            val state = opened(signed)
+            state.chooseFrom(alias)
+            assertEquals("Alias", state.signature.text)
+        }
 
-    private companion object {
-        val me = MailSender("Me", "me@example.com", "a1")
+    @Test
+    fun aCopyFromAnIdentityWithoutASignatureSignsLikeANewMessage() =
+        runTest {
+            val state = opened(Draft("a1", from = bare.sender, body = "Hi"))
+            state.chooseFrom(work)
+            assertEquals("Work", state.signature.text)
+            assertFalse(opened(Draft("a1", from = bare.sender, body = "Hi", quote = quote)).signatureOn)
+        }
+
+    @Test
+    fun aCopySavedWithoutAnAddressSignsLikeANewMessage() =
+        runTest {
+            val state = opened(Draft("a1", body = "Hi"))
+            assertEquals(work.sender, state.draft.from)
+            assertEquals("Work", state.signature.text)
+        }
+
+    @Test
+    fun aSignedCopyStaysSignedWhenIdentitiesFailToLoad() =
+        runTest {
+            val drafts = FakeDrafts()
+            val state = opened(signed, drafts = drafts)
+            state.edit { it.copy(subject = "Lunch") }
+            state.close()
+            runCurrent()
+            assertEquals(
+                "Work",
+                drafts.saved
+                    .last()
+                    .signature.text,
+            )
+        }
+
+    private class Identities(
+        private val all: List<SendIdentity>,
+    ) : DraftRepository by FakeDrafts() {
+        override suspend fun identities(accountId: String) = all.filter { it.accountId == accountId }
     }
 }
