@@ -5,10 +5,13 @@ import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.pager.PagerState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.pointer.AwaitPointerEventScope
 import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.PointerId
@@ -17,15 +20,18 @@ import androidx.compose.ui.input.pointer.PointerInputScope
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.input.pointer.positionChange
 import androidx.compose.ui.input.pointer.util.VelocityTracker
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.semantics.pageLeft
 import androidx.compose.ui.semantics.pageRight
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
+import com.otus.designsystem.shared.pages.elements.TurnProgress
 import com.otus.designsystem.theme.motion.MotionCurve
 import com.otus.designsystem.theme.motion.MotionSpeed
 import com.otus.designsystem.theme.motion.motionTween
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import kotlin.math.abs
@@ -36,7 +42,7 @@ import kotlin.math.sign
  * across as down, and letting go past [turnAt] of the width, or after a flick of [flickDp] per
  * second, turns the page.
  */
-internal enum class SwipeFeel(
+private enum class SwipeFeel(
     val sideways: Float,
     val turnAt: Float,
     val flickDp: Int,
@@ -50,19 +56,25 @@ internal enum class SwipeFeel(
 
 /**
  * Turns [pager]'s pages from a sideways drag anywhere it is applied, such as the pages and the
- * thread strip, as hard as [feel] asks. Letting go short of it eases back. Screen readers page
- * with the page left and page right actions.
+ * thread strip, as hard as [feel] asks. Letting go short of it eases back. [progress] holds how
+ * far the drag is from turning, for the strip's dots and the pages' dim, and the phone ticks once
+ * letting go would turn the page. Screen readers page with the page left and page right actions.
  */
 @Composable
-internal fun rememberPageSwipe(
+private fun rememberPageSwipe(
     pager: PagerState,
+    progress: MutableState<TurnProgress?>,
     feel: SwipeFeel = SwipeFeel.Pages,
 ): Modifier {
     val scope = rememberCoroutineScope()
     // Letting go slows the page to a stop on the design system's easing, not a spring.
     val settle = motionTween<Float>(MotionSpeed.Normal, MotionCurve.Enter)
     // Kept across recompositions, which the moving pages cause, so a drag is not restarted.
-    val turn = remember(pager, scope, settle) { PageTurn(pager, scope, settle) }
+    val haptics = LocalHapticFeedback.current
+    val turn =
+        remember(pager, scope, settle, progress, haptics) {
+            PageTurn(pager, scope, settle, progress) { haptics.performHapticFeedback(HapticFeedbackType.SegmentTick) }
+        }
     // In right-to-left layouts the pager lays its pages out mirrored, so the finger maps the other way.
     val across = if (LocalLayoutDirection.current == LayoutDirection.Rtl) 1f else -1f
     // The page to the right is the next one, or the previous one when mirrored.
@@ -75,6 +87,27 @@ internal fun rememberPageSwipe(
         }
 }
 
+/**
+ * The Read view's swipes over one [pager]: the modifier for its [pages], the lighter one for the
+ * thread [strip], and the [turn] a drag on either is making, null while none is.
+ */
+internal class ReadSwipes(
+    val pager: PagerState,
+    val pages: Modifier,
+    val strip: Modifier,
+    val turn: () -> TurnProgress?,
+)
+
+@Composable
+internal fun rememberReadSwipes(pager: PagerState): ReadSwipes {
+    val turning = remember { mutableStateOf<TurnProgress?>(null) }
+    return ReadSwipes(
+        pager,
+        rememberPageSwipe(pager, turning),
+        rememberPageSwipe(pager, turning, SwipeFeel.Strip),
+    ) { turning.value }
+}
+
 private suspend fun PointerInputScope.swipePages(
     turn: PageTurn,
     across: Float,
@@ -84,8 +117,18 @@ private suspend fun PointerInputScope.swipePages(
     val down = awaitFirstDown(requireUnconsumed = false)
     val start = pager.currentPage
     awaitSideways(down.id, feel.sideways)?.let { past ->
-        val drag = followDrag(down.id, past) { dx -> pager.dispatchRawDelta(dx * across) }
-        turn.to(start + drag.step(across, size.width * feel.turnAt, feel.flickDp.dp.toPx()))
+        val turnDistance = size.width * feel.turnAt
+        val drag =
+            try {
+                followDrag(down.id, past) { dx, distance ->
+                    pager.dispatchRawDelta(dx * across)
+                    turn.heading(start, distance * across / turnDistance)
+                }
+            } catch (cancelled: CancellationException) {
+                turn.progress.value = null
+                throw cancelled
+            }
+        turn.to(start + drag.step(across, turnDistance, feel.flickDp.dp.toPx()), start)
     }
 }
 
@@ -110,24 +153,24 @@ private suspend fun AwaitPointerEventScope.awaitSideways(
 }
 
 /**
- * Hands [past], the move beyond the slop, then each sideways move of pointer [id] to [onDelta]
- * until it lifts, so the pages keep up with the finger. It takes the moves before the children,
- * so the page does not scroll while it turns.
+ * Hands [past], the move beyond the slop, then each sideways move of pointer [id] to [onDelta],
+ * with the whole distance so far, until it lifts, so the pages keep up with the finger. It takes
+ * the moves before the children, so the page does not scroll while it turns.
  */
 private suspend fun AwaitPointerEventScope.followDrag(
     id: PointerId,
     past: Float,
-    onDelta: (Float) -> Unit,
+    onDelta: (dx: Float, distance: Float) -> Unit,
 ): PageDrag {
     val tracker = VelocityTracker()
     var distance = past
-    onDelta(past)
+    onDelta(past, past)
     var change = awaitPointerEvent(PointerEventPass.Initial).changes.firstOrNull { it.id == id }
     while (change != null && change.pressed) {
         val dx = change.positionChange().x
         tracker.addPosition(change.uptimeMillis, change.position)
         distance += dx
-        onDelta(dx)
+        onDelta(dx, distance)
         change.consume()
         change = awaitPointerEvent(PointerEventPass.Initial).changes.firstOrNull { it.id == id }
     }
@@ -155,27 +198,63 @@ private class PageDrag(
     }
 }
 
-/** Turns [pager] to a page in [scope], easing in with [settle]. */
+/**
+ * Turns [pager] to a page in [scope], easing in with [settle]. [progress] says how far a drag is
+ * from turning, and [onReady] runs once it is far enough.
+ */
 private class PageTurn(
     val pager: PagerState,
     private val scope: CoroutineScope,
     private val settle: AnimationSpec<Float>,
+    val progress: MutableState<TurnProgress?>,
+    private val onReady: () -> Unit,
 ) {
-    /** Animates to [page], kept within the pages; true for the screen reader action that asked. */
-    fun to(page: Int): Boolean {
-        val last = (pager.pageCount - 1).coerceAtLeast(0)
-        scope.launch { pager.animateScrollToPage(page.coerceIn(0, last), animationSpec = settle) }
+    /**
+     * Shows a drag from the page at [start] that is [forward] of the way to turning: toward the
+     * next page when positive, the previous one when negative. A drag past either end shows nothing.
+     */
+    fun heading(
+        start: Int,
+        forward: Float,
+    ) {
+        val toward = start + if (forward > 0) 1 else -1
+        val next =
+            TurnProgress(toward, abs(forward).coerceAtMost(1f))
+                .takeIf { forward != 0f && toward in 0 until pager.pageCount }
+        if (next?.ready == true && progress.value?.ready != true) onReady()
+        progress.value = next
+    }
+
+    /**
+     * Animates to [page], kept within the pages, [from] the page it leaves; true for the screen
+     * reader action that asked. The landing page shows as turned to until the pages settle on it.
+     */
+    fun to(
+        page: Int,
+        from: Int = pager.currentPage,
+    ): Boolean {
+        val target = page.coerceIn(0, (pager.pageCount - 1).coerceAtLeast(0))
+        val landing = TurnProgress(target, 1f).takeIf { target != from }
+        progress.value = landing
+        scope.launch {
+            try {
+                pager.animateScrollToPage(target, animationSpec = settle)
+            } finally {
+                // A drag that began meanwhile keeps its own progress.
+                if (progress.value === landing) progress.value = null
+            }
+        }
         return true
     }
 }
 
 /**
  * The bottom strips' gestures: the thread strip's [swipe], which turns the pages and drags its
- * message list open, the pages' [position] its content follows, and the folders strip's [folders]
- * drag, which pulls the folders sheet up.
+ * message list open, the [turn] a drag is making, which its dots show, and the folders strip's
+ * [folders] drag, which pulls the folders sheet up.
  */
 internal class StripGestures(
     val swipe: Modifier,
-    val position: () -> Float,
+    val turn: () -> TurnProgress?,
     val folders: Modifier,
 )
