@@ -16,16 +16,20 @@ fun interface SavedDrafts {
     ): Draft?
 }
 
-/** What the user wrote in a saved draft, and the quote of the message it answers or forwards. */
+/**
+ * What the user wrote in a saved draft, the signature it was saved with, and the quote of the
+ * message it answers or forwards.
+ */
 data class SavedText(
     val body: String,
     val quote: String = "",
+    val signature: String = "",
 )
 
 /**
  * Splits a saved draft's plain text, which Write stores as the body, then a signature after a
  * "-- " line, then the quote, each after a blank line (see `Draft.textContent`). Write adds the
- * identity's signature again, so the old one is dropped.
+ * identity's signature again, so the old one only tells whether the draft had one.
  */
 fun String.savedParts(): SavedText {
     val lines = lines()
@@ -38,6 +42,10 @@ fun String.savedParts(): SavedText {
     return SavedText(
         body = lines.take(bodyEnd).joinToString("\n").trimEnd(),
         quote = quote?.let { lines.drop(it).joinToString("\n").trimEnd() }.orEmpty(),
+        signature =
+            signature
+                ?.let { lines.subList(it + 1, quote ?: lines.size).joinToString("\n").trim() }
+                .orEmpty(),
     )
 }
 
@@ -47,10 +55,16 @@ fun String.savedParts(): SavedText {
  * the HTML has neither mark, as from another app, so none of it can be told from the body.
  */
 fun String.savedHtmlBody(): String? =
-    listOf("<br><div class=\"$SIGNATURE_CLASS\">", "<div class=\"$QUOTE_CLASS\">")
+    listOf(SIGNATURE_OPEN, QUOTE_OPEN)
         .mapNotNull { mark -> indexOf(mark).takeIf { it >= 0 } }
         .minOrNull()
         ?.let(::take)
+
+/** The signature's HTML in a saved draft's HTML, without the `<div>` Write wraps it in; empty without one. */
+fun String.savedHtmlSignature(): String =
+    substringAfter(SIGNATURE_OPEN, "")
+        .substringBefore(QUOTE_OPEN)
+        .removeSuffix("</div>")
 
 /** Whether line [this] of [lines] opens a reply's quote or a forward, after a blank line. */
 private fun Int.startsQuote(lines: List<String>): Boolean =
@@ -65,3 +79,7 @@ const val SIGNATURE_CLASS = "otus-signature"
 
 /** The class of the quote's `<div>` in the HTML Write stores. */
 const val QUOTE_CLASS = "otus-quote"
+
+private const val SIGNATURE_OPEN = "<br><div class=\"$SIGNATURE_CLASS\">"
+
+private const val QUOTE_OPEN = "<div class=\"$QUOTE_CLASS\">"

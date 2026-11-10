@@ -97,8 +97,10 @@ class ComposeState(
     var notice by mutableStateOf<String?>(null)
         private set
 
-    /** Whether the draft carries its identity's signature; the ⋯ menu turns it off for this draft. */
-    var signatureOn by mutableStateOf(request is ComposeRequest.New || origin.signatureInReplies)
+    /** Whether the draft carries its identity's signature, as a resumed copy did; ⋯ turns it off for this draft. */
+    var signatureOn by mutableStateOf(
+        request.resumedSigned ?: (request is ComposeRequest.New || origin.signatureInReplies),
+    )
         private set
 
     /** How far ahead each account may schedule, in seconds, by account id. */

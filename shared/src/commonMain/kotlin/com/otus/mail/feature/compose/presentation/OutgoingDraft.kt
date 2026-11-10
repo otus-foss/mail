@@ -46,10 +46,17 @@ internal suspend fun Outgoing.released(scheduled: ScheduledSends): Outgoing? {
 fun ComposeState.reopening(): ComposeRequest.Resume {
     val resumed = request as? ComposeRequest.Resume
     return ComposeRequest.Resume(
-        draft,
+        draft.copy(signature = signature),
         resumed?.from ?: request,
         attachments.sourceFiles,
         sendAt,
         held = resumed?.held,
     )
 }
+
+/**
+ * Whether a resumed draft carries a signature: its copy keeps the one it was saved or sent with,
+ * whatever the reply setting says. Null for any other request.
+ */
+internal val ComposeRequest.resumedSigned: Boolean?
+    get() = (this as? ComposeRequest.Resume)?.let { !it.draft.signature.isEmpty }
