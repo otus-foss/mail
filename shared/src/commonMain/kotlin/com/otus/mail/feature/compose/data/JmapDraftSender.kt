@@ -35,6 +35,7 @@ import kotlinx.serialization.SerializationException
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
 import kotlinx.serialization.json.putJsonObject
+import kotlin.time.Clock
 
 /**
  * Sends a draft with `EmailSubmission/set` (RFC 8621, section 7.5). One request stores the draft
@@ -153,7 +154,9 @@ class JmapDraftSender internal constructor(
 
     override suspend fun fileSent(accountId: String) {
         jmapCallOr(Unit) {
-            connections.mailAccount(accountId)?.let { it.fileScheduled(copies.mailboxes.sendFresh(it) {}.first) }
+            connections.mailAccount(accountId)?.let {
+                it.fileScheduled(copies.mailboxes.sendFresh(it) {}.first, Clock.System.now())
+            }
         }
     }
 

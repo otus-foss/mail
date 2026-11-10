@@ -20,6 +20,7 @@ import com.otus.mail.core.messages.data.inConversation
 import com.otus.mail.core.messages.data.memberIds
 import com.otus.mail.core.messages.data.receivedAt
 import com.otus.mail.core.messages.data.toMessage
+import com.otus.mail.core.messages.domain.FilterSort
 import com.otus.mail.core.messages.domain.MailLocation
 import com.otus.mail.core.messages.domain.MailMessage
 import com.otus.mail.core.messages.domain.MailScope
@@ -35,8 +36,13 @@ internal fun MailScope.listingQueries(
     conditions: List<JmapFilter>,
 ): List<ListingQuery> =
     chosen(mailboxes, loginId, query).map { mailbox ->
-        ListingQuery(mailbox.id, mailFilter(listOf(mailbox.id), conditions), query.filters.sort)
+        mailbox.listing(mailFilter(listOf(mailbox.id), conditions), query.filters.sort)
     }
+
+private fun MailFolder.listing(
+    filter: JmapFilter,
+    sort: FilterSort,
+) = ListingQuery(id, filter, sort, conversations = role?.listsConversations ?: true)
 
 /**
  * [login]'s lists of [scope] among its kept [mailboxes] as the cache holds them, one page per
@@ -59,7 +65,7 @@ internal suspend fun MailCache.cachedPages(
     val check = localCheck(query, login.id, now, zone)
     val chosen = scope.chosen(mailboxes, login.id, query)
     val queries = scope.listingQueries(mailboxes, login.id, query, conditions)
-    val unfiltered = chosen.map { ListingQuery(it.id, mailFilter(listOf(it.id), emptyList()), query.filters.sort) }
+    val unfiltered = chosen.map { it.listing(mailFilter(listOf(it.id), emptyList()), query.filters.sort) }
     val saved = listings(login.id, queries)
     // Each read waits its turn with a running sync, so only mailboxes without a list of their own
     // read the unfiltered one.
@@ -130,7 +136,13 @@ private class HeldMail(
         list: ListedMailbox,
     ): ListedRow? {
         val row = rows[id]?.takeIf { list.mailbox.id in it.boxes } ?: return null
-        val thread = threads[row.threadId]?.emailIds.orEmpty().mapNotNull { members[it] }
+        // A list of emails, not conversations, shows each row as its own email.
+        val thread =
+            if (list.mailbox.role?.listsConversations == false) {
+                emptyList()
+            } else {
+                threads[row.threadId]?.emailIds.orEmpty().mapNotNull { members[it] }
+            }
         val login = list.login
         val message =
             row

@@ -151,6 +151,23 @@ class JmapMailSourceTest {
         }
 
     @Test
+    fun scheduledListsEachEmailOfAConversationApart() =
+        runTest {
+            val scheduled = """, {"id": "sc", "name": "Scheduled", "role": "scheduled"}"""
+            val replies =
+                listOf("m1" to "2026-10-04T09:30:00Z", "m2" to "2026-10-05T09:30:00Z")
+                    .joinToString { (id, at) ->
+                        email(id, "sc", receivedAt = at).replaceFirst("{", """{"threadId": "t1", """)
+                    }
+            val server = FakeMailServer(MAILBOXES + scheduled, replies)
+            val snapshot = server.source(store()).messages(MailScope.Role(MailboxRole.Scheduled))
+            assertEquals(listOf("ada/m2", "ada/m1"), snapshot.messages.map { it.id }, "Each scheduled send has a row")
+            assertTrue(snapshot.messages.all { it.conversation?.messageCount == 1 }, "A row stands for its own email")
+            val query = server.bodies.single { "Email/query" in it }
+            assertTrue("\"collapseThreads\":false" in query)
+        }
+
+    @Test
     fun aLoginThatFailsIsReportedWithoutHidingOthers() =
         runTest {
             val snapshot = inbox.source(store(other)).messages(MailScope.Inbox)

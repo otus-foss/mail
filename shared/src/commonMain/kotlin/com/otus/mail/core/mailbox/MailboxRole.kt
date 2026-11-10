@@ -22,6 +22,13 @@ enum class MailboxRole(
     val holdsUnsent: Boolean
         get() = this == Drafts || this == Scheduled
 
+    /**
+     * Whether a list of this folder shows conversations. Scheduled lists each email apart, since
+     * each is a send of its own with its own time, and the folder counts emails.
+     */
+    val listsConversations: Boolean
+        get() = this != Scheduled
+
     /** Drafts, Scheduled, and Sent hold the user's own mail, which never looks read. */
     val holdsOwnMail: Boolean
         get() = holdsUnsent || this == Sent
