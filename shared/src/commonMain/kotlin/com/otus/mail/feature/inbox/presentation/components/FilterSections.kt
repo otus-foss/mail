@@ -21,7 +21,6 @@ import com.otus.designsystem.theme.tokens.selection.FilterTokens
 import com.otus.mail.core.messages.domain.FilterSort
 import com.otus.mail.core.messages.domain.ReadStatus
 import com.otus.mail.core.messages.domain.SizeFilter
-import com.otus.mail.core.messages.domain.TypeFacet
 import com.otus.mail.core.messages.presentation.icon
 import com.otus.mail.core.messages.presentation.label
 import com.otus.mail.core.settings.domain.FilterSection
@@ -56,7 +55,7 @@ internal fun FilterSections(
             .padding(horizontal = FilterTokens.bodyInset),
         verticalArrangement = Arrangement.spacedBy(FilterTokens.sectionGap),
     ) {
-        options.layout.sections.forEach { section ->
+        options.sections.forEach { section ->
             when (section) {
                 FilterSection.Status -> StatusSection(draft, onEdit)
                 FilterSection.Quick -> QuickSection(draft, options, onEdit)
@@ -150,7 +149,7 @@ private fun QuickFilterGroup(
     onEdit: FilterEdit,
 ) {
     val facets = options.quick.filter { it.group == group }
-    val types = if (group == QuickGroup.Mail) TypeFacet.entries else emptyList()
+    val types = if (group == QuickGroup.Mail) options.types else emptyList()
     if (facets.isEmpty() && types.isEmpty()) return
     FilterSection(group.label) {
         facets.forEach { facet ->

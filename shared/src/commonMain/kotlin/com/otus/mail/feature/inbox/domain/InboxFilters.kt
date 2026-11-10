@@ -113,7 +113,7 @@ data class InboxFilters(
 }
 
 /** The quick filter a row pill turns on; null for Unread, which sets the status. */
-private val InboxPill.Filter.quick: QuickFacet?
+internal val InboxPill.Filter.quick: QuickFacet?
     get() =
         when (this) {
             InboxPill.Filter.Unread -> null

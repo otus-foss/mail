@@ -42,7 +42,8 @@ internal class PeopleSearches(
 
 /**
  * The People card's From and To lines, typed in as a draft's recipient lines are, then "Received
- * in" while someone is picked in To. The draft keeps its fields while the chips are hidden.
+ * in" while someone is picked in To. A page of the user's own mail has no From line. The draft
+ * keeps its fields while the chips are hidden.
  */
 @Composable
 internal fun PeopleSection(
@@ -84,15 +85,17 @@ private fun PeopleInputs(
 ) {
     val people = searches.people
     Column {
-        FilterPeopleLine(
-            "From",
-            pickedSenders(draft, people.senders),
-            searches.senders,
-            people.senders,
-            draft::hasSender,
-            { person -> onEdit { it.withSender(person, true) } },
-            onEdit,
-        )
+        if (options.offersFrom) {
+            FilterPeopleLine(
+                "From",
+                pickedSenders(draft, people.senders),
+                searches.senders,
+                people.senders,
+                draft::hasSender,
+                { person -> onEdit { it.withSender(person, true) } },
+                onEdit,
+            )
+        }
         FilterPeopleLine(
             "To",
             pickedRecipients(draft, options, people.recipients),
