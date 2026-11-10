@@ -74,7 +74,8 @@ internal suspend fun MailAccount.heldSend(
  * Drafts. [makeFolder] gives the account a Scheduled folder for such a copy when it has none.
  *
  * A copy in [scheduled] without `$draft` leaves once its send is over: to [sent] when it went or
- * its submission is gone, and back to [drafts] as a draft when someone canceled it. A copy with
+ * its submission is gone, and back to [drafts] as a draft when every send was canceled, as when
+ * another client canceled it or making it a draft again failed. A copy with
  * `$draft` may be one Mail stored but has not submitted yet, so it stays. Keywords are read before
  * submissions, so a send that completes in between is not taken for one that is gone. A copy an
  * older Mail left in [drafts] without `$draft` goes to [sent] once sent, or becomes a draft again
@@ -143,7 +144,7 @@ private class SweptFolders(
     ): JsonObject? =
         when (state) {
             SendState.Sent, SendState.Gone -> move(listOf(scheduled), sent)
-            SendState.Canceled -> drafts?.let { move(listOf(scheduled), it, draft = true) }
+            SendState.Canceled -> drafts?.let { move(listOf(scheduled), it, draft = true) } ?: DRAFT_AGAIN
             SendState.Pending -> null
         }
 
@@ -154,7 +155,7 @@ private class SweptFolders(
     ): JsonObject? =
         when (state) {
             SendState.Sent -> move(listOf(drafts), sent)
-            SendState.Canceled -> jmapPatch { set(JsonPrimitive(true), "keywords", Keywords.DRAFT) }
+            SendState.Canceled -> DRAFT_AGAIN
             else -> null
         }
 }
@@ -180,6 +181,9 @@ private fun move(
         set(JsonPrimitive(true), "mailboxIds", to)
         if (draft) set(JsonPrimitive(true), "keywords", Keywords.DRAFT)
     }
+
+/** Makes a copy whose send was canceled a draft where it is, without a Drafts folder to go to. */
+private val DRAFT_AGAIN = jmapPatch { set(JsonPrimitive(true), "keywords", Keywords.DRAFT) }
 
 private const val SCHEDULED_NAME = "Scheduled"
 

@@ -170,8 +170,6 @@ internal data class PendingSubmission(
     val at: Instant,
 )
 
-private const val PENDING = "pending"
-
 private val UNDO_STATES =
     mapOf(
         PENDING to SendState.Pending,

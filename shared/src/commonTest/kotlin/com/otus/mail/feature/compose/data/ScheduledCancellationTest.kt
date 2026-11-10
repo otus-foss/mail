@@ -6,7 +6,7 @@ import com.otus.jmap.login.InMemoryLoginStore
 import com.otus.jmap.login.JmapLogin
 import com.otus.mail.core.mail.MailFailure
 import com.otus.mail.core.messages.domain.AnsweredMessage
-import com.otus.mail.core.messages.domain.DraftRestoreException
+import com.otus.mail.core.messages.domain.SendCancel
 import com.otus.mail.core.messages.domain.SendException
 import com.otus.mail.core.messages.domain.SendFailure
 import com.otus.mail.core.messages.domain.SentMessage
@@ -24,26 +24,16 @@ import kotlin.test.assertTrue
 
 class ScheduledCancellationTest {
     @Test
-    fun aRefusedCancellationDoesNotRestoreTheEmailAsADraft() =
+    fun aCanceledSendStopsEvenWhenItsCopyCannotBeADraftAgain() =
         runTest {
             val calls = mutableListOf<String>()
-            val result = sender(calls, canceled = false).cancel(message)
-            assertTrue(result.isFailure)
-            assertEquals(1, calls.size)
-            assertTrue("EmailSubmission/set" in calls.single())
-        }
-
-    @Test
-    fun cancellationAndDraftRestorationMustBothSucceed() =
-        runTest {
-            val calls = mutableListOf<String>()
-            assertTrue(sender(calls).cancel(message).isSuccess)
+            assertEquals(SendCancel.Stopped, sender(calls).cancel(message))
             assertEquals(2, calls.size)
             assertTrue("EmailSubmission/set" in calls.first())
             assertTrue("Email/set" in calls.last())
 
             calls.clear()
-            assertTrue(sender(calls, restored = false).cancel(message).exceptionOrNull() is DraftRestoreException)
+            assertEquals(SendCancel.Stopped, sender(calls, restored = false).cancel(message), "Filing repairs the copy")
             assertEquals(2, calls.size)
         }
 
@@ -51,7 +41,7 @@ class ScheduledCancellationTest {
     fun aCanceledCopyGoesBackToDraftsAsADraft() =
         runTest {
             val calls = mutableListOf<String>()
-            assertTrue(sender(calls).cancel(message.copy(draftsId = "dr")).isSuccess)
+            assertEquals(SendCancel.Stopped, sender(calls).cancel(message.copy(draftsId = "dr")))
             val update =
                 Json
                     .parseToJsonElement(calls.last())
@@ -73,7 +63,7 @@ class ScheduledCancellationTest {
         runTest {
             val calls = mutableListOf<String>()
             val answered = message.copy(marked = AnsweredMessage("o1", forwarded = true))
-            assertTrue(sender(calls, alsoUpdated = "o1").cancel(answered).isSuccess)
+            assertEquals(SendCancel.Stopped, sender(calls, alsoUpdated = "o1").cancel(answered))
             val update =
                 Json
                     .parseToJsonElement(calls.last())
@@ -136,14 +126,6 @@ class ScheduledCancellationTest {
         }
 
     @Test
-    fun aMissingCancellationAcknowledgementDoesNotRestoreTheDraft() =
-        runTest {
-            val calls = mutableListOf<String>()
-            assertTrue(sender(calls, acknowledged = false).cancel(message).isFailure)
-            assertEquals(1, calls.size)
-        }
-
-    @Test
     fun aLostResubmissionAnswerRestoresTheDraftWhenNothingWasSubmitted() =
         runTest {
             val calls = mutableListOf<String>()
@@ -165,7 +147,6 @@ class ScheduledCancellationTest {
         calls: MutableList<String>,
         canceled: Boolean = true,
         restored: Boolean = true,
-        acknowledged: Boolean = true,
         lost: Set<Lost> = emptySet(),
         submitted: Boolean = false,
         alsoUpdated: String? = null,
@@ -194,7 +175,6 @@ class ScheduledCancellationTest {
                 val result =
                     when {
                         """"create"""" in body -> """, "created": {"send": {"id": "s2"}}"""
-                        cancel && !acknowledged -> ""
                         if (cancel) canceled else restored -> """, "updated": {"$id": null${also(alsoUpdated)}}"""
                         else -> """, "notUpdated": {"$id": {"type": "forbidden"}}"""
                     }

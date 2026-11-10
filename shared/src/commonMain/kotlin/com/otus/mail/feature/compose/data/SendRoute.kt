@@ -97,6 +97,7 @@ private fun sendFailure(type: String): SendFailure =
         "noRecipients", "invalidRecipients" -> SendFailure.Recipients
         "tooManyRecipients" -> SendFailure.TooManyRecipients
         "tooLarge" -> SendFailure.TooLarge
+        "cannotUnsend" -> SendFailure.CannotUnsend
         in FORBIDDEN -> SendFailure.Mail(MailFailure.NotPermitted)
         else -> SendFailure.Mail(MailFailure.ServerProblem)
     }

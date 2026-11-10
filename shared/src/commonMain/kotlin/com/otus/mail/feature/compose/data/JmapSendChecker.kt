@@ -13,7 +13,6 @@ import com.otus.jmap.filterCondition
 import com.otus.jmap.isTemporary
 import com.otus.jmap.login.LoginStoreException
 import com.otus.mail.core.mail.EmailObject
-import com.otus.mail.core.mail.EmailSubmissionType
 import com.otus.mail.core.mail.EmailType
 import com.otus.mail.core.mail.Keywords
 import com.otus.mail.core.mail.MailAccount
@@ -25,10 +24,7 @@ import com.otus.mail.core.messages.domain.Draft
 import com.otus.mail.feature.compose.domain.SendCheck
 import com.otus.mail.feature.compose.domain.SendChecker
 import kotlinx.serialization.json.JsonArray
-import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
-import kotlinx.serialization.json.contentOrNull
-import kotlinx.serialization.json.jsonPrimitive
 
 /**
  * Finds what became of a send whose answer was lost. A try that stored its copy before submitting
@@ -84,29 +80,15 @@ private suspend fun MailAccount.findCopy(
     answered: AnsweredMessage?,
     changes: EmailChangeQueue,
 ): SendCheck {
-    lateinit var query: JmapCall<QueryResult>
-    lateinit var submissions: JmapCall<GetResult<JsonObject>>
-    lateinit var found: JmapCall<GetResult<EmailObject>>
-    val ofCopy = filterCondition("emailIds", JsonArray(listOf(JsonPrimitive(copy))))
-    val response =
-        connection.send {
-            query = call(QueryMethod(EmailSubmissionType, id, ofCopy))
-            val ids = JmapIds.Result(query.resultOf("/ids"))
-            submissions = call(GetMethod(EmailSubmissionType, id, ids, listOf("id", "undoStatus")))
-            found = call(GetMethod(EmailType, id, JmapIds.Of(listOf(copy)), KEYWORD_PROPERTIES))
-        }
-    response[query]
-    val all = response[submissions].list
-    val live = all.filter { it["undoStatus"]?.jsonPrimitive?.contentOrNull != "canceled" }
-    val stored = response[found].list.singleOrNull()
+    val state = copyState(copy)
     // `$draft` goes only when a submission was made, so a copy without it whose submission the
     // server has since dropped went.
-    val sentAndForgotten = all.isEmpty() && stored != null && Keywords.DRAFT !in stored.keywords
-    val went = if (live.isEmpty()) sentAndForgotten else !(cancelHeld && cancelHeld(listOf(copy)))
+    val sentAndForgotten = state.statuses.isEmpty() && state.isDraft == false
+    val went = if (state.live.isEmpty()) sentAndForgotten else !(cancelHeld && cancelHeld(listOf(copy)))
     // Neither a copy nor a submission: the user may have deleted what went, so only they can tell.
-    val nothingLeft = stored == null && all.isEmpty()
+    val nothingLeft = state.isDraft == null && state.statuses.isEmpty()
     if (!went && nothingLeft && !cancelHeld) return SendCheck.Unconfirmable
-    if (!went && stored != null) connection.call(SetMethod(EmailType, id, destroy = listOf(copy)))
+    if (!went && state.isDraft != null) connection.call(SetMethod(EmailType, id, destroy = listOf(copy)))
     if (went) tidySent(draftId?.takeIf { it != copy }, answered, changes)
     return if (went) SendCheck.Sent else SendCheck.NotSent
 }

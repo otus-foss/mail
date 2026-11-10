@@ -5,6 +5,7 @@ import com.otus.mail.core.messages.domain.Draft
 import com.otus.mail.core.messages.domain.DraftRepository
 import com.otus.mail.core.messages.domain.MailSender
 import com.otus.mail.core.messages.domain.SendIdentity
+import com.otus.mail.core.messages.domain.signature
 import com.otus.mail.testing.FakeDrafts
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.runCurrent
@@ -30,7 +31,13 @@ class ComposeAutosaveIdentityTest {
                     ComposeServices(drafts, { _, _ -> emptyList() }),
                     backgroundScope,
                     ComposeRequest.Resume(
-                        Draft("a", from = first.sender, body = "Hello", emailId = "existing"),
+                        Draft(
+                            "a",
+                            from = first.sender,
+                            body = "Hello",
+                            emailId = "existing",
+                            signature = first.signature,
+                        ),
                         ComposeRequest.New(),
                     ),
                     ComposeOrigin("a", listOf(ComposeAccount("a", "A")), emptyList()),

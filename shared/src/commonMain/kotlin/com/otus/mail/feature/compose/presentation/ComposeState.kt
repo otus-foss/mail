@@ -16,7 +16,6 @@ import com.otus.mail.core.messages.domain.SendIdentity
 import com.otus.mail.core.messages.domain.Signature
 import com.otus.mail.core.messages.domain.answered
 import com.otus.mail.core.messages.domain.answeredOriginal
-import com.otus.mail.core.messages.domain.signature
 import com.otus.mail.feature.compose.domain.preferredIdentity
 import com.otus.mail.feature.compose.domain.startDraft
 import kotlinx.coroutines.CoroutineScope
@@ -98,7 +97,7 @@ class ComposeState(
         private set
 
     /** Whether the draft carries its identity's signature; the ⋯ menu turns it off for this draft. */
-    var signatureOn by mutableStateOf(request is ComposeRequest.New || origin.signatureInReplies)
+    var signatureOn by mutableStateOf(request.startsSigned(origin.signatureInReplies, emptyList()))
         private set
 
     /** How far ahead each account may schedule, in seconds, by account id. */
@@ -110,9 +109,9 @@ class ComposeState(
     /** How far ahead the draft's account may schedule it, in seconds; 0 hides Schedule send. */
     val maxDelaySeconds: Long get() = delayLimits[draft.accountId] ?: 0L
 
-    /** The signature the draft goes out with: its From address's, while [signatureOn]. */
+    /** The signature the draft goes out with: its From address's, or a resumed copy's until that is known. */
     val signature: Signature
-        get() = if (signatureOn) identities.signatureOf(draft.from) else Signature()
+        get() = if (signatureOn) identities.signatureOf(draft.from) ?: request.resumedSignature else Signature()
 
     /** Whether Send can run: the draft has an address to send from, someone to go to, and its files uploaded. */
     val canSend: Boolean
@@ -149,6 +148,7 @@ class ComposeState(
             val found = loaded.map(origin::withOwnAvatar)
             thread?.load()
             identities = found
+            signatureOn = request.startsSigned(origin.signatureInReplies, found)
             delayLimits = limits.awaitAll().toMap()
             if (draft.from == null) {
                 val preferred = request.preferredIdentity(found.map { it.sender }, origin.recentFrom)
@@ -272,11 +272,6 @@ private suspend fun Draft.discardCopy(drafts: DraftRepository) {
     val savedId = emailId ?: return
     drafts.discard(accountId, savedId)
 }
-
-private fun List<SendIdentity>.signatureOf(from: MailSender?): Signature =
-    firstOrNull {
-        from != null && it.accountId == from.accountKey && it.sender.address.equals(from.address, ignoreCase = true)
-    }?.signature ?: Signature()
 
 /**
  * What the user wrote, without the sending identity, the account, the stored copy's id, or the

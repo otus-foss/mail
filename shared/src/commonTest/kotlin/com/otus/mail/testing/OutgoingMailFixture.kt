@@ -7,6 +7,7 @@ import com.otus.mail.core.messages.domain.ComposeRequest
 import com.otus.mail.core.messages.domain.Draft
 import com.otus.mail.core.messages.domain.DraftSender
 import com.otus.mail.core.messages.domain.ScheduledSends
+import com.otus.mail.core.messages.domain.SendCancel
 import com.otus.mail.core.messages.domain.SendException
 import com.otus.mail.core.messages.domain.SendFailure
 import com.otus.mail.core.messages.domain.SendTime
@@ -32,7 +33,11 @@ internal abstract class OutgoingMailFixture {
     protected val cancelled = mutableListOf<SentMessage>()
     protected val sentNow = mutableListOf<SentMessage>()
     protected var sendNowFailure: SendFailure? = null
-    protected var cancelFails = false
+
+    /** What cancel ends in; the send counts as canceled only when it stopped. */
+    protected var cancelOutcome: SendCancel = SendCancel.Stopped
+    protected val filedSent = mutableListOf<String>()
+    protected val drafts = FakeDrafts()
     protected val checks = mutableListOf<Boolean>()
     protected var failure: SendFailure? = null
     protected var check = SendCheck.NotSent
@@ -44,10 +49,9 @@ internal abstract class OutgoingMailFixture {
         object : ScheduledSends {
             override suspend fun maxDelaySeconds(accountId: String) = serverDelaySeconds
 
-            override suspend fun cancel(message: SentMessage): Result<Unit> {
-                if (cancelFails) return Result.failure(IllegalStateException("The send already went"))
-                cancelled += message
-                return Result.success(Unit)
+            override suspend fun cancel(message: SentMessage): SendCancel {
+                if (cancelOutcome == SendCancel.Stopped) cancelled += message
+                return cancelOutcome
             }
 
             override suspend fun sendNow(message: SentMessage): Result<Unit> {
@@ -55,7 +59,9 @@ internal abstract class OutgoingMailFixture {
                 return sendNowFailure?.let { Result.failure(SendException(it)) } ?: Result.success(Unit)
             }
 
-            override suspend fun fileSent(accountId: String) = Unit
+            override suspend fun fileSent(accountId: String) {
+                filedSent += accountId
+            }
 
             override suspend fun held(
                 accountId: String,

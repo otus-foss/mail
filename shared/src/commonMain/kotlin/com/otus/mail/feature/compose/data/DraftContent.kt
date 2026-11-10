@@ -25,10 +25,14 @@ internal fun Draft.textContent(): String =
  */
 internal fun Draft.htmlContent(): String? {
     if (html.isBlank() && signature.html.isBlank()) return null
-    val formatted = html.ifBlank { body.escapeHtml().replace("\n", "<br>") }
-    val signed = if (signature.html.isBlank()) "" else "<br><div class=\"$SIGNATURE_CLASS\">${signature.html}</div>"
+    val formatted = html.ifBlank { body.textHtml() }
+    val signatureHtml = signature.html.ifBlank { signature.text.textHtml() }
+    val signed = if (signatureHtml.isBlank()) "" else "<br><div class=\"$SIGNATURE_CLASS\">$signatureHtml</div>"
     return formatted + signed + if (quote.isBlank()) "" else "<div class=\"$QUOTE_CLASS\">${quote.quoteHtml()}</div>"
 }
+
+/** Plain text as HTML, its lines kept apart by `<br>`. */
+private fun String.textHtml(): String = escapeHtml().replace("\n", "<br>")
 
 private fun String.quoteHtml(): String =
     lines()

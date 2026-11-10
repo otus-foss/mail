@@ -114,6 +114,21 @@ class ScheduledFilingTest {
         }
 
     @Test
+    fun aCanceledCopyBecomesADraftInScheduledWithoutADraftsFolder() =
+        runTest {
+            val server =
+                FakeSubmissionServer(
+                    mapOf("canceled" to setOf("sc")),
+                    listOf(FakeSubmission("canceled", "canceled", NOW)),
+                )
+            server.account().fileScheduled(drafts = null, scheduled = "sc", sent = "se", now = NOW) { "made" }
+            assertEquals(
+                mapOf("canceled" to Json.parseToJsonElement("""{"keywords/${'$'}draft": true}""")),
+                server.updates.toMap(),
+            )
+        }
+
+    @Test
     fun aCutShortAnswerTakesNoCopyForGone() =
         runTest {
             val copies = mapOf("sent" to setOf("sc"), "gone" to setOf("sc"))

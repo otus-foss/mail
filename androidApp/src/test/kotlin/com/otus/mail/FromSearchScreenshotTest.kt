@@ -14,6 +14,7 @@ import com.otus.designsystem.theme.colors.ThemeBase
 import com.otus.designsystem.theme.colors.ThemeChoice
 import com.otus.mail.core.messages.domain.ComposeRequest
 import com.otus.mail.core.messages.domain.ScheduledSends
+import com.otus.mail.core.messages.domain.SendCancel
 import com.otus.mail.core.messages.domain.SentMessage
 import com.otus.mail.core.settings.domain.ActionBehavior
 import com.otus.mail.feature.compose.presentation.ComposeAccount
@@ -87,7 +88,7 @@ class FromSearchScreenshotTest {
     private object NoScheduling : ScheduledSends {
         override suspend fun maxDelaySeconds(accountId: String) = 0L
 
-        override suspend fun cancel(message: SentMessage) = Result.success(Unit)
+        override suspend fun cancel(message: SentMessage) = SendCancel.Stopped
 
         override suspend fun sendNow(message: SentMessage) = Result.success(Unit)
 

@@ -14,9 +14,11 @@ import com.otus.mail.core.messages.data.toSender
 import com.otus.mail.core.messages.domain.AttachmentBlob
 import com.otus.mail.core.messages.domain.Draft
 import com.otus.mail.core.messages.domain.DraftAttachment
+import com.otus.mail.core.messages.domain.Signature
 import com.otus.mail.feature.compose.domain.SavedDrafts
 import com.otus.mail.feature.compose.domain.SavedText
 import com.otus.mail.feature.compose.domain.savedHtmlBody
+import com.otus.mail.feature.compose.domain.savedHtmlSignature
 import com.otus.mail.feature.compose.domain.savedParts
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonPrimitive
@@ -48,8 +50,10 @@ internal class JmapSavedDrafts(
 
 /**
  * The draft this saved Email holds, [whole] or split for Write, which adds the identity's signature.
- * Only HTML that Write marked can be split; other HTML stays whole, so nothing of it is lost. Images
- * only the cut-off signature or quote showed are dropped, since Write adds those again.
+ * A split draft keeps the signature it was saved with, so Write knows to sign it again; a text-only
+ * signature comes back with the HTML `Draft.htmlContent` made of it. Only HTML
+ * that Write marked can be split; other HTML stays whole, so nothing of it is lost. Images only the
+ * cut-off signature or quote showed are dropped, since Write adds those again.
  */
 internal fun EmailObject.toDraft(
     accountId: String,
@@ -90,6 +94,7 @@ internal fun EmailObject.toDraft(
                     it.shows(html)
                 }.fold(html) { body, file -> body.replace("cid:${file.cid}", "cid:${file.draftId}@otus.mail") },
         quote = parts.quote,
+        signature = if (split) Signature(fullHtml.savedHtmlSignature(), parts.signature) else Signature(),
         references = references.orEmpty(),
         inReplyTo = references.orEmpty().takeLast(1),
         emailId = id,

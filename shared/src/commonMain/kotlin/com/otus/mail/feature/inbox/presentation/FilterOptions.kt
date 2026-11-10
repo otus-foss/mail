@@ -6,10 +6,13 @@ import com.otus.mail.core.mailbox.FolderKey
 import com.otus.mail.core.messages.domain.FolderRef
 import com.otus.mail.core.messages.domain.OwnAddress
 import com.otus.mail.core.messages.domain.QuickFacet
+import com.otus.mail.core.messages.domain.TypeFacet
 import com.otus.mail.core.messages.presentation.avatar
 import com.otus.mail.core.settings.domain.FilterLayout
+import com.otus.mail.core.settings.domain.FilterSection
 import com.otus.mail.core.settings.presentation.icon
 import com.otus.mail.core.settings.presentation.label
+import com.otus.mail.feature.inbox.domain.ListKind
 import org.jetbrains.compose.resources.DrawableResource
 
 /** One login's folder as the filter panel lists it. [ancestors] name its parents, top level first. */
@@ -51,7 +54,8 @@ data class FilterAddress(
 /**
  * What the filter panel offers on a page: the user's [addresses], each login's folders in
  * [accounts], whether the page can filter by [folders] at all,
- * whether any account has a Read later folder, and the user's [layout].
+ * whether any account has a Read later folder, and the user's [layout], from which the page's
+ * [kind] leaves out the filters that make no sense there.
  */
 data class FilterOptions(
     val addresses: List<FilterAddress> = emptyList(),
@@ -59,6 +63,7 @@ data class FilterOptions(
     val folders: Boolean = false,
     val readLater: Boolean = false,
     val layout: FilterLayout = FilterLayout(),
+    val kind: ListKind = ListKind.Inbox,
 ) {
     private val byKey: Map<FolderKey, FilterFolder> by lazy {
         accounts.flatMap { it.folders }.associateBy { it.key }
@@ -75,7 +80,22 @@ data class FilterOptions(
     val offersAccount: Boolean
         get() = accounts.size > 1
 
-    /** The Quick filters the layout shows here, without Read later while no account has its folder. */
+    /** The sections the layout shows on this kind of page, in the layout's order. */
+    val sections: List<FilterSection>
+        get() = layout.sections.filter(kind::offers)
+
+    /**
+     * The Quick filters the layout shows on this kind of page, without Read later while no account
+     * has its folder.
+     */
     val quick: List<QuickFacet>
-        get() = layout.quick.filter { readLater || it != QuickFacet.ReadLater }
+        get() = layout.quick.filter { kind.offers(it) && (readLater || it != QuickFacet.ReadLater) }
+
+    /** The mail types this kind of page can hold. */
+    val types: List<TypeFacet>
+        get() = if (kind.offersTypes) TypeFacet.entries else emptyList()
+
+    /** Whether the From line shows: mail the user wrote has only their own addresses in it. */
+    val offersFrom: Boolean
+        get() = !kind.outgoing
 }
