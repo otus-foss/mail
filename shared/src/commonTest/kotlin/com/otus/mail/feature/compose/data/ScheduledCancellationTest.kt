@@ -10,6 +10,7 @@ import com.otus.mail.core.messages.domain.DraftRestoreException
 import com.otus.mail.core.messages.domain.SendException
 import com.otus.mail.core.messages.domain.SendFailure
 import com.otus.mail.core.messages.domain.SentMessage
+import com.otus.mail.core.messages.domain.sendWentAnyway
 import com.otus.mail.testing.SUBMISSION_SESSION
 import com.otus.mail.testing.composeMail
 import com.otus.mail.testing.stalwartLike
@@ -20,6 +21,7 @@ import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
 class ScheduledCancellationTest {
@@ -31,6 +33,14 @@ class ScheduledCancellationTest {
             assertTrue(result.isFailure)
             assertEquals(1, calls.size)
             assertTrue("EmailSubmission/set" in calls.single())
+        }
+
+    @Test
+    fun aSendThatCannotBeUnsentSaysItGoesAnyway() =
+        runTest {
+            val result = sender(mutableListOf(), canceled = false, refusal = "cannotUnsend").cancel(message)
+            assertTrue(result.sendWentAnyway)
+            assertFalse(sender(mutableListOf(), canceled = false).cancel(message).sendWentAnyway)
         }
 
     @Test
@@ -169,6 +179,7 @@ class ScheduledCancellationTest {
         lost: Set<Lost> = emptySet(),
         submitted: Boolean = false,
         alsoUpdated: String? = null,
+        refusal: String = "forbidden",
     ): JmapDraftSender {
         val login = JmapLogin("a", "https://mail.example.org/.well-known/jmap", "ada@example.org", "Ada")
         val store = InMemoryLoginStore().apply { save(login, "secret") }
@@ -196,7 +207,7 @@ class ScheduledCancellationTest {
                         """"create"""" in body -> """, "created": {"send": {"id": "s2"}}"""
                         cancel && !acknowledged -> ""
                         if (cancel) canceled else restored -> """, "updated": {"$id": null${also(alsoUpdated)}}"""
-                        else -> """, "notUpdated": {"$id": {"type": "forbidden"}}"""
+                        else -> """, "notUpdated": {"$id": {"type": "$refusal"}}"""
                     }
                 """{"methodResponses": [["$method", {"newState": "n"$result}, "c0"]]}"""
             }

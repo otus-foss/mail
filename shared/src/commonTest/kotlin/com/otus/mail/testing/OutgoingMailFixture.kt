@@ -5,6 +5,7 @@ import com.otus.dateformat.DateFormatter
 import com.otus.designsystem.shared.feedback.components.ToastState
 import com.otus.mail.core.messages.domain.ComposeRequest
 import com.otus.mail.core.messages.domain.Draft
+import com.otus.mail.core.messages.domain.DraftRestoreException
 import com.otus.mail.core.messages.domain.DraftSender
 import com.otus.mail.core.messages.domain.ScheduledSends
 import com.otus.mail.core.messages.domain.SendException
@@ -32,7 +33,9 @@ internal abstract class OutgoingMailFixture {
     protected val cancelled = mutableListOf<SentMessage>()
     protected val sentNow = mutableListOf<SentMessage>()
     protected var sendNowFailure: SendFailure? = null
-    protected var cancelFails = false
+
+    /** Why cancel fails; after a [DraftRestoreException] the server still canceled the send. */
+    protected var cancelFailure: Throwable? = null
     protected val checks = mutableListOf<Boolean>()
     protected var failure: SendFailure? = null
     protected var check = SendCheck.NotSent
@@ -45,9 +48,9 @@ internal abstract class OutgoingMailFixture {
             override suspend fun maxDelaySeconds(accountId: String) = serverDelaySeconds
 
             override suspend fun cancel(message: SentMessage): Result<Unit> {
-                if (cancelFails) return Result.failure(IllegalStateException("The send already went"))
-                cancelled += message
-                return Result.success(Unit)
+                val failure = cancelFailure
+                if (failure == null || failure is DraftRestoreException) cancelled += message
+                return failure?.let { Result.failure(it) } ?: Result.success(Unit)
             }
 
             override suspend fun sendNow(message: SentMessage): Result<Unit> {

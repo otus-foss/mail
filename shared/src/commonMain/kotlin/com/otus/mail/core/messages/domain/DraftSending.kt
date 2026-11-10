@@ -42,6 +42,9 @@ sealed interface SendFailure {
     /** A send may have gone, and the server cannot say whether it did, so only the user can tell. */
     data object Unconfirmed : SendFailure
 
+    /** The server sent the message, or will whatever happens, so it can no longer be canceled. */
+    data object CannotUnsend : SendFailure
+
     data class Mail(
         val failure: MailFailure,
     ) : SendFailure
@@ -143,3 +146,14 @@ data class HeldSend(
 class DraftRestoreException(
     cause: Throwable? = null,
 ) : Exception("Send canceled; draft restoration failed", cause)
+
+/**
+ * Whether this [ScheduledSends.cancel] result stopped the send. It did when only restoring the
+ * draft failed afterwards, so that is not a send that still waits.
+ */
+val Result<Unit>.stoppedSend: Boolean
+    get() = isSuccess || exceptionOrNull() is DraftRestoreException
+
+/** Whether this [ScheduledSends.cancel] result found the send already final: it went, or goes anyway. */
+val Result<Unit>.sendWentAnyway: Boolean
+    get() = (exceptionOrNull() as? SendException)?.failure == SendFailure.CannotUnsend

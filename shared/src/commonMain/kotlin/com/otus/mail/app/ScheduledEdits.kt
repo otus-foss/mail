@@ -8,6 +8,7 @@ import com.otus.mail.core.messages.domain.ComposeRequest
 import com.otus.mail.core.messages.domain.Draft
 import com.otus.mail.core.messages.domain.HeldSend
 import com.otus.mail.core.messages.domain.MailMessage
+import com.otus.mail.core.messages.domain.stoppedSend
 import com.otus.mail.core.messages.presentation.actions.ScheduledActions
 import com.otus.mail.feature.compose.presentation.COULD_NOT_CHANGE
 import com.otus.mail.feature.compose.presentation.Outgoing
@@ -50,7 +51,7 @@ internal fun rememberScheduledActions(
                     // The copy goes as it is; Undo opens it split, as Write expects.
                     val sent = states.compose.savedDraft(message, whole = true) ?: return@launch states.changeFailed()
                     val (held, draft) = states.waiting(message) ?: return@launch
-                    if (states.compose.cancel(held.message).isFailure) return@launch states.changeFailed()
+                    if (!states.compose.cancel(held.message).stoppedSend) return@launch states.changeFailed()
                     states.compose.outgoing.send(
                         Outgoing(
                             OutgoingDraft(ready = { sent }, answered = null, sent = {}),
