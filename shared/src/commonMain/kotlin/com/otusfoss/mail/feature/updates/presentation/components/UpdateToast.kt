@@ -27,11 +27,10 @@ fun UpdateToastEffect(
 }
 
 /**
- * The toast for a newer build; [onView] opens what changed. It leaves on the timer for toasts with
- * an action, because the sidebar's version mark keeps offering the update. Its group makes a
- * second check replace it instead of stacking another.
+ * The toast for a newer build; [onView] opens what changed. It stays until the user views the
+ * update or swipes it away. Its group makes a second check replace it instead of stacking another.
  */
 private fun updateToast(onView: () -> Unit): ToastMessage =
-    ToastMessage("Update available", UiAction("View", onClick = onView), group = UPDATE_GROUP)
+    ToastMessage("Update available", UiAction("View", onClick = onView), group = UPDATE_GROUP, sticky = true)
 
 private const val UPDATE_GROUP = "update"
