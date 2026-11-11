@@ -52,13 +52,21 @@ class JmapDraftSender internal constructor(
         draft: Draft,
         answered: AnsweredMessage?,
         time: SendTime,
-    ): Result<SentMessage> = send(draft, answered, time) {}
+    ): Result<SentMessage> = deliver(draft, answered, time, stored = null)
 
     override suspend fun send(
         draft: Draft,
         answered: AnsweredMessage?,
         time: SendTime,
         stored: suspend (emailId: String) -> Unit,
+    ): Result<SentMessage> = deliver(draft, answered, time, stored)
+
+    /** Without [stored], no one can look the copy up later, so a send that fails for now destroys it. */
+    private suspend fun deliver(
+        draft: Draft,
+        answered: AnsweredMessage?,
+        time: SendTime,
+        stored: (suspend (emailId: String) -> Unit)?,
     ): Result<SentMessage> =
         try {
             val account =
@@ -101,14 +109,15 @@ class JmapDraftSender internal constructor(
     /**
      * Stores the draft, tells [stored] the copy's id, and then submits that copy, so a submission
      * whose answer is lost can be looked up by the id. A refused submission destroys the copy, so
-     * Drafts keeps only the draft's earlier copy; a server failing for now keeps it. A scheduled copy waits in Scheduled, made when the
-     * account has none, so Drafts holds only drafts.
+     * Drafts keeps only the draft's earlier copy; a server failing for now keeps it when [stored]
+     * tracks it. A scheduled copy waits in Scheduled, made when the account has none, so Drafts
+     * holds only drafts.
      */
     private suspend fun MailAccount.submit(
         draft: Draft,
         route: SendRoute,
         time: SendTime,
-        stored: suspend (emailId: String) -> Unit,
+        stored: (suspend (emailId: String) -> Unit)?,
     ): SentMessage {
         val folder =
             (if (time is SendTime.Scheduled) scheduledFolderFor(route) else null)
@@ -123,14 +132,14 @@ class JmapDraftSender internal constructor(
         val creationFailure = created.notCreated[EMAIL]
         if (creationFailure != null) failSend(creationFailure.toSendFailure())
         val copy = created.createdId(EMAIL) ?: failSend(SendFailure.Mail(MailFailure.ServerProblem))
-        stored(copy)
+        stored?.invoke(copy)
         val submitted =
             try {
                 submitCopy(route, folder, copy, draft, time)
             } catch (error: JmapException.MethodError) {
                 // The copy may still go, or have gone in part (RFC 8620, section 3.6.2), so it stays
                 // for the outbox to look up by its id before anything is destroyed.
-                if (error.isTemporary) throw error
+                if (error.isTemporary && stored != null) throw error
                 refused(copy, error.toSendFailure())
             }
         val refusal = submitted.notCreated[SUBMISSION]
