@@ -33,6 +33,8 @@ import com.otusfoss.mail.feature.read.presentation.ReadLoads
 import com.otusfoss.mail.feature.read.presentation.ReadPrivacy
 import com.otusfoss.mail.feature.read.presentation.ReadReplies
 import com.otusfoss.mail.feature.read.presentation.ReadServices
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flowOf
 
 @DslMarker
 internal annotation class ContextDsl
@@ -119,7 +121,7 @@ internal class ReadContextBuilder {
     var display =
         ReadDisplay(showQuotes = { false }, zen = { false }, quickView = { ReadQuickModule.Defaults }, setZen = {})
     var own = OwnAddresses(emptyMap())
-    var loadContent: suspend (MailMessage) -> MessageContent? = { null }
+    var loadContent: (MailMessage) -> Flow<MessageContent?> = { flowOf(null) }
     var onCompose: (ComposeRequest) -> Unit = {}
 
     fun build(): ReadContext =

@@ -23,6 +23,7 @@ import com.otusfoss.mail.feature.read.domain.Newsletters
 import com.otusfoss.mail.feature.read.domain.OfflineAttachments
 import com.otusfoss.mail.feature.read.presentation.components.NewFolderSheet
 import com.otusfoss.mail.feature.read.presentation.components.PersonSheet
+import kotlinx.coroutines.flow.Flow
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
@@ -44,10 +45,10 @@ class ReadContext(
     val replies: ReadReplies,
 )
 
-/** The conversation's [pages], and [content], which loads a page's full body. */
+/** The conversation's [pages], and [content], which loads a page's full body, then with its inline images. */
 class ReadLoads(
     val pages: ConversationMessages,
-    val content: suspend (MailMessage) -> MessageContent?,
+    val content: (MailMessage) -> Flow<MessageContent?>,
 )
 
 /**
