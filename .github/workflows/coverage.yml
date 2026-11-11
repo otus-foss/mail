@@ -28,7 +28,7 @@ concurrency:
   cancel-in-progress: ${{ github.event_name != 'push' }}
 
 jobs:
-  # Decides whether this run checks anything; see otus-meta's .github/actions/ready-gate.
+  # Decides whether this run checks anything; see core's .github/actions/ready-gate.
   gate:
     runs-on: ubuntu-24.04
     outputs:
@@ -36,14 +36,14 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          repository: ${{ github.repository_owner }}/otus-meta
-          path: otus-meta
+          repository: ${{ github.repository_owner }}/core
+          path: core
           fetch-depth: 0
           persist-credentials: false
-      # Meta's branch with this branch's name when there is one, else main, so every Meta action
-      # and the build come from the Meta that lands with this change.
-      - name: Use the Meta partner branch
-        working-directory: otus-meta
+      # Core's branch with this branch's name when there is one, else main, so every Core action
+      # and the build come from the Core that lands with this change.
+      - name: Use the Core partner branch
+        working-directory: core
         env:
           BRANCH: ${{ github.head_ref || github.ref_name }}
         run: |
@@ -52,7 +52,7 @@ jobs:
           fi
           git log --oneline -1
       - id: gate
-        uses: ./otus-meta/.github/actions/ready-gate
+        uses: ./core/.github/actions/ready-gate
 
   # Runs the JVM tests once with Kover and writes the summary. A pull request's summary also covers
   # the lines it changes, so the checkout keeps the history back to the base.
@@ -90,19 +90,19 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{ steps.target.outputs.ref }}
-          path: otus-mail
+          path: mail
           fetch-depth: 0
           persist-credentials: false
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          repository: ${{ github.repository_owner }}/otus-meta
-          path: otus-meta
+          repository: ${{ github.repository_owner }}/core
+          path: core
           fetch-depth: 0
           persist-credentials: false
-      # Meta's branch with this branch's name when there is one, else main, so every Meta action
-      # and the build come from the Meta that lands with this change.
-      - name: Use the Meta partner branch
-        working-directory: otus-meta
+      # Core's branch with this branch's name when there is one, else main, so every Core action
+      # and the build come from the Core that lands with this change.
+      - name: Use the Core partner branch
+        working-directory: core
         env:
           BRANCH: ${{ steps.target.outputs.branch }}
         run: |
@@ -110,33 +110,33 @@ jobs:
             git checkout --quiet --detach "origin/$BRANCH"
           fi
           git log --oneline -1
-      - uses: ./otus-meta/.github/actions/setup-build
+      - uses: ./core/.github/actions/setup-build
         with:
-          directory: otus-mail
+          directory: mail
           python: "false"
       # The coverage variant runs Shared's host tests and the app's debug unit tests, screenshot
       # tests included, once each.
       - run: ./gradlew koverXmlReportCoverage koverHtmlReportCoverage --console=plain
-        working-directory: otus-mail
+        working-directory: mail
       - name: Write the summary
-        working-directory: otus-mail
+        working-directory: mail
         env:
           BASE: ${{ steps.target.outputs.base }}
         run: |
           set -- build/reports/kover/reportCoverage.xml
           if [ -n "$BASE" ]; then set -- "$@" --base "$BASE"; fi
-          python3 ../otus-meta/tools/coverage_report.py "$@" > coverage.md
+          python3 ../core/tools/coverage_report.py "$@" > coverage.md
           cat coverage.md >> "$GITHUB_STEP_SUMMARY"
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: coverage-report
           path: |
-            otus-mail/build/reports/kover/htmlCoverage
-            otus-mail/build/reports/kover/reportCoverage.xml
+            mail/build/reports/kover/htmlCoverage
+            mail/build/reports/kover/reportCoverage.xml
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: coverage-summary
-          path: otus-mail/coverage.md
+          path: mail/coverage.md
 
   # Posts the summary as one comment per pull request, updated by later runs. Only this job can
   # write to the pull request, so no build step gets that token.

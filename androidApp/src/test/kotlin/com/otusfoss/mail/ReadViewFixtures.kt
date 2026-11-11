@@ -274,7 +274,7 @@ internal object ReadViewFixtures {
     private const val PHOTO_SIZE = 96
     private const val SHEET_TYPE = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
     private const val DIGEST_HTML =
-        "<p>Your weekly digest is here.</p><p>12 new issues in otus-mail, 3 regressions.</p>" +
+        "<p>Your weekly digest is here.</p><p>12 new issues in mail, 3 regressions.</p>" +
             "<img src=\"https://sentry.example/chart.png\" width=\"320\" height=\"120\"><p>View all issues</p>"
     private const val Q4 = "Q4 launch plan"
     private const val GRACE =
@@ -293,7 +293,7 @@ internal object ReadViewFixtures {
     private const val INVOICE =
         "Hi Alex,\n\nattached is the invoice for October. Payment within 14 days please.\n\nThanks!\nAda"
     private const val DIGEST =
-        "Your weekly digest is here.\n\n12 new issues in otus-mail, 3 regressions. " +
+        "Your weekly digest is here.\n\n12 new issues in mail, 3 regressions. " +
             "Crash-free sessions are at 99.2%.\n\n" +
             "View all issues"
 }

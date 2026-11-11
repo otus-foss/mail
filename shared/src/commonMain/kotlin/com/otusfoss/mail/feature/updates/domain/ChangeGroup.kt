@@ -10,7 +10,7 @@ data class ChangeGroup(
  * The feature, fix, and speed changes in the notes of [builds], grouped by commit scope in the
  * order the scopes first appear. Commits for CI, the build, docs, and tests are left out, since
  * the user sees none of them. Scopes spelled with and without hyphens, such as `design-system`
- * and `designsystem`, share one group, and a change listed in both Mail and Meta appears once.
+ * and `designsystem`, share one group, and a change listed in both Mail and Core appears once.
  */
 fun changesIn(builds: List<NightlyBuild>): List<ChangeGroup> =
     builds

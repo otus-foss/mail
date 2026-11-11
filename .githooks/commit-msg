@@ -1,14 +1,14 @@
 #!/bin/sh
-# Checks the message with otus-meta's checker, from the checkout that the otus.meta.path Gradle
-# property names, else from the sibling ../otus-meta, as Gradle finds it.
+# Checks the message with core's checker, from the checkout that the otus.core.path Gradle
+# property names, else from the sibling ../core, as Gradle finds it.
 set -eu
 
 repo_root=$(git rev-parse --show-toplevel)
 cd "$repo_root"
-meta=$(printenv 'ORG_GRADLE_PROJECT_otus.meta.path' || true)
+core=$(printenv 'ORG_GRADLE_PROJECT_otus.core.path' || true)
 for properties in "${GRADLE_USER_HOME:-$HOME/.gradle}/gradle.properties" gradle.properties; do
-  if [ -z "$meta" ] && [ -f "$properties" ]; then
-    meta=$(tr -d '\r' < "$properties" | sed -n 's/^[[:space:]]*otus\.meta\.path[[:space:]]*[=:][[:space:]]*//p' | tail -n 1)
+  if [ -z "$core" ] && [ -f "$properties" ]; then
+    core=$(tr -d '\r' < "$properties" | sed -n 's/^[[:space:]]*otus\.core\.path[[:space:]]*[=:][[:space:]]*//p' | tail -n 1)
   fi
 done
-exec python3 "${meta:-../otus-meta}/tools/check_commit_message.py" "$1"
+exec python3 "${core:-../core}/tools/check_commit_message.py" "$1"

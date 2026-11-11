@@ -1,9 +1,9 @@
 # Motion
 
 Motion lives in common Kotlin code. Every animation in Mail takes its duration and curve from
-Meta's `Motion` API: `MotionSpeed`, `MotionCurve`, and the global speed multiplier
-`LocalMotionScale`. Meta's
-[design system guide](https://github.com/otus-foss/otus-meta/blob/main/docs/designsystem.md#motion)
+Core's `Motion` API: `MotionSpeed`, `MotionCurve`, and the global speed multiplier
+`LocalMotionScale`. Core's
+[design system guide](https://github.com/otus-foss/core/blob/main/docs/designsystem.md#motion)
 explains the curves, the speeds, how durations are computed, and how to call it. The rules for
 choosing a speed and a curve are in [AGENTS.md](../AGENTS.md#motion).
 
@@ -19,7 +19,7 @@ choosing a speed and a curve are in [AGENTS.md](../AGENTS.md#motion).
 | Sidebar opening | `Relaxed`, 300 ms | Enter |
 | Swiped row settling | `Relaxed`, 300 ms | Standard |
 
-Meta's `tools/check_architecture.py` rejects `tween(`, `spring(`, and `CubicBezierEasing(` in
+Core's `tools/check_architecture.py` rejects `tween(`, `spring(`, and `CubicBezierEasing(` in
 Mail's production Kotlin, and `animateScrollToPage`, `animateScrollBy`, and `animate*AsState` calls that
 leave their spec on the Compose default. `Motion.tween` and `motionTween` are allowed.
 
@@ -46,7 +46,7 @@ Physical-device motion review and iOS runtime validation remain separate from lo
 
 ## Launch
 
-Each launch opens on Meta's `MailLaunch`: the envelope pops up, the owl rises behind it, and tilts
+Each launch opens on Core's `MailLaunch`: the envelope pops up, the owl rises behind it, and tilts
 upright. The inbox starts loading underneath at once, and the animation ends as soon as the inbox
 shows mail, usually the device's copy before the server answers, or when the first load ends for an
 empty inbox. When the [start page](settings.md#start-page) is not the Inbox, the inbox does not

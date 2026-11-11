@@ -46,7 +46,7 @@ the app.
 `core/messages/domain` owns message values shared with other features; `feature/inbox/domain` owns
 search, filters, and matching. `presentation` owns screen input state.
 Feature components receive values/callbacks; they reuse the design-system panel, pills, input,
-icons, and avatar from Meta. App wiring connects `InboxFeedState` to the domain's `MailSource`
+icons, and avatar from Core. App wiring connects `InboxFeedState` to the domain's `MailSource`
 contract and the `JmapMailSource` data implementation, then supplies messages to `InboxScreen`.
 On the Inbox page it also passes a `MailboxSearch` in `InboxContext`, with saved account metadata,
 folder names, and the feed's `show` to load the mailboxes a search picks.
@@ -206,7 +206,7 @@ the open message's **More actions** menu show them; see [action bar](action-bar.
 - Every move, including Archive, Trash, Spam, and Move to, shows a toast above the action bar
   with **Undo**, such as "Email deleted" or "Moved to Clients". Moves to the same folder while
   its toast is up count up in it, such as "3 emails deleted", and Undo puts all of them back
-  once their own moves have finished. The toast comes from Meta's `ToastHost`; dismissing it
+  once their own moves have finished. The toast comes from Core's `ToastHost`; dismissing it
   keeps the move. Marks share these toasts (`MoveToasts`).
 - **Read later**, when it is on, adds the account's Read later folder and keeps the message where
   it is; a saved message offers **Remove from Read later**. See
@@ -246,7 +246,7 @@ storage.
 
 ## Message rows
 
-Each row is Meta's `CompactContentRow`. The first line is the subject, bold while unread, with when the
+Each row is Core's `CompactContentRow`. The first line is the subject, bold while unread, with when the
 message arrived: the time today, "Yesterday", the weekday within the last week, and the saved date
 format before that (`receivedLabel`). The second line is the sender's name, or the address when
 the message has none.
@@ -272,7 +272,7 @@ the name.
 
 ## Swipe actions
 
-Each inbox and folder row is wrapped in Meta's `SwipeActions`. Mail behavior chooses what
+Each inbox and folder row is wrapped in Core's `SwipeActions`. Mail behavior chooses what
 a swipe right and a swipe left do: **Read / unread**, **Flag / unflag**, **Read later** (while it
 is on), **Archive**, **Delete**, or **Nothing**. Delete moves the message to Trash. The defaults
 are mark read or unread on a swipe right and delete on a swipe left. Right-to-left layouts mirror the directions.
@@ -296,7 +296,7 @@ are mark read or unread on a swipe right and delete on a swipe left. Right-to-le
 
 The row under the search prompt shows the user's pills in the user's order. **Mail behavior
 › Pills** opens an `OrderedChoiceSheet` that starts with the shown pills in row order. Dragging
-a pill's handle moves it, using Meta's `ReorderableColumn`, and tapping a shown pill takes it off
+a pill's handle moves it, using Core's `ReorderableColumn`, and tapping a shown pill takes it off
 the row. TalkBack and VoiceOver offer Move up and Move down on each shown pill. Below follow the
 pills to add, grouped as filters, folders every account has, and each account's own folders;
 tapping one adds it to the end of the row. Done saves the row, and closing the sheet any other

@@ -1,6 +1,6 @@
 """Only the signing step gets the nightly key.
 
-otus-meta's architecture check covers the suite rule that no secret reaches Gradle. These tests use
+core's architecture check covers the suite rule that no secret reaches Gradle. These tests use
 its workflow reader, which architectureTest puts on PYTHONPATH.
 """
 

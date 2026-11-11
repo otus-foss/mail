@@ -1,7 +1,7 @@
 # Otus Mail
 
 Development, pull requests, and issues use
-[otus-mail on GitHub](https://github.com/otus-foss/otus-mail). See [hosting and CI](docs/hosting.md).
+[mail on GitHub](https://github.com/otus-foss/mail). See [hosting and CI](docs/hosting.md).
 
 Kotlin Multiplatform + Compose app for Android and iOS, intended as the mail client in the Otus JMAP
 suite. Mail starts with an empty inbox and working local search/filter UI over supplied messages.
@@ -29,8 +29,8 @@ Use JDK 21 and Android Studio with the Kotlin Multiplatform plugin. Install Andr
 `ANDROID_HOME` or add `sdk.dir=/your/android/sdk` to untracked `local.properties`. Open this
 directory in Android Studio and run `androidApp`.
 
-The build compiles the shared Otus libraries from an otus-meta checkout next to this one,
-`../otus-meta`, or from the checkout the `otus.meta.path` Gradle property names. See
+The build compiles the shared Otus libraries from an core checkout next to this one,
+`../core`, or from the checkout the `otus.core.path` Gradle property names. See
 [Shared libraries](docs/shared-libraries.md).
 
 ```sh
@@ -54,7 +54,7 @@ See [Apple push delivery](docs/apple-push.md) for APNs bridge deployment, signin
 
 ## Toolchain and attribution
 
-Versions are pinned in otus-meta's `gradle/libs.versions.toml`, the suite catalog, and in
+Versions are pinned in core's `gradle/libs.versions.toml`, the suite catalog, and in
 `gradle/app.versions.toml` for what only Mail uses. The Gradle wrapper includes a distribution
 checksum. Derived from [Kotlin/KMP-App-Template](https://github.com/Kotlin/KMP-App-Template) at
 commit `6b6d09e4f3f5e845116422d59b658791ed6149c6`; its Apache 2.0 license is retained in `LICENSES/Apache-2.0-KMP-App-Template.txt`.
@@ -85,7 +85,7 @@ of at most 72 characters without a final period. Apply the unslop skill to the e
 when available. Keep the wording plain and describe only changes in the commit.
 
 Enable the versioned Git hooks once per checkout, including new clones. `pre-commit` checks
-formatting, and `commit-msg` checks the message with otus-meta's checker. Run this from the
+formatting, and `commit-msg` checks the message with core's checker. Run this from the
 repository root with Python 3.11+ installed:
 
 ```sh
@@ -94,10 +94,10 @@ git config --local core.hooksPath .githooks
 
 The `commit-msg` hook rejects invalid title syntax, missing separators, and bodies outside the 1–8 bullet
 limit. Review wording and the title-length target manually. Git-generated merge messages and
-temporary autosquash messages are exempt; final squash messages follow the rules. otus-meta's CI
+temporary autosquash messages are exempt; final squash messages follow the rules. core's CI
 tests the checker; nothing inspects commit history or installs local hooks.
 See [the full commit rules](AGENTS.md#commit-messages) and
-[hook details](https://github.com/otus-foss/otus-meta/blob/main/docs/quality.md#commit-messages).
+[hook details](https://github.com/otus-foss/core/blob/main/docs/quality.md#commit-messages).
 
 ## Inbox and reusable controls
 
@@ -112,8 +112,8 @@ JMAP account setup, and [JMAP](docs/jmap.md) for the protocol client.
 See [sender and attendee avatars](docs/avatars.md) for the reusable contact-photo, optional domain-icon,
 and generated-avatar service.
 
-Meta is the central owner of visual elements, reusable components, tokens, and symbols.
-Mail retains feature screens and adapters. Message rows use Meta's `CompactContentRow`, empty
+Core is the central owner of visual elements, reusable components, tokens, and symbols.
+Mail retains feature screens and adapters. Message rows use Core's `CompactContentRow`, empty
 states `EmptyState`, and all symbols and tokens come from `designsystem`.
 
 ## License
