@@ -6,6 +6,7 @@ import android.content.Context
 import android.content.Intent
 import android.os.Build
 import android.provider.MediaStore
+import android.webkit.MimeTypeMap
 import androidx.annotation.RequiresApi
 import androidx.core.content.FileProvider
 import com.otusfoss.mail.core.files.SavedFiles
@@ -23,7 +24,8 @@ import java.util.Locale
 /**
  * Saves received files to the device's Downloads through MediaStore, which needs no storage
  * permission from Android 10 on; older versions cannot save. Opening lends the downloaded file to
- * the app that shows its type through a [FileProvider], read-only, without another copy.
+ * the app that shows its type through a [FileProvider], read-only, without another copy. The type
+ * comes from the file's extension, see [viewType].
  */
 class AndroidSavedFiles(
     private val context: Context,
@@ -99,7 +101,7 @@ class AndroidSavedFiles(
         return try {
             context.startActivity(
                 Intent(Intent.ACTION_VIEW)
-                    .setDataAndType(uri, file.type)
+                    .setDataAndType(uri, viewType(File(file.path).name, file.type))
                     .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_ACTIVITY_NEW_TASK),
             )
             true
@@ -111,6 +113,34 @@ class AndroidSavedFiles(
         }
     }
 }
+
+/**
+ * The type an app opens [name] as: the one its extension stands for, else the [claimed] type the
+ * sender gave. An app package or other program opens as plain bytes, so a file the sender labels as
+ * one never reaches the installer.
+ */
+internal fun viewType(
+    name: String,
+    claimed: String,
+): String =
+    name
+        .substringAfterLast('.', missingDelimiterValue = "")
+        .lowercase()
+        .let { extension ->
+            MimeTypeMap.getSingleton().getMimeTypeFromExtension(extension)
+                ?: claimed.substringBefore(';').trim().lowercase()
+        }.takeUnless { it.isEmpty() || it in EXECUTABLE_TYPES }
+        ?: GENERIC_TYPE
+
+private const val GENERIC_TYPE = "application/octet-stream"
+
+private val EXECUTABLE_TYPES =
+    setOf(
+        "application/vnd.android.package-archive",
+        "application/x-msdownload",
+        "application/x-executable",
+        "application/x-sh",
+    )
 
 /** [name] with the current time before its extension, such as "Contacts 20261025-162235.vcf". */
 private fun timedName(name: String): String {
