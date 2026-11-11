@@ -20,7 +20,7 @@ strings. It knows nothing of JMAP; the callers encode and decode the objects.
 ## Where it lives
 
 `SqlMailCache` keeps the cache in one SQLite database through SQLDelight. The schema is in
-`shared/src/commonMain/sqldelight/com/otus/mail/core/cache/`. Every read and write runs on
+`shared/src/commonMain/sqldelight/com/otusfoss/mail/core/cache/`. Every read and write runs on
 `Dispatchers.IO`, and each `write {}` is one transaction, so a failed write saves nothing.
 
 - Android opens `otus_mail_cache.db` in the app's private databases folder. The manifest sets

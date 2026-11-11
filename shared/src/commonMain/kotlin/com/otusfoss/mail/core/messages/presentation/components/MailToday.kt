@@ -1,0 +1,17 @@
+package com.otusfoss.mail.core.messages.presentation.components
+
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.ProvidableCompositionLocal
+import androidx.compose.runtime.compositionLocalOf
+import com.otusfoss.core.dateformat.currentLocalDate
+import kotlinx.datetime.LocalDate
+
+/**
+ * The day mail lists count their dates from, or null for the device's date. Screenshot tests pin
+ * it so rows read the same any day.
+ */
+val LocalToday: ProvidableCompositionLocal<LocalDate?> = compositionLocalOf { null }
+
+/** The device's date, or the pinned [LocalToday]. */
+@Composable
+fun mailToday(): LocalDate = LocalToday.current ?: currentLocalDate()

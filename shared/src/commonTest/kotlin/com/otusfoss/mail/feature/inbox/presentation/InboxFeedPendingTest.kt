@@ -1,0 +1,137 @@
+package com.otusfoss.mail.feature.inbox.presentation
+
+import com.otusfoss.mail.core.mailbox.MailboxRole
+import com.otusfoss.mail.core.messages.domain.MailAttributes
+import com.otusfoss.mail.core.messages.domain.MailLocation
+import com.otusfoss.mail.core.messages.domain.MailMessage
+import com.otusfoss.mail.core.messages.domain.MailScope
+import com.otusfoss.mail.core.messages.domain.MailSender
+import com.otusfoss.mail.core.messages.domain.MessageFlag
+import com.otusfoss.mail.core.messages.domain.ReceivedAt
+import com.otusfoss.mail.core.messages.domain.withFlag
+import com.otusfoss.mail.core.messages.presentation.move
+import com.otusfoss.mail.feature.inbox.domain.InboxSnapshot
+import com.otusfoss.mail.feature.inbox.domain.MailSource
+import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.test.TestScope
+import kotlinx.coroutines.test.runCurrent
+import kotlinx.coroutines.test.runTest
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertNull
+
+@OptIn(ExperimentalCoroutinesApi::class)
+class InboxFeedPendingTest {
+    private val serverMail = listOf(message("a"), message("b"))
+
+    /** Answers each load with the snapshot the test completes for it. */
+    private class SlowSource : MailSource {
+        val answers = ArrayDeque<CompletableDeferred<InboxSnapshot>>()
+
+        override suspend fun messages(scope: MailScope): InboxSnapshot =
+            CompletableDeferred<InboxSnapshot>().also { answers.addLast(it) }.await()
+
+        fun answer(messages: List<MailMessage>) {
+            answers.removeFirst().complete(InboxSnapshot(messages))
+        }
+    }
+
+    private fun TestScope.loadedFeed(): Pair<InboxFeedState, SlowSource> {
+        val source = SlowSource()
+        val feed = InboxFeedState(source, this)
+        feed.refresh()
+        runCurrent()
+        source.answer(serverMail)
+        runCurrent()
+        return feed to source
+    }
+
+    @Test
+    fun aReloadAfterAServerChangeKeepsAReportedFailure() =
+        runTest {
+            val (feed, source) = loadedFeed()
+            feed.report("Couldn't finish archiving.")
+            feed.refresh(keepReport = true)
+            runCurrent()
+            source.answer(serverMail)
+            runCurrent()
+            assertEquals("Couldn't finish archiving.", feed.notice, "The push that followed the action keeps it")
+
+            feed.refresh()
+            runCurrent()
+            source.answer(serverMail)
+            runCurrent()
+            assertNull(feed.notice, "A refresh by the user clears it")
+        }
+
+    @Test
+    fun anArchivedMessageStaysRemovedWhenAnOlderLoadAnswers() =
+        runTest {
+            val (feed, source) = loadedFeed()
+            feed.refresh()
+            runCurrent()
+            val archive = feed.remove("a")
+            source.answer(serverMail)
+            runCurrent()
+            assertEquals(listOf("b"), feed.messages.map { it.id })
+
+            feed.refresh()
+            runCurrent()
+            archive.confirm()
+            source.answer(serverMail)
+            runCurrent()
+            assertEquals(listOf("b"), feed.messages.map { it.id }, "The load started before the server saved the move")
+
+            feed.refresh()
+            runCurrent()
+            source.answer(serverMail)
+            runCurrent()
+            assertEquals(listOf("a", "b"), feed.messages.map { it.id }, "A load after the move shows the server's mail")
+        }
+
+    @Test
+    fun aMessageMarkedReadStaysReadWhenAnOlderLoadAnswers() =
+        runTest {
+            val (feed, source) = loadedFeed()
+            feed.refresh()
+            runCurrent()
+            feed.change("a", { it.withFlag(MessageFlag.Read, true) }, undo = { it.withFlag(MessageFlag.Read, false) })
+            source.answer(serverMail)
+            runCurrent()
+            assertEquals(listOf(false, true), feed.messages.map { it.attributes.unread })
+        }
+
+    @Test
+    fun aRolledBackChangeLeavesLaterLoadsAlone() =
+        runTest {
+            val (feed, source) = loadedFeed()
+            feed.refresh()
+            runCurrent()
+            val read =
+                feed.change(
+                    "a",
+                    { it.withFlag(MessageFlag.Read, true) },
+                    undo = { it.withFlag(MessageFlag.Read, false) },
+                )
+            val archive = feed.remove("b")
+            read.rollBack()
+            archive.rollBack()
+            assertEquals(listOf(true, true), feed.messages.map { it.attributes.unread })
+            source.answer(serverMail)
+            runCurrent()
+            assertEquals(listOf("a", "b"), feed.messages.map { it.id })
+            assertEquals(listOf(true, true), feed.messages.map { it.attributes.unread })
+        }
+
+    private fun message(id: String) =
+        MailMessage(
+            id,
+            MailSender("Ada", "ada@example.org"),
+            "Subject",
+            "Body",
+            ReceivedAt("2026-10-01", "12:00"),
+            MailLocation("Inbox", "Ada", mailboxRole = MailboxRole.Inbox),
+            MailAttributes(unread = true),
+        )
+}

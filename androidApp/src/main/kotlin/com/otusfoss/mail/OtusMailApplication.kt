@@ -1,0 +1,130 @@
+package com.otusfoss.mail
+
+import android.app.Application
+import android.content.Context
+import androidx.work.Configuration
+import app.cash.sqldelight.driver.android.AndroidSqliteDriver
+import com.otusfoss.core.avatar.FileAvatarStore
+import com.otusfoss.core.jmap.login.AndroidLoginStore
+import com.otusfoss.core.jmap.push.PushSubscriptions
+import com.otusfoss.core.storage.PreferenceMap
+import com.otusfoss.mail.app.MailDeviceStores
+import com.otusfoss.mail.app.MailPickers
+import com.otusfoss.mail.app.MailPlatform
+import com.otusfoss.mail.app.MailServices
+import com.otusfoss.mail.app.NightlyUpdates
+import com.otusfoss.mail.app.trimCache
+import com.otusfoss.mail.core.cache.MailDatabase
+import com.otusfoss.mail.core.cache.SqlMailCache
+import com.otusfoss.mail.core.files.FileDownloadFolder
+import com.otusfoss.mail.core.messages.domain.DevicePrivacy
+import com.otusfoss.mail.core.settings.presentation.MailBehaviorState
+import com.otusfoss.mail.feature.notifications.domain.MailPush
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.launch
+import java.io.File
+import java.util.UUID
+
+/**
+ * Owns process-wide services, so activity recreation does not open new network clients. It also
+ * gives WorkManager its configuration, so WorkManager starts on first use instead of at launch.
+ */
+class OtusMailApplication :
+    Application(),
+    Configuration.Provider {
+    override val workManagerConfiguration: Configuration
+        get() = Configuration.Builder().build()
+
+    val stores: MailDeviceStores by lazy {
+        MailDeviceStores.named(
+            { name, commit -> mailPreferences(this, name, commit) },
+            SqlMailCache(AndroidSqliteDriver(MailDatabase.Schema, this, CACHE_DATABASE)),
+            // Matches the `files-path` in `res/xml/shared_files.xml`, so Open can lend these files.
+            FileDownloadFolder(File(filesDir, "attachments").absolutePath),
+            AndroidNotificationPreviewStore(this),
+        )
+    }
+
+    val services: MailServices by lazy {
+        // Names kept from the first release so saved accounts keep working.
+        MailServices(
+            AndroidLoginStore(this, preferencesName = "otus_accounts", keyAlias = "otus.account.credentials"),
+            avatarStore = FileAvatarStore(File(cacheDir, "avatars-v1").absolutePath),
+            stores = stores,
+            pickers =
+                MailPickers(
+                    AndroidSignatureImages(photoPicker),
+                    attachmentFiles,
+                    AndroidSavedFiles(this),
+                    printer,
+                    AndroidAvatarPhotos(photoPicker),
+                ),
+            host =
+                MailPlatform(
+                    NightlyUpdates(installer = AndroidUpdateInstaller(this)),
+                    DevicePrivacy(screen = true, keyboard = true),
+                    wakeOutbox = { OutboxWorker.wake(this, it) },
+                    instantPush = instantPush,
+                    categoriesOn = { behavior.behavior.list.categories.enabled },
+                    alerts = MailNotifications(this),
+                ),
+        )
+    }
+
+    /**
+     * The saved inbox behavior, for the process like the toasts, so a send that finishes after the
+     * activity was recreated records its From address on top of the current settings.
+     */
+    val behavior: MailBehaviorState by lazy { MailBehaviorState(AndroidMailBehaviorStore(this)) }
+
+    val photoPicker: AndroidPhotoPicker by lazy { AndroidPhotoPicker(this) }
+
+    val attachmentFiles: AndroidAttachmentFiles by lazy { AndroidAttachmentFiles(this) }
+
+    /** The print dialog needs the activity in front, which attaches itself here. */
+    val printer: AndroidMessagePrinter by lazy { AndroidMessagePrinter() }
+
+    val instantPush: AndroidInstantPush by lazy { AndroidInstantPush(this) }
+
+    /** One per process, so its lock covers the push service, the workers, and the settings page. */
+    val push: PushSubscriptions by lazy {
+        services.pushSubscriptions(PreferenceMap(this, "otus_mail_push"), deviceClientId(), MailPush.Changes)
+    }
+
+    /** Work that outlives any screen, such as cache upkeep. It ends with the process. */
+    private val processScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+
+    override fun onCreate() {
+        super.onCreate()
+        MailNotifications(this).createChannels()
+        NewMailWorker.schedule(this)
+        processScope.launch { services.trimCache() }
+    }
+
+    /**
+     * Tells this app's push subscriptions apart from those of other apps and devices (RFC 8620,
+     * section 7.2). A random id, kept until the app's data is cleared.
+     */
+    private fun deviceClientId(): String {
+        val stored = PreferenceMap(this, "otus_mail_device")
+        val existing = stored.read()[DEVICE_ID]
+        if (existing != null) return existing
+        val created = "otus-mail-${UUID.randomUUID()}"
+        stored.write(mapOf(DEVICE_ID to created))
+        return created
+    }
+
+    private companion object {
+        const val DEVICE_ID = "deviceClientId"
+        const val CACHE_DATABASE = "otus_mail_cache.db"
+    }
+}
+
+/** The shared preferences file of the device store [name]; each store keeps its own. */
+internal fun mailPreferences(
+    context: Context,
+    name: String,
+    commit: Boolean = false,
+): PreferenceMap = PreferenceMap(context, "otus_mail_$name", commit)

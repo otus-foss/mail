@@ -1,7 +1,7 @@
 # Architecture
 
-Both Otus repositories use the same conventions. Their package roots are `com.otus.mail` and
-`com.otus.calendar`.
+Both Otus repositories use the same conventions. Their package roots are `com.otusfoss.mail` and
+`com.otusfoss.calendar`.
 
 ```text
 androidApp/                         Android lifecycle and entry point
@@ -80,7 +80,7 @@ Design-system elements/components and feature components are driven by values an
 ViewModels and navigation are connected at screen entry points. Networking, persistence, and
 synchronization do not belong inside UI components.
 
-The provider-independent JMAP client and login storage come from the `com.otus:jmap` library in
+The provider-independent JMAP client and login storage come from the `com.otusfoss.core:jmap` library in
 otus-meta. See [JMAP](jmap.md) and [shared libraries](shared-libraries.md). Code shared with
 Calendar moves to otus-meta when both apps need it; other shared package names do not share code
 across Git repositories. Shared account setup and settings screens come from otus-meta.
@@ -117,23 +117,23 @@ client, a host, or a new trigger for an existing one.
 
 ## Avatar service
 
-The portable account-scoped avatar resolver comes from the `com.otus:avatar` library. App wiring
+The portable account-scoped avatar resolver comes from the `com.otusfoss.core:avatar` library. App wiring
 supplies sources; presentation resolves photos before passing bitmap or initial values to
 design-system elements. Mail resolves senders progressively after inbox loading. See
 [avatars](avatars.md) for Mail's wiring.
 
 ## Shared libraries
 
-The design system (`com.otus.designsystem`), date formatting (`com.otus.dateformat`), avatars
-(`com.otus.avatar`), JMAP client (`com.otus.jmap`), settings (`com.otus.settings`), and accounts
-(`com.otus.accounts`) come from otus-meta; see
+The design system (`com.otusfoss.core.designsystem`), date formatting (`com.otusfoss.core.dateformat`), avatars
+(`com.otusfoss.core.avatar`), JMAP client (`com.otusfoss.core.jmap`), settings (`com.otusfoss.core.settings`), and accounts
+(`com.otusfoss.core.accounts`) come from otus-meta; see
 [shared libraries](shared-libraries.md). All visual tokens, including `InboxTokens`, and symbol resources live in Meta.
 A new element or reusable component belongs in Meta even when Mail is its only current consumer.
 Mail feature adapters supply domain-derived labels, values, and callbacks to shared renderers.
 The checker rejects local production design-system code and drawable resources.
 
-Meta groups rendering beneath `com.otus.designsystem.shared.<group>` and
-`com.otus.designsystem.mail.<feature>`, each with `elements` and `components` where needed.
+Meta groups rendering beneath `com.otusfoss.core.designsystem.shared.<group>` and
+`com.otusfoss.core.designsystem.mail.<feature>`, each with `elements` and `components` where needed.
 For example, contact rows come from `shared.contacts.components` and message HTML from
 `mail.read.elements`. Theme declarations use `theme.colors`, `theme.motion`, `theme.brand`,
 `theme.typography`, and `theme.tokens.<family>`. `theme.OtusTheme` and `resources.Res` retain

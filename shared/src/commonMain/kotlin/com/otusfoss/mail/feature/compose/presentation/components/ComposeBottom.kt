@@ -1,0 +1,157 @@
+package com.otusfoss.mail.feature.compose.presentation.components
+
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import com.otusfoss.core.designsystem.mail.compose.components.CompactSendButton
+import com.otusfoss.core.designsystem.mail.compose.components.FormatButton
+import com.otusfoss.core.designsystem.mail.compose.components.FormattingBar
+import com.otusfoss.core.designsystem.resources.Res
+import com.otusfoss.core.designsystem.resources.symbol_attach_file
+import com.otusfoss.core.designsystem.resources.symbol_schedule
+import com.otusfoss.core.designsystem.resources.symbol_schedule_send
+import com.otusfoss.core.designsystem.resources.symbol_send
+import com.otusfoss.core.designsystem.shared.actionbar.components.BarMorph
+import com.otusfoss.core.designsystem.shared.actionbar.components.BarNotice
+import com.otusfoss.core.designsystem.theme.tokens.overlays.ActionBarTokens
+import com.otusfoss.core.settings.presentation.components.LocalDateFormatter
+import com.otusfoss.mail.core.messages.domain.shownName
+import com.otusfoss.mail.core.settings.domain.ActionBehavior
+import com.otusfoss.mail.feature.compose.presentation.ComposeState
+import com.otusfoss.mail.feature.compose.presentation.recipients
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toLocalDateTime
+import kotlin.time.Clock
+
+/**
+ * The compose page's bottom: its action bar, or while the [keyboardUp] the formatting row with
+ * Attach and a compact Send. While a time is scheduled, a notice above it names the time, and
+ * Change runs [onChangeSchedule]. A reply's earlier messages sit above the bar and open the
+ * thread's sheet. Send runs [onSend] and is disabled while it is null; Attach picks files, and is
+ * disabled where the platform cannot pick them.
+ */
+@Composable
+internal fun ComposeBottom(
+    state: ComposeState,
+    actions: ActionBehavior,
+    keyboardUp: Boolean,
+    onSend: (() -> Unit)?,
+    onDiscard: () -> Unit,
+    onChangeSchedule: () -> Unit,
+) {
+    var linking by remember { mutableStateOf(false) }
+    val now = remember { Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()) }
+    val at = state.sendAt?.let { LocalDateFormatter.current.sendLaterLabel(it, now) }
+    var showingThread by remember { mutableStateOf(false) }
+    val scheduled = state.sendAt
+    val thread = state.thread
+    Column(verticalArrangement = Arrangement.spacedBy(ActionBarTokens.gap)) {
+        if (scheduled != null) {
+            BarNotice(
+                Res.drawable.symbol_schedule,
+                LocalDateFormatter.current.scheduledLabel(scheduled),
+                "Change",
+                onChangeSchedule,
+            )
+        }
+        if (thread != null && !keyboardUp) ReplyThreadStrip(thread) { showingThread = true }
+        Bottom(state, actions, keyboardUp, onSend, onDiscard, at) { linking = true }
+    }
+    if (linking) LinkSheet(state.body.selectedText, state.body::addLink) { linking = false }
+    if (showingThread && thread != null) ThreadSheet(thread) { showingThread = false }
+    val question = state.attachments.cleaning.question
+    if (question != null) PhotoCleaningSheet(question, state.attachments.cleaning::answer)
+}
+
+/** The action bar, the formatting row while the keyboard is up, or the image bar; each morphs into the next. */
+@Composable
+private fun Bottom(
+    state: ComposeState,
+    actions: ActionBehavior,
+    keyboardUp: Boolean,
+    onSend: (() -> Unit)?,
+    onDiscard: () -> Unit,
+    at: String?,
+    onLink: () -> Unit,
+) {
+    val shown =
+        when {
+            state.body.images.selected != null -> BottomBar.Image
+            keyboardUp -> BottomBar.Formatting
+            else -> BottomBar.Actions
+        }
+    BarMorph(shown) { bar ->
+        when (bar) {
+            BottomBar.Image -> ComposeImageBar(state)
+            BottomBar.Formatting -> FormattingRow(state, onSend, at, onLink)
+            BottomBar.Actions -> DraftActions(state, actions, onSend, onDiscard, scheduled = at != null)
+        }
+    }
+}
+
+@Composable
+private fun DraftActions(
+    state: ComposeState,
+    actions: ActionBehavior,
+    onSend: (() -> Unit)?,
+    onDiscard: () -> Unit,
+    scheduled: Boolean,
+) {
+    ComposeBar(
+        actions,
+        state.draft,
+        onSend = onSend,
+        onAttach = state.attachments::attach.takeIf { state.attachments.canAttach },
+        onDiscard = onDiscard,
+        scheduled = scheduled,
+    )
+}
+
+/** Which bar the compose page shows: the image's while one is selected, the formatting row while typing. */
+private enum class BottomBar { Image, Formatting, Actions }
+
+/** The formatting row with Attach and a compact Send, while the keyboard is up. */
+@Composable
+private fun FormattingRow(
+    state: ComposeState,
+    onSend: (() -> Unit)?,
+    at: String?,
+    onLink: () -> Unit,
+) {
+    FormattingBar(
+        state.body,
+        onLink = onLink,
+        leading = {
+            FormatButton(
+                "Attach",
+                Res.drawable.symbol_attach_file,
+                active = false,
+                onClick = state.attachments::attach,
+                enabled = state.attachments.canAttach,
+            )
+        },
+        trailing = {
+            CompactSendButton(
+                sendDescription(state, at),
+                { onSend?.invoke() },
+                enabled = onSend != null,
+                icon = if (at == null) Res.drawable.symbol_send else Res.drawable.symbol_schedule_send,
+            )
+        },
+    )
+}
+
+/** What screen readers hear for the compact Send, such as "Send Sun, 8:00, to Grace". */
+private fun sendDescription(
+    state: ComposeState,
+    at: String?,
+): String {
+    val people = state.draft.recipients
+    val send = at?.let { "Send $it," } ?: "Send"
+    val first = people.firstOrNull() ?: return send
+    return if (people.size == 1) "$send to ${first.shownName}" else "$send to ${people.size} people"
+}

@@ -1,0 +1,91 @@
+package com.otusfoss.mail.feature.folders.presentation.components
+
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
+import com.otusfoss.core.avatar.ResolvedAvatar
+import com.otusfoss.core.avatar.generatedAvatar
+import com.otusfoss.core.avatar.ui.presentation.toChipAvatar
+import com.otusfoss.core.designsystem.mail.folders.components.FolderOwnerLine
+import com.otusfoss.core.designsystem.mail.folders.components.FolderRuleSummary
+import com.otusfoss.core.designsystem.mail.folders.components.FolderSettingRow
+import com.otusfoss.core.designsystem.mail.folders.components.RuleChipLine
+import com.otusfoss.core.designsystem.resources.Res
+import com.otusfoss.core.designsystem.resources.symbol_folder_shared
+import com.otusfoss.core.designsystem.shared.actionbar.components.QuickActionBar
+import com.otusfoss.core.designsystem.shared.controls.elements.LocalIconTint
+import com.otusfoss.core.designsystem.shared.people.components.ChipAvatar
+import com.otusfoss.core.designsystem.shared.reorder.components.ReorderableScope
+import com.otusfoss.core.designsystem.shared.sidebar.elements.SidebarFolder
+import com.otusfoss.core.designsystem.theme.colors.FolderColor
+import com.otusfoss.mail.core.mailbox.presentation.symbol
+import com.otusfoss.mail.feature.folders.presentation.FolderListRow
+
+/**
+ * A folder in Settings › Folders & rules: its icon in the folder's color, the name, the first of its rules
+ * as a compact chip with how many more there are, and who shares it. With subfolders, [expanded]
+ * is set and the icon folds them. Tapping opens the folder, a long press opens its quick actions
+ * at the pressed point, and the handle at the end drags it.
+ */
+@Composable
+fun ReorderableScope.FolderRow(
+    row: FolderListRow,
+    expanded: Boolean?,
+    onExpandedChange: (Boolean) -> Unit,
+    actions: FolderListActions,
+    modifier: Modifier = Modifier,
+) {
+    val folder = row.folder
+    val rules = actions.rulesOf(folder)
+    val shared = row.sharingLine()
+    val menu = actions.menuOf(folder)
+    var menuAt by remember { mutableStateOf<Offset?>(null) }
+    CompositionLocalProvider(LocalIconTint provides FolderColor.named(actions.colorOf(folder)).tint) {
+        FolderSettingRow(
+            SidebarFolder(
+                folder.name,
+                row.node.depth,
+                icon = if (shared != null) Res.drawable.symbol_folder_shared else row.node.symbol,
+            ),
+            expanded,
+            onExpandedChange,
+            onClick = { actions.onOpen(folder) },
+            modifier,
+            onLongClick = { at: Offset -> menuAt = at }.takeIf { menu.isNotEmpty() },
+            detail =
+                if (rules.isEmpty() && shared == null) {
+                    null
+                } else {
+                    { FolderRowDetail(rules, shared) }
+                },
+        )
+        menuAt?.let { at -> QuickActionBar(menu, at, onDismiss = { menuAt = null }) }
+    }
+}
+
+/** The first rule, or else who shares the folder: the row has room for one line. */
+@Composable
+private fun FolderRowDetail(
+    rules: List<RuleChipLine>,
+    shared: Pair<ChipAvatar, String>?,
+) {
+    val first = rules.firstOrNull()
+    when {
+        first != null -> FolderRuleSummary(first, "+${rules.size - 1}".takeIf { rules.size > 1 })
+        shared != null -> FolderOwnerLine(shared.first, shared.second)
+    }
+}
+
+/** The owner's avatar and "Shared by <owner> · can read"; null for a folder nobody shares. */
+private fun FolderListRow.sharingLine(): Pair<ChipAvatar, String>? =
+    sharedBy?.let { (owner, canEdit) ->
+        owner.avatar() to "Shared by $owner · ${if (canEdit) "can edit" else "can read"}"
+    }
+
+private fun String.avatar(): ChipAvatar =
+    ResolvedAvatar(generatedAvatar(this, takeIf { '@' in it }.orEmpty())).toChipAvatar()

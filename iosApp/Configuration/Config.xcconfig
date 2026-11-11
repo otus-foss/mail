@@ -1,5 +1,5 @@
 TEAM_ID=
-BUNDLE_ID=com.otus.mail
+BUNDLE_ID=com.otus-foss.mail
 APP_NAME=Otus Mail
 
 // Set to the HTTPS origin of the deployed bridge, without a path.

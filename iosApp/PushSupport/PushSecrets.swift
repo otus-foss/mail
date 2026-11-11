@@ -2,7 +2,7 @@ import Foundation
 import Security
 
 struct PushSecrets {
-    private let service = "com.otus.mail.push"
+    private let service = "com.otus-foss.mail.push"
 
     private func query(_ key: String) -> [String: Any]? {
         guard let group = Bundle.main.object(forInfoDictionaryKey: "OtusPushKeychainGroup") as? String,

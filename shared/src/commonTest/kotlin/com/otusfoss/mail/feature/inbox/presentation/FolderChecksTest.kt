@@ -1,0 +1,74 @@
+package com.otusfoss.mail.feature.inbox.presentation
+
+import com.otusfoss.core.designsystem.mail.folders.components.FolderCheck
+import com.otusfoss.core.designsystem.resources.Res
+import com.otusfoss.core.designsystem.resources.symbol_folder
+import com.otusfoss.core.designsystem.shared.people.components.ChipAvatar
+import com.otusfoss.mail.core.mailbox.FolderKey
+import com.otusfoss.mail.core.messages.domain.FolderRef
+import com.otusfoss.mail.feature.inbox.domain.InboxFilters
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertFalse
+
+class FolderChecksTest {
+    @Test
+    fun checkingAParentIncludesItsSubfolders() {
+        val parent = folder("ada", "p", "Clients", descendants = setOf("c"))
+        val child = folder("ada", "c", "Acme", "Clients", parentId = "p")
+        val options = FilterOptions(accounts = listOf(account("ada", parent, child)))
+        val withChild = InboxFilters().toggle(child)
+        val withParent = withChild.toggle(parent)
+        assertEquals(
+            setOf(FolderRef("ada", "p", includeSubfolders = true)),
+            withParent.folders,
+            "The parent covers the child",
+        )
+        assertEquals(FolderCheck.On, withParent.check(parent, options))
+        assertEquals(FolderCheck.Included, withParent.check(child, options))
+        val only = withParent.includeSubfolders(parent, include = false)
+        assertEquals(FolderCheck.Off, only.check(child, options))
+        assertFalse(
+            InboxFilters()
+                .toggle(parent)
+                .toggle(parent)
+                .folders
+                .isNotEmpty(),
+        )
+    }
+
+    @Test
+    fun collapsedParentsHideTheirSubfoldersAndSearchFlattens() {
+        val account =
+            account(
+                "ada",
+                folder("ada", "p", "Clients", descendants = setOf("c", "d")),
+                folder("ada", "c", "Acme", "Clients", parentId = "p", descendants = setOf("d")),
+                folder("ada", "d", "Invoices", "Clients", "Acme", parentId = "c"),
+            )
+        assertEquals(listOf("Clients"), account.shownFolders("", setOf(FolderKey("ada", "p"))).map { it.name })
+        assertEquals(listOf("Clients", "Acme"), account.shownFolders("", setOf(FolderKey("ada", "c"))).map { it.name })
+        assertEquals(listOf("Invoices"), account.shownFolders(" inv ", setOf(FolderKey("ada", "p"))).map { it.name })
+    }
+
+    private fun account(
+        id: String,
+        vararg folders: FilterFolder,
+    ) = FilterAccount(id, id, ChipAvatar("A", 0), folders.toList())
+
+    private fun folder(
+        login: String,
+        id: String,
+        name: String,
+        vararg ancestors: String,
+        parentId: String? = null,
+        descendants: Set<String> = emptySet(),
+    ) = FilterFolder(
+        FolderKey(login, id),
+        name,
+        ancestors.toList(),
+        Res.drawable.symbol_folder,
+        parentId = parentId,
+        descendants = descendants,
+    )
+}

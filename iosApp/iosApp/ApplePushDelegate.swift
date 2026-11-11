@@ -11,7 +11,7 @@ final class ApplePushDelegate: NSObject, UIApplicationDelegate, UNUserNotificati
         baseUrl: Bundle.main.object(forInfoDictionaryKey: "OtusPushBridgeURL") as? String ?? ""
     )
     private var refreshIdentifier: String {
-        "\(Bundle.main.bundleIdentifier ?? "com.otus.mail").push-refresh"
+        "\(Bundle.main.bundleIdentifier ?? "com.otus-foss.mail").push-refresh"
     }
 
     func application(

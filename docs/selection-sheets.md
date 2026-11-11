@@ -162,7 +162,7 @@ Measured on the connected Pixel 9a running Android 17, before the subsequent mon
 and date-label centering refinements. Raw captures are in `androidApp/build/reports/calendar-performance/`.
 Each build used two warm-up swipe pairs,
 then three runs of four down/up pairs inside the calendar, with 450 ms swipes and 250 ms pauses.
-Each run reset `dumpsys gfxinfo com.otus.mail`; results below use the process totals once, without
+Each run reset `dumpsys gfxinfo com.otusfoss.mail`; results below use the process totals once, without
 counting the repeated per-window summaries. Builds used the same package and local development
 signing key. No system settings were changed.
 

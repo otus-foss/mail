@@ -29,7 +29,7 @@ the workflow instead of treating an unavailable release as an empty history.
 
 The `nightly` build type is the release build with these changes:
 
-- The app id is `com.otus.mail.nightly` and the name is "Otus Mail Nightly", so it installs beside
+- The app id is `com.otusfoss.mail.nightly` and the name is "Otus Mail Nightly", so it installs beside
   a debug build.
 - The version code is the nightly number. The version name is the build's date as d.m.yy, such as
   `18.10.26`, and the sidebar footer shows it.
