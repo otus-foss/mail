@@ -48,10 +48,17 @@ internal class FolderStates(
             { all.accounts },
         ) { behavior.behavior.sidebar.layout.folderColors }
 
-    /** Which folder the color nudge offers a color for; only while folder colors and folder icons are on. */
+    // Read once: a launch that began with the first run keeps the inbox free of tips until the next one.
+    private val setUpBefore = behavior.behavior.onboarded
+
+    /**
+     * Which folder the color nudge offers a color for; only while folder colors and folder icons
+     * are on, and never in the launch the first run ran in, where a tip would be the first thing
+     * in a new user's inbox.
+     */
     val nudge =
         FolderNudgeState(services.stores.folders.nudges, colors, { all.accounts }) {
-            behavior.behavior.sidebar.layout.folderColors && behavior.behavior.list.layout.folderIcons
+            setUpBefore && behavior.behavior.sidebar.layout.folderColors && behavior.behavior.list.layout.folderIcons
         }
 
     /** Each account's folder rules, kept in the Otus block of its active Sieve script. */

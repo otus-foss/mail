@@ -101,6 +101,7 @@ internal fun PrivacyPage(
             onOpenAllowed = { navigation.go(MailPage.AllowedSenders) },
             onBack = back,
             device = states.devicePrivacy,
+            onPreset = states::applyAlertPreset,
         )
     }
 }

@@ -193,8 +193,9 @@ memory only and is not written to saved instance state.
 
 `parseJmapServer` resolves the typed server. A bare host uses the discovery path
 `https://<host>/.well-known/jmap` (RFC 8620, section 2.2); a full `https://` URL with a path is used
-as the session URL. Plain `http://` is refused because JMAP requires TLS. The resolved URL is shown
-under the field.
+as the session URL. Plain `http://` is refused because JMAP requires TLS. The field shows no text
+under it: a check or a circled exclamation mark at its end says whether a JMAP server answered, and
+a failed sign-in says why. The password field ends with a Show button.
 
 Connect verifies the server and credentials, then saves the account; see [JMAP](jmap.md). If the
 server hands sign-in to another host, the page names that host and continues only after the user

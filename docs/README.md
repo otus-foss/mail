@@ -101,7 +101,8 @@ See [the full commit rules](../AGENTS.md#commit-messages) and
 
 ## Inbox and reusable controls
 
-See [Inbox](inbox.md) for the default screen and search scope, and
+See [First run](onboarding.md) for the setup a new device opens on,
+[Inbox](inbox.md) for the default screen and search scope, and
 [Action bar](action-bar.md) for the open message page, selection, and configurable actions, and
 [Compose](compose.md) for new messages, replies, forwards, and drafts, and
 [Context panel](context-panel.md) for the reusable API and component test playground, and

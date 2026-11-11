@@ -19,6 +19,7 @@ import com.otusfoss.core.settings.presentation.components.ToggleRowSpec
 import com.otusfoss.mail.core.messages.domain.DevicePrivacy
 import com.otusfoss.mail.core.messages.domain.RemoteImages
 import com.otusfoss.mail.core.settings.domain.PhotoCleaning
+import com.otusfoss.mail.core.settings.domain.PrivacyPreset
 import com.otusfoss.mail.core.settings.domain.ReadBehavior
 import com.otusfoss.mail.core.settings.domain.WriteBehavior
 import com.otusfoss.mail.core.settings.presentation.MailBehaviorState
@@ -29,10 +30,24 @@ import com.otusfoss.mail.core.settings.presentation.title
 /**
  * Settings › Privacy & security: when mail loads images from other servers, chosen in a sheet, who
  * may always show them ([openAllowed] opens that list), what photos you attach keep, the avatars,
- * and the screen and keyboard protections that [device] offers. Each switch and each choice saves
- * at once. Website icons are off by default, so avatars reach only the user's servers.
+ * and the screen and keyboard protections that [device] offers. The Preset row on top fills them
+ * in from a [PrivacyPreset]; [onPreset] applies what that preset sets outside these settings. Each
+ * switch and each choice saves at once. Website icons are off by default, so avatars reach only
+ * the user's servers.
  */
 fun privacySettings(
+    state: MailBehaviorState,
+    device: DevicePrivacy,
+    onPreset: (PrivacyPreset) -> Unit = {},
+    openAllowed: (setting: String?) -> Unit,
+): List<SettingsSectionSpec> =
+    listOf(SettingsSectionSpec(null, listOf(presetRow(state, onPreset)))) + privacyRows(state, device, openAllowed)
+
+/**
+ * The privacy settings a preset fills in, by section, without the Preset row itself: what the
+ * first run shows under a preset, and the rest of the Privacy & security page.
+ */
+fun privacyRows(
     state: MailBehaviorState,
     device: DevicePrivacy,
     openAllowed: (setting: String?) -> Unit,

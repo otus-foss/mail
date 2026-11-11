@@ -1,6 +1,7 @@
 # Inbox and local search
 
-Inbox is Mail's default start page. Without connected accounts it is empty; no sample messages
+Inbox is Mail's default start page. A device without an account opens on the
+[first run](onboarding.md) instead. Without connected accounts the Inbox is empty; no sample messages
 are shipped. Shared account setup verifies JMAP discovery and authentication. The device keeps
 each login's mailboxes, listed emails, threads, and opened bodies in its mail cache. A list opened
 with nothing shown yet shows the device's copy at once, keeps its loading state, and then shows

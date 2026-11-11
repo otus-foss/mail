@@ -30,8 +30,9 @@ import java.util.UUID
 /**
  * Owns process-wide services, so activity recreation does not open new network clients. It also
  * gives WorkManager its configuration, so WorkManager starts on first use instead of at launch.
+ * Open so the tests' application can start as a device that has finished the first run.
  */
-class OtusMailApplication :
+open class OtusMailApplication :
     Application(),
     Configuration.Provider {
     override val workManagerConfiguration: Configuration

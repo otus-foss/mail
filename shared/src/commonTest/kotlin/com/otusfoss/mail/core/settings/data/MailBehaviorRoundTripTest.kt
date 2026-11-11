@@ -48,7 +48,8 @@ class MailBehaviorRoundTripTest {
 
     @Test
     fun nothingSavedReadsAsTheDefaults() =
-        assertEquals(MailBehavior(), KeyValueMailBehaviorStore(InMemoryKeyValueStore()).read())
+        // A store that never saved anything has not finished the first run.
+        assertEquals(MailBehavior(onboarded = false), KeyValueMailBehaviorStore(InMemoryKeyValueStore()).read())
 
     private val changed =
         MailBehavior(

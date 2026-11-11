@@ -16,6 +16,14 @@ data class PushDistributor(
     val isApple: Boolean = false,
 )
 
+/**
+ * The service a first run starts with: an installed app's when the user chose [private] settings,
+ * so pushes do not pass through Google, and otherwise Google's where the device offers it. Null
+ * leaves Mail on periodic checks.
+ */
+fun List<PushDistributor>.suggested(private: Boolean): PushDistributor? =
+    if (private) firstOrNull { !it.isGoogle } else firstOrNull { it.isGoogle } ?: firstOrNull()
+
 /** Instant new-mail pushes through the selected service. */
 interface InstantPush {
     val periodicChecks: Boolean get() = true
