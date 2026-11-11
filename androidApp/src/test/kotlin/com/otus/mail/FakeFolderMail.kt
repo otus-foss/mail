@@ -17,13 +17,15 @@ import kotlinx.serialization.json.putJsonObject
  * The mail of a [FakeFolderServer]: each mailbox holds one message from Grace Hopper, alone in its
  * thread. The inbox's is `m1` and any other mailbox's is `m1-<mailbox>`, titled by
  * [FakeFolderServer.subjects]. The server keeps no states, so `Email/changes`, `Thread/changes`,
- * and `Email/queryChanges` cannot be calculated and every load reads the lists again; updates are accepted without being
- * applied, so tests read what was sent from [FakeFolderServer.calls].
+ * and `Email/queryChanges` cannot be calculated and every load reads the lists again. Updates are
+ * accepted, so tests read what was sent from [FakeFolderServer.calls]. Only keyword patches apply,
+ * as on a real server, so a reload during a test keeps a message's read and flag marks.
  */
 internal class FakeFolderMail(
     private val server: FakeFolderServer,
 ) {
     private var draftCount = 0
+    private var keywords = mapOf<String, Set<String>>()
 
     fun answer(
         method: String,
@@ -109,6 +111,7 @@ internal class FakeFolderMail(
                     },
                 )
             }
+            putJsonObject("keywords") { keywords[id].orEmpty().forEach { put(it, true) } }
             put("subject", server.subjects[mailbox] ?: "Welcome")
             put("receivedAt", "2026-10-04T09:30:00Z")
             put("preview", "Hello")
@@ -137,6 +140,7 @@ internal class FakeFolderMail(
                     put("notUpdated", JsonObject(updates.mapValues { FORBIDDEN }))
                 } else {
                     server.olderMail -= updates.keys
+                    keywords += updates.mapValues { (id, patch) -> patched(keywords[id].orEmpty(), patch.jsonObject) }
                     put("updated", JsonObject(updates.mapValues { JsonNull }))
                 }
             }
@@ -157,6 +161,21 @@ internal class FakeFolderMail(
         fun mailboxOf(emailId: String) = if (emailId == INBOX_EMAIL) INBOX else emailId.removePrefix(FOLDER_EMAIL)
     }
 }
+
+/** [keywords] after an `Email/set` [patch]: `keywords/<name>` set to true adds the keyword, null removes it. */
+private fun patched(
+    keywords: Set<String>,
+    patch: JsonObject,
+): Set<String> =
+    patch
+        .filterKeys { it.startsWith(KEYWORD_PATH) }
+        .entries
+        .fold(keywords) { kept, (path, value) ->
+            val name = path.removePrefix(KEYWORD_PATH)
+            if (value == JsonNull) kept - name else kept + name
+        }
+
+private const val KEYWORD_PATH = "keywords/"
 
 /** The mailboxes a filter names: an AND's first condition holds them, and an OR lists them. */
 private fun mailboxesIn(filter: JsonObject): Set<String> {
