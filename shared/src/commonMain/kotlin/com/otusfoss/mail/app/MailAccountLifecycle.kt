@@ -14,7 +14,9 @@ internal val MailAccountService = AccountService("mail", JmapCapability.MAIL, "M
  * What Mail keeps on the device for a login outside its cache: its pushes, its settings in
  * [stores], the messages [outbox] holds, and its new-mail [alerts]. Removing the login deletes them
  * while its credentials still exist, so the push subscription on the server goes too. The alerts
- * go once the credentials are gone, so a check that raced the removal cannot leave one behind.
+ * go once the credentials are gone, so a check that raced the removal cannot leave one behind, and
+ * the push is forgotten again then, since a push sync queued before the removal still saw the
+ * login and could register it again.
  */
 internal class DeviceAccountData(
     private val stores: MailDeviceStores,
@@ -29,6 +31,7 @@ internal class DeviceAccountData(
     }
 
     override suspend fun removed(loginId: String) {
+        push?.forget(loginId)
         alerts?.forget(loginId)
     }
 }

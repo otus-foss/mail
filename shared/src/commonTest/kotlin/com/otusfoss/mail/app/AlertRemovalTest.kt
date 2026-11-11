@@ -33,13 +33,14 @@ class AlertRemovalTest {
         }
 
     @Test
-    fun removingAnAccountForgetsItsPushWhileItsCredentialsExist() =
+    fun removingAnAccountForgetsItsPushBeforeAndAfterItsCredentialsGo() =
         runTest {
             val push = Push { loginId -> logins.logins().any { it.id == loginId } }
 
             MailServices(logins, host = MailPlatform(instantPush = push)).accounts.remove("ada")
 
-            assertEquals(listOf("ada" to true), push.forgotten)
+            // The second time undoes a registration by a push sync that still saw the login.
+            assertEquals(listOf("ada" to true, "ada" to false), push.forgotten)
         }
 
     private class Alerts(
