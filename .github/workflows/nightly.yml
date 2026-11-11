@@ -24,7 +24,7 @@ concurrency:
 
 jobs:
   version:
-    runs-on: ubicloud-standard-2
+    runs-on: ubuntu-24.04
     outputs:
       number: ${{ steps.number.outputs.number }}
       previous_mail: ${{ steps.number.outputs.previous_mail }}
@@ -54,7 +54,7 @@ jobs:
   build:
     needs: version
     if: needs.version.outputs.number != ''
-    runs-on: ubicloud-standard-2
+    runs-on: ubuntu-24.04
     env:
       NUMBER: ${{ needs.version.outputs.number }}
       PREVIOUS_MAIL: ${{ needs.version.outputs.previous_mail }}
