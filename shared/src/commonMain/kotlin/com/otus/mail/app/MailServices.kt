@@ -145,12 +145,13 @@ class MailServices(
         JmapOwnAvatars(connections, avatars, options)
 
     internal val accounts: AccountRepository by lazy {
+        val device = DeviceAccountData(stores, outbox, instantPush, host.alerts)
         JmapAccountRepository(
             client,
             connections,
             logins,
             MailAccountService,
-            listOf(DeviceAccountData(stores, outbox, instantPush), changes, accountCache, retention, avatars),
+            listOf(device, changes, accountCache, retention, avatars),
         )
     }
 

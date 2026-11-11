@@ -10,6 +10,9 @@ import com.otus.mail.core.cache.CacheStorageException
 import com.otus.mail.core.cache.InMemoryMailCache
 import com.otus.mail.core.cache.MailCache
 import com.otus.mail.core.cache.withAccount
+import com.otus.mail.core.files.DownloadFolder
+import com.otus.mail.core.files.DownloadFolderException
+import com.otus.mail.core.files.InMemoryDownloadFolder
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Job
@@ -105,6 +108,19 @@ class AccountRemovalRecoveryTest {
             val services = MailServices(saved, stores = MailDeviceStores(cache = cache))
             val failure = assertFailsWith<AccountStorageException> { services.accounts.remove(login.id) }
             assertTrue(generateSequence<Throwable>(failure) { it.cause }.any { it is CacheStorageException })
+            assertEquals(listOf(login), saved.logins())
+        }
+
+    @Test
+    fun anAttachmentFolderFailureDuringRemovalIsAnAccountStorageError() =
+        runTest {
+            val downloads =
+                object : DownloadFolder by InMemoryDownloadFolder() {
+                    override suspend fun deleteGroup(group: String) = throw DownloadFolderException("disk I/O")
+                }
+            val services = MailServices(saved, stores = MailDeviceStores(downloads = downloads))
+            val failure = assertFailsWith<AccountStorageException> { services.accounts.remove(login.id) }
+            assertTrue(generateSequence<Throwable>(failure) { it.cause }.any { it is DownloadFolderException })
             assertEquals(listOf(login), saved.logins())
         }
 

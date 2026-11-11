@@ -70,6 +70,9 @@ interface MailAlerts {
     fun show(mail: List<NewMail>)
 
     fun clear(mail: List<AlertedMail>)
+
+    /** Clears every alert of the login [loginId], for an account that was removed. */
+    fun forget(loginId: String) = clear(showing().filter { it.loginId == loginId })
 }
 
 /** Finds mail that arrived since the last check, and alerted mail the user has handled since. */

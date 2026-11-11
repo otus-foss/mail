@@ -68,6 +68,7 @@ class OtusMailApplication :
                     wakeOutbox = { OutboxWorker.wake(this, it) },
                     instantPush = instantPush,
                     categoriesOn = { behavior.behavior.list.categories.enabled },
+                    alerts = MailNotifications(this),
                 ),
         )
     }

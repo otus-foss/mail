@@ -29,6 +29,8 @@ internal fun Context.alertAction(
         .Builder(0, action.buttonLabel(), pending)
         .setSemanticAction(action.semantic)
         .setShowsUserInterface(action.opensMailFromAlert)
+        // A lock screen that shows full alerts shows their buttons too, so a button that changes mail asks to unlock.
+        .setAuthenticationRequired(!action.opensMailFromAlert)
         .build()
 }
 
