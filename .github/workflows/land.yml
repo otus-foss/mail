@@ -13,6 +13,6 @@ permissions: {}
 
 jobs:
   lander:
-    uses: reazndev/otus-meta/.github/workflows/lander.yml@main
+    uses: otus-foss/otus-meta/.github/workflows/lander.yml@main
     secrets:
       app-private-key: ${{ secrets.LANDER_APP_PRIVATE_KEY }}

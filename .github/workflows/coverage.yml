@@ -36,10 +36,9 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          repository: reazndev/otus-meta
+          repository: ${{ github.repository_owner }}/otus-meta
           path: otus-meta
           fetch-depth: 0
-          ssh-key: ${{ secrets.OTUS_META_DEPLOY_KEY }}
           persist-credentials: false
       # Meta's branch with this branch's name when there is one, else main, so every Meta action
       # and the build come from the Meta that lands with this change.
@@ -96,10 +95,9 @@ jobs:
           persist-credentials: false
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          repository: reazndev/otus-meta
+          repository: ${{ github.repository_owner }}/otus-meta
           path: otus-meta
           fetch-depth: 0
-          ssh-key: ${{ secrets.OTUS_META_DEPLOY_KEY }}
           persist-credentials: false
       # Meta's branch with this branch's name when there is one, else main, so every Meta action
       # and the build come from the Meta that lands with this change.
@@ -143,8 +141,9 @@ jobs:
   # Posts the summary as one comment per pull request, updated by later runs. Only this job can
   # write to the pull request, so no build step gets that token.
   comment:
+    # A fork's pull request gets a read-only token, so it skips this job, which writes to the pull request.
     needs: report
-    if: needs.report.outputs.pr != ''
+    if: needs.report.outputs.pr != '' && github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-24.04
     permissions:
       pull-requests: write
