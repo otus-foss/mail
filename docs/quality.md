@@ -1,6 +1,6 @@
 # Quality gate
 
-Meta's [quality guide](https://github.com/reazndev/otus-meta/blob/main/docs/quality.md) describes the commands, the convention plugins, the
+Meta's [quality guide](https://github.com/otus-foss/otus-meta/blob/main/docs/quality.md) describes the commands, the convention plugins, the
 shared tools and rules, file-length exceptions, commit messages, and coverage for every Otus
 repository. Mail runs them from its otus-meta checkout; see [shared libraries](shared-libraries.md).
 This guide covers what only Mail adds.

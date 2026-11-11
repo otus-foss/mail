@@ -2,7 +2,7 @@
 
 Mail uses the `com.otusfoss.core:avatar` library from otus-meta to resolve sender avatars. The service, its
 caching, website-icon rules, and privacy limits are documented in
-[otus-meta's avatar guide](https://github.com/reazndev/otus-meta/blob/main/docs/avatar.md). This
+[otus-meta's avatar guide](https://github.com/otus-foss/otus-meta/blob/main/docs/avatar.md). This
 guide covers how Mail wires and uses it. Every host avatars may contact is also listed in
 [network destinations](network.md#avatars).
 

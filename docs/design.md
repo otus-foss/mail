@@ -6,9 +6,9 @@ app theme. `OtusColors` holds named tokens that follow the picked theme, and `Ot
 Material colors and default content styling. Ordinary text inherits `text1` at full opacity; muted
 text requires an explicit `text2` or `text3` choice. The default, Otus with Otus blue, uses the
 supplied palette in Meta's
-[mail design foundations](https://github.com/reazndev/otus-meta/blob/main/docs/suite/mail-design.md).
+[mail design foundations](https://github.com/otus-foss/otus-meta/blob/main/docs/suite/mail-design.md).
 Meta's `accentShades` derives the other themes' accent shades; see Meta's
-[decision 0014](https://github.com/reazndev/otus-meta/blob/main/docs/decisions/0014-user-themes.md).
+[decision 0014](https://github.com/otus-foss/otus-meta/blob/main/docs/decisions/0014-user-themes.md).
 
 The application background and default Material surface use `bgRegular`. Alternate surfaces and
 borders use their named tokens when explicitly designed. Accent roles use the supplied blues; the

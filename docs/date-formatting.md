@@ -2,7 +2,7 @@
 
 Mail uses the `com.otusfoss.core:dateformat` library from otus-meta for date display and preference storage.
 Its choices, platform behavior, and API are documented in
-[otus-meta's date-formatting guide](https://github.com/reazndev/otus-meta/blob/main/docs/dateformat.md).
+[otus-meta's date-formatting guide](https://github.com/otus-foss/otus-meta/blob/main/docs/dateformat.md).
 
 ## Settings state
 
