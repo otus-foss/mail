@@ -53,6 +53,11 @@ install apps and to confirm the first update. After Otus has installed itself, l
 Android 12 and newer. Android closes the app when the update lands. Only the nightly manifest
 declares `REQUEST_INSTALL_PACKAGES`.
 
+The app only offers a build whose APK is an `https://github.com/<repository>/releases/download/`
+address with a SHA-256 `digest`, which GitHub's release API adds to each uploaded asset. It
+installs the download only when its SHA-256 matches. The hash comes from the same API answer as the
+address, so it catches a changed or broken download, not a changed release.
+
 ## One-time setup
 
 1. Create the signing key and keep the file and password outside the repository, for example in a

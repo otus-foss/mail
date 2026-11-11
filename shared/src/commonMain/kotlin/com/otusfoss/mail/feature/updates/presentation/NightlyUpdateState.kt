@@ -48,7 +48,7 @@ class NightlyUpdateState(
         val build = available ?: return false
         progress = 0f
         return try {
-            attempt { installer.install(build.download) { progress = it } } != null
+            attempt { installer.install(build.download, build.sha256) { progress = it } } != null
         } finally {
             progress = null
         }

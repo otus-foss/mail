@@ -19,7 +19,7 @@ class NightlyUpdateStateTest {
         )
     private val installs = mutableListOf<String>()
     private val installer =
-        UpdateInstaller { download, onProgress ->
+        UpdateInstaller { download, _, onProgress ->
             onProgress(0.5f)
             installs += download
         }

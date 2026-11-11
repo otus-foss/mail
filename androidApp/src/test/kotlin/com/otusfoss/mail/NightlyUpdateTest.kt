@@ -50,7 +50,7 @@ class NightlyUpdateTest {
                                     )
                                 }
                             },
-                            installer = UpdateInstaller { download, _ -> installed += download },
+                            installer = UpdateInstaller { download, _, _ -> installed += download },
                         ),
                     ),
             )
