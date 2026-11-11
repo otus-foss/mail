@@ -7,7 +7,10 @@ import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import androidx.test.core.app.ApplicationProvider
+import androidx.work.Data
+import androidx.work.ListenableWorker
 import androidx.work.WorkManager
+import androidx.work.testing.TestListenableWorkerBuilder
 import com.otus.mail.core.mailbox.MailboxRole
 import com.otus.mail.core.messages.domain.ComposeRequest
 import com.otus.mail.core.messages.domain.MailAction
@@ -16,6 +19,7 @@ import com.otus.mail.feature.notifications.domain.AlertedMail
 import com.otus.mail.feature.notifications.domain.NewMail
 import com.otus.mail.feature.notifications.domain.NotificationPreviews
 import com.otus.mail.feature.notifications.domain.PreviewChoices
+import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Before
@@ -28,7 +32,8 @@ import kotlin.time.Instant
 
 /**
  * A tapped alert opens its message, its chosen buttons change it without Mail or open a reply, a
- * failed change brings the alert back, and mailto: intents start drafts.
+ * button that changes mail asks to unlock, a failed change brings the alert back unless its account
+ * is gone, and mailto: intents start drafts.
  */
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [35])
@@ -104,6 +109,28 @@ class AlertActionsTest {
         assertEquals("Archive didn't work", back.extras.getCharSequence(Notification.EXTRA_SUB_TEXT).toString())
         assertEquals(listOf("Delete", "Archive", "Mark read"), titles(back))
         assertEquals(setOf("ada/m1", "ada"), posted().keys)
+    }
+
+    @Test
+    fun buttonsThatChangeMailAskToUnlockAndReplyDoesNot() {
+        val chosen = listOf(MailAction.Trash, MailAction.Archive, MailAction.Reply)
+        MailNotifications(app, { chosen }) { PreviewChoices() }.show(listOf(mail("m1")))
+        val buttons = posted().getValue("ada/m1").actions
+        val unlock = buttons.associate { it.title.toString() to it.isAuthenticationRequired }
+        assertEquals(mapOf("Delete" to true, "Archive" to true, "Reply" to false), unlock)
+    }
+
+    @Test
+    fun aChangeForARemovedAccountStopsWithoutBringingTheAlertBack() {
+        val input =
+            Data
+                .Builder()
+                .putString("action", MailAction.Archive.name)
+                .putMail(mail("m1"))
+                .build()
+        val worker = TestListenableWorkerBuilder<AlertActionWorker>(app).setInputData(input).build()
+        assertEquals(ListenableWorker.Result.failure(), runBlocking { worker.doWork() })
+        assertEquals(emptySet<String>(), posted().keys)
     }
 
     @Test
