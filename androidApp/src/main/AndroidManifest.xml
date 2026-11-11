@@ -192,6 +192,18 @@
         <category android:name="android.intent.category.LAUNCHER" />
       </intent-filter>
     </activity-alias>
+    <!--
+      Opens the message of a tapped alert, then Mail. Not exported, so only Mail's own alerts reach it;
+      its own task keeps it out of Mail's task and the recent apps list.
+    -->
+    <activity
+      android:name=".AlertOpenActivity"
+      android:excludeFromRecents="true"
+      android:exported="false"
+      android:noHistory="true"
+      android:taskAffinity=""
+      android:theme="@android:style/Theme.NoDisplay"
+    />
     <service android:name=".MailPushService" android:exported="false">
       <intent-filter>
         <action android:name="org.unifiedpush.android.connector.PUSH_EVENT" />

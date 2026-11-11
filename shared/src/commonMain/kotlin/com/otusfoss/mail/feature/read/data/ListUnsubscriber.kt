@@ -1,5 +1,6 @@
 package com.otusfoss.mail.feature.read.data
 
+import com.otusfoss.core.avatar.AvatarDomainResolver
 import com.otusfoss.mail.core.messages.domain.Draft
 import com.otusfoss.mail.core.messages.domain.DraftRepository
 import com.otusfoss.mail.core.messages.domain.DraftSender
@@ -7,49 +8,85 @@ import com.otusfoss.mail.core.messages.domain.MailMessage
 import com.otusfoss.mail.core.messages.domain.MailSender
 import com.otusfoss.mail.core.messages.domain.SendTime
 import com.otusfoss.mail.core.messages.domain.Unsubscribe
+import com.otusfoss.mail.core.messages.domain.displayLine
+import com.otusfoss.mail.core.messages.domain.mailtoRequest
 import com.otusfoss.mail.core.messages.domain.sendingAs
 import com.otusfoss.mail.feature.read.domain.UnsubscribeResult
-import io.ktor.http.URLDecodeException
-import io.ktor.http.decodeURLPart
 
 /**
- * Sends to the list's `mailto:` address through the account, then falls back to its web page.
+ * Sends to the list's `mailto:` address through the account, then falls back to its web page
+ * when the address fails the checks in [mail].
  * Automatic RFC 8058 POSTs require trusted DKIM verification that the current JMAP path lacks.
  */
 internal class ListUnsubscriber(
     private val drafts: DraftRepository,
     private val sender: DraftSender,
+    private val domains: AvatarDomainResolver,
 ) {
     suspend fun unsubscribe(
         message: MailMessage,
         how: Unsubscribe,
     ): UnsubscribeResult =
         when {
-            how.mail?.let { mail(message, it, how.deliveredTo) } == true -> UnsubscribeResult.Done
+            how.mail?.let { mail(message, it, how) } == true -> UnsubscribeResult.Done
             how.web != null -> UnsubscribeResult.OpenLink(how.web)
             else -> UnsubscribeResult.Failed
         }
 
-    /** Sends the mail a `mailto:` address asks for, from the identity the message was sent to. */
+    /**
+     * Sends one plain request, from the identity the message was sent to, to the list address the
+     * `mailto:` link names. The sender writes the link, so only its subject is kept; its body and
+     * any further addresses are dropped, and the address must share the list's or sender's domain.
+     */
     private suspend fun mail(
         message: MailMessage,
-        address: String,
-        deliveredTo: List<String>,
+        link: String,
+        how: Unsubscribe,
     ): Boolean {
-        val mailto = parseMailto(address)
-        val from = mailto?.let { sendingAs(message, deliveredTo) }
-        if (mailto == null || from == null) return false
+        val request = mailtoRequest(link)
+        val to = request?.let { listAddress(link, message, how.listId) }
+        val from = to?.let { sendingAs(message, how.deliveredTo) }
+        if (request == null || to == null || from == null) return false
         val accountId = message.location.accountId
         val draft =
             Draft(
                 accountId = accountId,
                 from = from,
-                to = mailto.to.map { MailSender(it, it, accountId) },
-                subject = mailto.subject ?: DEFAULT_SUBJECT,
-                body = mailto.body.orEmpty(),
+                to = listOf(MailSender(to, to, accountId)),
+                subject = request.subject.displayLine().ifBlank { DEFAULT_SUBJECT },
             )
         return sender.send(draft, answered = null, SendTime.Now).isSuccess
     }
+
+    /**
+     * The first address before the link's `?` on the registrable domain of the [listId] or the
+     * message's sender. `to`, `cc`, and `bcc` fields are ignored, so a link cannot add recipients.
+     */
+    private suspend fun listAddress(
+        link: String,
+        message: MailMessage,
+        listId: String?,
+    ): String? {
+        val trusted =
+            listOfNotNull(listId, message.sender.address.substringAfterLast('@', ""))
+                .mapNotNull { registrableDomain(it) }
+        return mailtoRequest(link.substringBefore('?'))
+            ?.to
+            ?.map { it.address.trim() }
+            ?.firstOrNull { address ->
+                val domain = registrableDomain(address.substringAfterLast('@', ""))
+                domain != null && domain in trusted
+            }
+    }
+
+    private suspend fun registrableDomain(host: String): String? =
+        host
+            .trim()
+            .trimEnd('.')
+            .lowercase()
+            .ifEmpty { null }
+            ?.let { domains.resolve(it) }
+            ?.lowercase()
 
     /**
      * The address the list reached: the one the mail was [deliveredTo], else one in its To or Cc,
@@ -69,36 +106,6 @@ internal class ListUnsubscriber(
             }
     }
 }
-
-/** The addresses, subject, and body of a `mailto:` URI (RFC 6068). */
-internal data class Mailto(
-    val to: List<String>,
-    val subject: String?,
-    val body: String?,
-)
-
-/** Null when [uri] is not a `mailto:` URI with an address, or its escapes are broken. */
-internal fun parseMailto(uri: String): Mailto? {
-    if (!uri.startsWith(MAILTO, ignoreCase = true)) return null
-    return try {
-        val rest = uri.substring(MAILTO.length)
-        val fields =
-            rest
-                .substringAfter('?', missingDelimiterValue = "")
-                .split('&')
-                .filter { '=' in it }
-                .associate { it.substringBefore('=').lowercase() to it.substringAfter('=').decodeURLPart() }
-        val to =
-            (rest.substringBefore('?').decodeURLPart().split(',') + fields["to"].orEmpty().split(','))
-                .map { it.trim() }
-                .filter { '@' in it }
-        Mailto(to, fields["subject"], fields["body"]).takeIf { to.isNotEmpty() }
-    } catch (expected: URLDecodeException) {
-        null
-    }
-}
-
-private const val MAILTO = "mailto:"
 
 /** The subject when the `mailto:` address names none; list servers act on the address alone. */
 private const val DEFAULT_SUBJECT = "unsubscribe"

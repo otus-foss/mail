@@ -59,7 +59,9 @@ A Dockerfile is included. Build it from the repository root with
 volume at `/data`. The container runs as UID 10001. Publish its port on localhost behind TLS.
 
 The reverse proxy is part of the deployment. It must limit registration requests, cap request
-bodies at 4096 bytes and disable access logs containing capability URLs. Limit per IPv4 address
+bodies at 4096 bytes and keep capability URLs out of its logs: turn off access logs and log
+only critical errors, since rate-limit and upstream errors include the URL. The service logs only
+the class of an unexpected error and answers storage errors with 503. Limit per IPv4 address
 and per IPv6 /64, since one host can usually use every address in its /64. The service limits each
 APNs token to 32 routes, the database to 10,000 routes, each active route to 32 pending messages,
 and each inactive route to 4. An example Nginx configuration is in `push_bridge/nginx.conf`; it
@@ -68,7 +70,9 @@ Do not expose the backend port directly. Public registration has no account logi
 Attest check; configure ingress limits before making it publicly reachable.
 
 A route that is not active, such as a new one waiting for its verification push, expires one hour
-after its last update, so registrations nobody completes free their quota slot quickly. Active
+after its last update, so registrations nobody completes free their quota slot quickly. A route
+can become active only after a push has been delivered to it, such as the verification notice;
+until then a request to activate it leaves it inactive with the one-hour lifetime. Active
 routes expire after eight days without upkeep. Ciphertext expires after at most one hour, or
 sooner when acknowledged. Deleting a route deletes its pending messages. APNs rejects an invalid
 device token with a permanent error; the bridge revokes that route. Transient APNs errors, and
@@ -97,8 +101,9 @@ entitlement to `development`; Release sets it to `production`. Match the bridge 
 signing environment. The extension is an embedded Xcode target with its own provisioning profile.
 
 The app stores route capabilities, device tokens and push keys in a shared Keychain group using
-`AfterFirstUnlockThisDeviceOnly`. The extension has no access to the mail credential service.
-Normal mail credentials keep their existing storage and names.
+`AfterFirstUnlockThisDeviceOnly`. The app lists its own Keychain group first, so mail logins,
+which Core saves without an explicit group, land there and the extension cannot read them. Logins
+saved by builds that listed only the push group stay in that group until Core moves them.
 
 ## Lifecycle and limits
 
@@ -116,10 +121,15 @@ local capability is discarded; an unreachable bridge can therefore delay account
 The next foreground check also cleans up routes for logins no longer present. Failure to read the
 login store does not count as removing every account.
 
-The extension has a time limit and may not run before the first device unlock or when alerts are
-disabled. Its fallback remains a generic alert. APNs may delay, coalesce or drop pushes; notifications
-are hints, not the mail store. A generic alert can remain when a notice cannot be downloaded or
-validated. This version does not promise exactly-once notification presentation.
+Anyone holding a route URL can make the bridge send an APNs alert, so the extension shows "New mail"
+only after it downloads a notice that decrypts with the route's key to a JMAP `StateChange`. When the
+key is unknown, the download fails, the notice is not a `StateChange` or the time limit runs out, it
+finishes with empty content, for which iOS shows no alert. Without Apple's notification filtering
+entitlement (`com.apple.developer.usernotifications.filtering`), which Otus does not have, iOS still
+shows the APNs "New mail" alert whenever the extension does not run or finish: before the first
+device unlock, after it crashes or exceeds its memory limit, or when iOS skips it. APNs may delay,
+coalesce or drop pushes; notifications are hints, not the mail store. This version does not promise
+exactly-once notification presentation.
 
 ## Validation
 

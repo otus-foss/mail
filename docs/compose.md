@@ -210,7 +210,8 @@ online" with Retry instead, since the outbox sends it once the network is back.
 
 `MailOutbox` keeps each message handed over for sending until the server has it, so closing the
 app or losing the network loses no mail. Android keeps it in the `otus_mail_outbox` shared
-preferences file and writes it before the send starts; iOS keeps it in user defaults. Each message
+preferences file and writes it before the send starts; iOS keeps it in a file out of backups, as
+`docs/storage.md` describes. Each message
 gets its own Message-ID, `<id>@otus.mail`, which every try reuses.
 
 - A send that got no answer may have reached the server. The sender stores the copy first and

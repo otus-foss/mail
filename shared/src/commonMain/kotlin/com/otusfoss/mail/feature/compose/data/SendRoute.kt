@@ -53,6 +53,12 @@ internal data class SendRoute(
 /** The patch for a held copy: it stays where it was stored and only loses `$draft`. */
 internal fun SendRoute.heldPatch(): JsonObject = jmapPatch { remove("keywords", Keywords.DRAFT) }
 
+/** The patch that files a copy stored in [folder] once it is submitted for [time]. */
+internal fun SendRoute.filedPatch(
+    folder: String,
+    time: SendTime,
+): JsonObject = if (time is SendTime.Scheduled) heldPatch() else sentPatch(folder)
+
 /**
  * The envelope that holds a draft until [at] (RFC 4865 HOLDUNTIL), from its From address to every
  * recipient. An explicit envelope is needed to carry the parameter.
@@ -135,10 +141,7 @@ internal fun MailAccount.submission(
         mapOf(
             "onSuccessUpdateEmail" to
                 buildJsonObject {
-                    put(
-                        "#$SUBMISSION",
-                        if (time is SendTime.Scheduled) route.heldPatch() else route.sentPatch(folder),
-                    )
+                    put("#$SUBMISSION", route.filedPatch(folder, time))
                 },
         ),
 )

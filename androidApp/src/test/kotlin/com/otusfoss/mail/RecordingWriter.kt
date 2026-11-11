@@ -45,10 +45,11 @@ internal class RecordingWriter : EmailWriter {
 
     override suspend fun setMailboxes(
         accountId: String,
-        mailboxes: Map<String, Set<String>>,
+        before: Map<String, Set<String>>,
+        after: Map<String, Set<String>>,
     ): Set<String> {
-        refiled = mailboxes
-        return mailboxes.keys
+        refiled = after
+        return after.keys
     }
 
     override suspend fun notSpam(

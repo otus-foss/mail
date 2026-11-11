@@ -10,22 +10,28 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.withContext
+import java.io.IOException
 import java.io.InputStream
 import java.io.OutputStream
 import java.net.URL
+import java.security.DigestInputStream
+import java.security.MessageDigest
+import java.util.Locale
 
 /**
  * Streams a nightly APK into a [PackageInstaller] session, so the update installs in place without a
  * browser download. Android asks the user to confirm the first update, and also to let Otus install
  * apps; once Otus has installed itself, later updates need no confirmation on Android 12 and newer.
- * The installer then closes the app. Needs `REQUEST_INSTALL_PACKAGES` and [UpdateStatusReceiver]
- * in the manifest, which only the nightly build declares.
+ * An APK whose SHA-256 differs from the published one is not installed. The installer then closes
+ * the app. Needs `REQUEST_INSTALL_PACKAGES` and [UpdateStatusReceiver] in the manifest, which only
+ * the nightly build declares.
  */
 class AndroidUpdateInstaller(
     private val context: Context,
 ) : UpdateInstaller {
     override suspend fun install(
         download: String,
+        sha256: String,
         onProgress: (Float) -> Unit,
     ) = withContext(Dispatchers.IO) {
         val installer = context.packageManager.packageInstaller
@@ -40,7 +46,7 @@ class AndroidUpdateInstaller(
         var committed = false
         try {
             installer.openSession(id).use { session ->
-                write(download, session, onProgress)
+                write(download, sha256, session, onProgress)
                 session.commit(statusReceiver(id).intentSender)
                 committed = true
             }
@@ -49,8 +55,10 @@ class AndroidUpdateInstaller(
         }
     }
 
+    /** Fails before the session is committed when the APK's SHA-256 is not [sha256]. */
     private suspend fun write(
         download: String,
+        sha256: String,
         session: PackageInstaller.Session,
         onProgress: (Float) -> Unit,
     ) {
@@ -61,9 +69,11 @@ class AndroidUpdateInstaller(
                 readTimeout = READ_TIMEOUT_MILLIS
             }
         val total = connection.contentLengthLong
-        connection.getInputStream().use { input ->
+        DigestInputStream(connection.getInputStream(), MessageDigest.getInstance(SHA256)).use { input ->
             session.openWrite(APK_NAME, 0, total).use { output ->
                 input.copyWithProgress(output, total, onProgress)
+                val received = input.messageDigest.digest().joinToString("") { "%02x".format(Locale.ROOT, it) }
+                if (received != sha256) throw IOException("The download's SHA-256 is $received")
                 session.fsync(output)
             }
         }
@@ -101,6 +111,7 @@ class AndroidUpdateInstaller(
 
     private companion object {
         const val APK_NAME = "update.apk"
+        const val SHA256 = "SHA-256"
         const val BUFFER_SIZE = 64 * 1024
         const val PERCENT = 100L
         const val CONNECT_TIMEOUT_MILLIS = 15_000

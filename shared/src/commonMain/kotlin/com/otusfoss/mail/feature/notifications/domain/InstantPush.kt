@@ -31,6 +31,9 @@ interface InstantPush {
     /** Each login's push status, keyed by login id. */
     suspend fun statuses(): Map<String, PushDeliveryStatus>
 
-    /** Stops pushes for a login that is being removed, while its credentials still exist. */
+    /**
+     * Stops pushes for a login that is being removed: once while its credentials still exist, and
+     * again after they are gone, so it must be safe to call twice.
+     */
     suspend fun forget(loginId: String)
 }

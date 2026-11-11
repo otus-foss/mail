@@ -2,7 +2,9 @@
 
 import hmac
 import json
+import logging
 import re
+import sqlite3
 from http import HTTPStatus
 
 import httpx
@@ -16,6 +18,8 @@ MAX_BODY = 4096
 KEY_ID_LENGTH_OFFSET = 20
 SENDER_KEY_LENGTH = 65
 MIN_PUSH_BODY = KEY_ID_LENGTH_OFFSET + 1 + SENDER_KEY_LENGTH + 1 + 16
+
+log = logging.getLogger(__name__)
 
 
 class Problem(Exception):
@@ -38,6 +42,14 @@ class Application:
             status, body, content_type = 429, b"", "text/plain"
         except httpx.HTTPError:
             status, body, content_type = 503, b"", "text/plain"
+        # Errors are caught here and logged by class only: the server's own traceback would
+        # include the request path, which holds a route or message capability.
+        except sqlite3.Error as error:
+            log.error("Storage unavailable: %s", type(error).__name__)
+            status, body, content_type = 503, b"", "text/plain"
+        except Exception as error:
+            log.error("Request failed: %s", type(error).__name__)
+            status, body, content_type = 500, b"", "text/plain"
         headers = [("Content-Type", content_type), ("Cache-Control", "no-store")]
         if status in (429, 503):
             headers.append(("Retry-After", "60"))

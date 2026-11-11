@@ -75,7 +75,7 @@ internal class OutgoingMail(
                     val sent = held.await()?.getOrNull()
                     when {
                         sent != null -> unschedule(outgoing, sent)
-                        outbox.cancel(id.await()) -> outgoing.open(outgoing.reopen)
+                        outbox.cancel(id.await()) -> outgoing.open(outgoing.reopenSaved())
                         else -> toasts.show(ToastMessage(ALREADY_SENT, group = group))
                     }
                 }
@@ -233,7 +233,7 @@ internal class OutgoingMail(
             if (unconfirmed) {
                 UiAction("Open") {
                     scope.launch {
-                        outgoing.open(outgoing.reopen)
+                        outgoing.open(outgoing.reopenSaved())
                         outbox.drop(id)
                     }
                 }

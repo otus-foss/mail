@@ -22,6 +22,7 @@ import com.otusfoss.mail.testing.ADA_LOGIN
 import com.otusfoss.mail.testing.FakeMailServer
 import com.otusfoss.mail.testing.source
 import com.otusfoss.mail.testing.stalwartLike
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -63,7 +64,7 @@ class MailCacheFailureTest {
                     MailLocation("Inbox", "Ada", "ada", mailboxRole = MailboxRole.Inbox),
                     emailId = "e",
                 )
-            assertEquals("Keep this body", bodies.content(message)?.text)
+            assertEquals("Keep this body", bodies.content(message).first()?.text)
         }
 
     @Test

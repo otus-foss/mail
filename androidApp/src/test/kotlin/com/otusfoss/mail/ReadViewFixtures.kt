@@ -50,6 +50,7 @@ import com.otusfoss.mail.feature.read.presentation.ReadPrivacy
 import com.otusfoss.mail.feature.read.presentation.ReadServices
 import com.otusfoss.mail.feature.read.presentation.components.NewFolderSheet
 import kotlinx.coroutines.MainScope
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.datetime.LocalDate
 
 /** Demo mail for the Read view: the Q4 launch thread, an invoice, and a Sentry digest. Alex reads it. */
@@ -202,7 +203,7 @@ internal object ReadViewFixtures {
         display =
             ReadDisplay(display.showQuotes, display.zen, display.quickView, display.setZen) { LocalDate(2026, 10, 19) }
         this.own = own
-        loadContent = { content(it) }
+        loadContent = { flowOf(content(it)) }
         block()
     }
 

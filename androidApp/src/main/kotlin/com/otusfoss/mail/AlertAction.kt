@@ -14,16 +14,18 @@ internal fun Context.alertAction(
     mail: NewMail,
     action: MailAction,
 ): NotificationCompat.Action {
-    // Each alert's buttons need their own request code, or the newest alert's ids would replace the others'.
-    val code = "${mail.loginId}/${mail.emailId}/${action.name}".hashCode()
     val pending =
         if (action.opensMailFromAlert) {
-            replyTo(mail.loginId, mail.emailId, code)
+            replyTo(mail.loginId, mail.emailId)
         } else {
-            val intent = Intent(this, AlertActionReceiver::class.java).setAction(action.name).putMail(mail)
+            val intent =
+                Intent(this, AlertActionReceiver::class.java)
+                    .setAction(action.name)
+                    .setData(alertUri(mail.loginId, mail.emailId, action.name))
+                    .putMail(mail)
             // Updated, so an alert posted again after a failure carries its current account roles.
             val flags = PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
-            PendingIntent.getBroadcast(this, code, intent, flags)
+            PendingIntent.getBroadcast(this, 0, intent, flags)
         }
     return NotificationCompat.Action
         .Builder(0, action.buttonLabel(), pending)

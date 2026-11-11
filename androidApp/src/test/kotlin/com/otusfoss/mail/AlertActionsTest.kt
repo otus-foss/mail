@@ -3,6 +3,7 @@ package com.otusfoss.mail
 import android.Manifest
 import android.app.Notification
 import android.app.NotificationManager
+import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
@@ -21,7 +22,9 @@ import com.otusfoss.mail.feature.notifications.domain.NotificationPreviews
 import com.otusfoss.mail.feature.notifications.domain.PreviewChoices
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -31,9 +34,9 @@ import org.robolectric.annotation.Config
 import kotlin.time.Instant
 
 /**
- * A tapped alert opens its message, its chosen buttons change it without Mail or open a reply, a
- * button that changes mail asks to unlock, a failed change brings the alert back unless its account
- * is gone, and mailto: intents start drafts.
+ * A tapped alert opens its message through an activity only Mail can reach, its chosen buttons
+ * change it without Mail or open a reply, a button that changes mail asks to unlock, a failed
+ * change brings the alert back unless its account is gone, and mailto: intents start drafts.
  */
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [35])
@@ -61,7 +64,7 @@ class AlertActionsTest {
     fun tappingAnAlertOpensItsMessageAndTheSummaryOpensMail() {
         MailNotifications(app) { PreviewChoices() }.show(listOf(mail("m1"), mail("m2")))
         val tapped = shadowOf(posted().getValue("ada/m1").contentIntent).savedIntent
-        assertEquals(MainActivity::class.java.name, tapped.component?.className)
+        assertEquals(AlertOpenActivity::class.java.name, tapped.component?.className)
         assertEquals("ada", tapped.getStringExtra(EXTRA_LOGIN_ID))
         assertEquals("m1", tapped.getStringExtra(EXTRA_EMAIL_ID))
         val other = shadowOf(posted().getValue("ada/m2").contentIntent).savedIntent
@@ -97,9 +100,30 @@ class AlertActionsTest {
         MailNotifications(app, { listOf(MailAction.Reply) }) { PreviewChoices() }.show(listOf(mail("m1")))
         val reply = posted().getValue("ada/m1").actions.single()
         val opened = shadowOf(reply.actionIntent).savedIntent
-        assertEquals(MainActivity::class.java.name, opened.component?.className)
+        assertEquals(AlertOpenActivity::class.java.name, opened.component?.className)
         assertEquals(AlertedMail("ada", "m1"), opened.repliedAlert())
         assertNull(shadowOf(posted().getValue("ada/m1").contentIntent).savedIntent.repliedAlert())
+    }
+
+    @Test
+    fun eachAlertsButtonsActOnItsOwnMessage() {
+        val chosen = listOf(MailAction.Trash, MailAction.Reply)
+        MailNotifications(app, { chosen }) { PreviewChoices() }.show(listOf(mail("m1"), mail("m2")))
+        val named =
+            listOf("m1", "m2").map { id ->
+                posted()
+                    .getValue("ada/$id")
+                    .actions
+                    .map { shadowOf(it.actionIntent).savedIntent.getStringExtra(EXTRA_EMAIL_ID) }
+            }
+        assertEquals(listOf(listOf("m1", "m1"), listOf("m2", "m2")), named)
+    }
+
+    @Test
+    fun alertsOpenMailThroughAnActivityOtherAppsCannotReach() {
+        val opener = ComponentName(app, AlertOpenActivity::class.java)
+        assertFalse(app.packageManager.getActivityInfo(opener, 0).exported)
+        assertTrue(app.packageManager.getActivityInfo(ComponentName(app, MainActivity::class.java), 0).exported)
     }
 
     @Test

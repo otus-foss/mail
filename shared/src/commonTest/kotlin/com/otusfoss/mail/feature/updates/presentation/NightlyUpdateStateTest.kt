@@ -19,7 +19,7 @@ class NightlyUpdateStateTest {
         )
     private val installs = mutableListOf<String>()
     private val installer =
-        UpdateInstaller { download, onProgress ->
+        UpdateInstaller { download, _, onProgress ->
             onProgress(0.5f)
             installs += download
         }
@@ -77,7 +77,7 @@ class NightlyUpdateStateTest {
     @Test
     fun aFailedDownloadReportsFalse() =
         runTest {
-            val state = NightlyUpdateState({ builds }, installed = 141) { _, _ -> error("offline") }
+            val state = NightlyUpdateState({ builds }, installed = 141) { _, _, _ -> error("offline") }
             state.check()
             assertFalse(state.install())
             assertNull(state.progress)

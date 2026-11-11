@@ -19,6 +19,9 @@ import com.otusfoss.mail.testing.stalwartLike
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Runnable
+import kotlinx.coroutines.flow.last
+import kotlinx.coroutines.flow.single
+import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.test.runTest
 import kotlin.coroutines.CoroutineContext
 import kotlin.test.Test
@@ -68,7 +71,7 @@ class JmapMessageBodiesTest {
                         "textBody": [{"partId": "1", "type": "text/plain"}],
                         "htmlBody": [{"partId": "1", "type": "text/plain"}],
                         "bodyValues": {"1": {"value": "Line one\nLine two, after the preview"}}}""",
-                ).content(opened)
+                ).content(opened).last()
             assertNotNull(content)
             val text = "Line one\nLine two, after the preview"
             assertEquals(text, content.text)
@@ -88,7 +91,7 @@ class JmapMessageBodiesTest {
                         "textBody": [{"partId": "1", "type": "text/html"}],
                         "htmlBody": [{"partId": "1", "type": "text/html"}],
                         "bodyValues": {"1": {"value": "<p>Hello &amp; welcome</p>", "isTruncated": true}}}""",
-                ).content(opened)
+                ).content(opened).last()
             assertNotNull(content)
             assertEquals("Hello & welcome", content.text, "An HTML-only message reads as text for replies")
             assertEquals("<p>Hello &amp; welcome</p>", content.html?.html)
@@ -106,7 +109,7 @@ class JmapMessageBodiesTest {
                         "htmlBody": [{"partId": "1", "type": "text/html"}],
                         "bodyValues": {"1": {"value": "<p>Hi</p>"}}}""",
                     parsing = parsing,
-                ).content(opened)
+                ).content(opened).last()
             assertEquals("Hi", content?.text)
             assertTrue(parsing.dispatched > 0, "A megabyte of HTML must not be read on the main thread")
         }
@@ -115,7 +118,7 @@ class JmapMessageBodiesTest {
     fun anUnknownLoginLoadsNothing() =
         runTest {
             val stranger = opened.copy(location = opened.location.copy(accountId = "gone"))
-            assertNull(bodies("").content(stranger))
+            assertNull(bodies("").content(stranger).single())
             assertTrue(requests.isEmpty())
         }
 
@@ -130,8 +133,8 @@ class JmapMessageBodiesTest {
                         "bodyValues": {"1": {"value": "Kept text"}}}""",
                     cache,
                 )
-            bodies.content(opened)
-            val again = bodies.content(opened)
+            bodies.content(opened).last()
+            val again = bodies.content(opened).last()
             assertEquals("Kept text", again?.text)
             assertEquals(1, requests.size, "The second open sends nothing")
             cache.trim(CacheKind.Body, Instant.parse("2026-10-05T00:00:00Z").toEpochMilliseconds())
@@ -147,8 +150,8 @@ class JmapMessageBodiesTest {
                         "textBody": [{"partId": "1", "type": "text/plain"}],
                         "bodyValues": {"1": {"value": "Old copy"}}}""",
                 )
-            bodies.content(opened)
-            bodies.content(opened)
+            bodies.content(opened).last()
+            bodies.content(opened).last()
             assertEquals(2, requests.size, "A copy without an attachments list is not trusted")
             assertTrue("\"attachments\"" in requests.first() && "\"cid\"" in requests.first(), requests.first())
             assertTrue("header:List-Unsubscribe:asURLs" in requests.first(), requests.first())
@@ -170,12 +173,34 @@ class JmapMessageBodiesTest {
                         "header:List-Unsubscribe-Post:asText": "List-Unsubscribe=One-Click",
                         "header:List-Id:asText": "Plans <plans.example.org>"}""",
                     files = mapOf("b-logo" to byteArrayOf(1, 2, 3)),
-                ).content(opened)
+                ).content(opened).last()
             assertNotNull(content)
             assertEquals("""<p>Hi</p><img src="data:image/png;base64,AQID">""", content.html?.html)
             assertEquals(listOf("plan.pdf"), content.attachments.map { it.name })
             assertEquals("https://lists.example.org/u/1", content.unsubscribe?.web)
             assertEquals("Plans", content.listName)
+        }
+
+    @Test
+    fun aSavedBodyShowsItsTextBeforeItsImagesDownload() =
+        runTest {
+            val bodies =
+                bodies(
+                    """{"id": "e1", "receivedAt": "2026-10-04T09:30:00Z", "attachments": [],
+                        "htmlBody": [{"partId": "1", "type": "text/html"},
+                          {"partId": "2", "blobId": "b-logo", "type": "image/png", "size": 3, "cid": "logo"}],
+                        "bodyValues": {"1": {"value": "<p>Hi</p><img src='cid:logo'>"}}}""",
+                    InMemoryMailCache(),
+                    files = mapOf("b-logo" to byteArrayOf(1, 2, 3)),
+                )
+            bodies.content(opened).last()
+            val versions = bodies.content(opened).toList()
+            assertEquals(1, requests.size, "The second open reads the body from the device")
+            assertEquals(
+                listOf("<p>Hi</p><img src='cid:logo'>", "<p>Hi</p><img src='data:image/png;base64,AQID'>"),
+                versions.map { it?.html?.html },
+                "The text shows before the image arrives",
+            )
         }
 
     @Test
@@ -187,7 +212,7 @@ class JmapMessageBodiesTest {
                         "htmlBody": [{"partId": "1", "type": "text/html"},
                           {"partId": "2", "blobId": "gone", "type": "image/gif", "cid": "pic"}],
                         "bodyValues": {"1": {"value": "<img src='cid:pic'>"}}}""",
-                ).content(opened)
+                ).content(opened).last()
             assertEquals("<img src='cid:pic'>", content?.html?.html)
         }
 

@@ -124,7 +124,8 @@ class ComposeState(
     val edited: Boolean
         get() = draft.content() != unwritten.content()
 
-    private val saving = Mutex()
+    /** Held while a save runs, so a reopen or send waits for the copy it writes. */
+    internal val saving = Mutex()
     private var pending: Job? = null
     private var stored by mutableStateOf(start.takeIf { it.emailId != null })
 

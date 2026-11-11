@@ -36,7 +36,7 @@ class PageRequestsTest {
             val recreated = backgroundScope.launch { requests.collect { error("The old activity is gone") } }
             runCurrent()
             recreated.cancel()
-            requests.showLater(MailPage.Folders)
+            requests.showLater { MailPage.Folders }
             runCurrent()
             val shown = mutableListOf<MailPage>()
             backgroundScope.launch { requests.collect { shown += it } }

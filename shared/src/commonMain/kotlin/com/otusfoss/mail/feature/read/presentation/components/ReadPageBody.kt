@@ -7,8 +7,8 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -30,9 +30,9 @@ import com.otusfoss.mail.core.messages.domain.MailMessage
 import com.otusfoss.mail.core.messages.domain.MessageHtml
 import com.otusfoss.mail.core.messages.presentation.components.chipAvatar
 import com.otusfoss.mail.feature.read.presentation.PageBody
+import com.otusfoss.mail.feature.read.presentation.PlainPage
 import com.otusfoss.mail.feature.read.presentation.QuoteLevelText
-import com.otusfoss.mail.feature.read.presentation.levels
-import com.otusfoss.mail.feature.read.presentation.splitPlainQuote
+import com.otusfoss.mail.feature.read.presentation.plainPage
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
@@ -139,6 +139,10 @@ private fun HtmlBody(
     )
 }
 
+/**
+ * The message's text with its quote folded. As with HTML, a long text splits off the main thread
+ * and the page shows once it is done; its pieces lay out only as they scroll into view.
+ */
 @Composable
 private fun PlainBody(
     text: String,
@@ -147,24 +151,31 @@ private fun PlainBody(
     room: PaddingValues,
     modifier: Modifier,
 ) {
-    val split = remember(text) { splitPlainQuote(text) }
+    val quick = remember(text) { text.takeIf { it.length <= QUICK_FOLD_CHARS }?.let(::plainPage) }
+    val slow by produceState<Pair<String, PlainPage>?>(null, text) {
+        if (quick == null) value = text to withContext(Dispatchers.Default) { plainPage(text) }
+    }
+    val page = quick ?: slow?.takeIf { it.first == text }?.second ?: return
     var expanded by remember(text) { mutableStateOf(false) }
-    Column(
-        modifier
-            .fillMaxWidth()
-            .verticalScroll(rememberScrollState())
-            .padding(
+    val levels =
+        page.quoteLevels
+            .takeUnless { quotes.hide }
+            .orEmpty()
+            .map { it.shown(quotes.showPerson) }
+    val partTop = Modifier.padding(top = ReadTokens.partGap)
+    LazyColumn(
+        modifier.fillMaxWidth(),
+        contentPadding =
+            PaddingValues(
                 top = room.calculateTopPadding(),
                 bottom = PageTokens.contentInset + room.calculateBottomPadding(),
             ),
-        spacing,
     ) {
-        Text(split?.body ?: text)
-        split?.takeUnless { quotes.hide }?.let { quote ->
-            val levels = remember(quote) { quote.levels() }.map { it.shown(quotes.showPerson) }
-            QuoteFold(levels.first(), expanded, onToggle = { expanded = !expanded }, deeper = levels.drop(1))
+        items(page.chunks) { Text(it) }
+        if (levels.isNotEmpty()) {
+            item { QuoteFold(levels.first(), expanded, { expanded = !expanded }, partTop, deeper = levels.drop(1)) }
         }
-        note?.let { Text(it, color = OtusColors.text2) }
+        note?.let { item { Text(it, partTop, color = OtusColors.text2) } }
     }
 }
 
@@ -197,5 +208,5 @@ private val spacing = Arrangement.spacedBy(ReadTokens.partGap)
 private const val TOP = "top"
 private const val BODY = "body"
 
-/** HTML up to this many characters splits on the main thread, too quickly to show a blank page. */
+/** A body up to this many characters splits on the main thread, too quickly to show a blank page. */
 private const val QUICK_FOLD_CHARS = 16_000

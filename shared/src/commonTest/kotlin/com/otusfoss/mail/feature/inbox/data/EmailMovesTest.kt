@@ -101,6 +101,41 @@ class EmailMovesTest {
         }
 
     @Test
+    fun movingAConversationBackReturnsEachEmailToItsOwnFolders() =
+        runTest {
+            val sent = mutableListOf<String>()
+            val mover =
+                mover {
+                    sent += it
+                    """{"methodResponses": [["Email/set", {"newState": "e2",
+                       "updated": {"m1": null, "m2": null}}, "c0"]]}"""
+                }
+            val members = listOf(ThreadMember("m1", setOf("a", "l"), "a"), ThreadMember("m2", setOf("a"), "a"))
+            val row = message.copy(conversation = conversationOf(members))
+            assertTrue(mover.moveBack(row, "t", returning = setOf("a", "l")))
+            val update =
+                "\"update\":{\"m1\":{\"mailboxIds/t\":null,\"mailboxIds/a\":true,\"mailboxIds/l\":true}," +
+                    "\"m2\":{\"mailboxIds/t\":null,\"mailboxIds/a\":true}}"
+            assertTrue(update in sent.single(), sent.single())
+        }
+
+    @Test
+    fun refilingNamesOnlyTheFoldersThatChange() =
+        runTest {
+            val sent = mutableListOf<String>()
+            val mover =
+                mover {
+                    sent += it
+                    """{"methodResponses": [["Email/set", {"newState": "e2", "updated": {"m1": null}}, "c0"]]}"""
+                }
+            val before = mapOf("m1" to setOf("a", "l"), "m2" to setOf("r"))
+            val after = mapOf("m1" to setOf("a", "r"), "m2" to setOf("r"))
+            assertEquals(setOf("m1", "m2"), mover.setMailboxes("ada", before, after), "m2 needs no change")
+            val update = "\"update\":{\"m1\":{\"mailboxIds/l\":null,\"mailboxIds/r\":true}}"
+            assertTrue(update in sent.single(), sent.single())
+        }
+
+    @Test
     fun folderIdsAreEscapedInPatchPaths() =
         runTest {
             val sent = mutableListOf<String>()

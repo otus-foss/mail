@@ -18,6 +18,7 @@ import com.otusfoss.mail.core.settings.presentation.MailBehaviorState
 import com.otusfoss.mail.feature.folders.presentation.components.folderActions
 import com.otusfoss.mail.feature.notifications.presentation.NotificationSettingsState
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.flow.first
 
 /**
  * State holders that outlive a single page, by feature: [folders], [list], [contacts], [compose],
@@ -104,7 +105,8 @@ internal class MailStates(
             folderActions(folders.all, folders.colors, folders.rules) { knownAddresses(it) },
         )
 
-    suspend fun messageContent(message: MailMessage): MessageContent? = services.bodies.content(message)
+    /** The message's body without waiting for its inline images, which a reply does not quote. */
+    suspend fun messageContent(message: MailMessage): MessageContent? = services.bodies.content(message).first()
 }
 
 /** Avatars load from outside the user's servers only while Website icons is on. */

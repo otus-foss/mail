@@ -4,4 +4,7 @@ APP_NAME=Otus Mail
 
 // Set to the HTTPS origin of the deployed bridge, without a path.
 PUSH_BRIDGE_URL=
+// Keychain items saved without an explicit group, such as mail logins, go to the app's first
+// listed group. This one is not shared with the notification extension.
+APP_KEYCHAIN_GROUP=$(AppIdentifierPrefix)$(BUNDLE_ID)
 PUSH_KEYCHAIN_GROUP=$(AppIdentifierPrefix)$(BUNDLE_ID).push

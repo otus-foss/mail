@@ -41,7 +41,7 @@ class FileDownloadFolder(
                 SystemFileSystem.createDirectories(folder)
                 SystemFileSystem.sink(partial).buffered().use { output -> fill { piece -> output.append(piece) } }
                 contentOf(folder)?.let { SystemFileSystem.delete(it) }
-                val file = Path(folder, safeName(name))
+                val file = Path(folder, safeFileName(name))
                 moveFile(partial, file)
                 entryOf(key, file)
             } finally {
@@ -146,18 +146,6 @@ private fun Sink.append(piece: ByteArray) {
         throw DownloadFolderException("Cannot write a downloaded file", error)
     }
 }
-
-/**
- * The sender picks the name, so path separators cannot leave the folder, and a leading dot, which
- * marks the folder's own files, is dropped.
- */
-private fun safeName(name: String): String =
-    name
-        .replace('/', '_')
-        .replace('\\', '_')
-        .trim()
-        .trimStart('.')
-        .ifEmpty { "attachment" }
 
 /** Runs [block] on the IO dispatcher, reporting disk failures as [DownloadFolderException]. */
 private suspend fun <T> disk(

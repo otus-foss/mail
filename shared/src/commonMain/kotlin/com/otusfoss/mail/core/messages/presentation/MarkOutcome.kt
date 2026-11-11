@@ -2,7 +2,7 @@ package com.otusfoss.mail.core.messages.presentation
 
 import com.otusfoss.mail.core.messages.domain.MailMessage
 import com.otusfoss.mail.core.messages.domain.MessageFlag
-import com.otusfoss.mail.core.messages.domain.hasFlag
+import com.otusfoss.mail.core.messages.domain.changedBy
 import com.otusfoss.mail.core.messages.domain.withFlag
 
 /**
@@ -21,18 +21,23 @@ internal class MarkOutcome(
     /**
      * The messages Undo sets back, as they are after the change. Only those the server changed and
      * that did not already have the mark go back, so marking a mixed selection read and undoing it
-     * leaves the messages that were read before still read.
+     * leaves the messages that were read before still read. A conversation keeps only its emails
+     * that changed, so the same holds for the emails of one row.
      */
     val changed: List<MailMessage>
-        get() = messages.filter { it.id in marked && it.hasFlag(flag) != on }.map { it.withFlag(flag, on) }
+        get() =
+            messages
+                .filter { it.id in marked }
+                .mapNotNull { it.changedBy(flag, on) }
+                .map { it.withFlag(flag, on) }
 }
 
-/** How many of [messages] setting [flag] to [on] changes. */
+/** How many of [messages] setting [flag] to [on] changes, counting a row when any of its emails changes. */
 internal fun changing(
     messages: List<MailMessage>,
     flag: MessageFlag,
     on: Boolean,
-): Int = messages.count { it.hasFlag(flag) != on }
+): Int = messages.count { it.changedBy(flag, on) != null }
 
 /** What the Undo toast says after [count] messages had [flag] set to [on]. */
 internal fun markedText(

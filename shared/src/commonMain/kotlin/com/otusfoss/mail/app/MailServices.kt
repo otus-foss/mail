@@ -206,7 +206,7 @@ class MailServices(
     }
     internal val knownPeople: KnownPeople by lazy { JmapKnownPeople(connections, mailboxes) }
     internal val newsletters: Newsletters by lazy {
-        JmapNewsletters(connections, drafts, sender, writer, mailboxes)
+        JmapNewsletters(connections, drafts, sender, writer, mailboxes, domains)
     }
     internal val headers: MessageHeaders by lazy { JmapMessageHeaders(connections) }
     internal val blocks: SenderBlocks by lazy { RuleSenderBlocks(rules, folders) }

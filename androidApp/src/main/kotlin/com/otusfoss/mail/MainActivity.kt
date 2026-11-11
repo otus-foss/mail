@@ -93,18 +93,16 @@ class MainActivity : ComponentActivity() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) setRecentsScreenshotEnabled(!on)
     }
 
-    /** A tapped alert or a `mailto:` link while Mail runs comes here instead of to a new activity. */
+    /** A `mailto:` link, or a tapped alert, while Mail runs comes here instead of to a new activity. */
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         setIntent(intent)
         take(intent)
     }
 
-    /** Hands [intent]'s request to Mail, and clears the alert whose Reply button sent it. */
+    /** Hands [intent]'s `mailto:` draft to Mail; a tapped alert's message comes through [AlertOpenActivity]. */
     private fun take(intent: Intent) {
         (application as OtusMailApplication).services.requests.take(intent)
-        val replied = intent.repliedAlert() ?: return
-        MailNotifications(this).clear(listOf(replied))
     }
 
     override fun onStart() {

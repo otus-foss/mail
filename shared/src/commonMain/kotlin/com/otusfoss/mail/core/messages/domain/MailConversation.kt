@@ -61,10 +61,17 @@ data class ThreadEmail(
 
 /**
  * One email of a conversation row. [mailboxIds] are all of its mailboxes; [mailboxId] is the shown
- * mailbox it was listed in, which Delete and Not spam take it out of.
+ * mailbox it was listed in, which Delete and Not spam take it out of. [flags] are the marks the
+ * email itself has, so Undo can set each email back to its own mark.
  */
 data class ThreadMember(
     val emailId: String,
     val mailboxIds: Set<String>,
     val mailboxId: String = "",
+    val flags: Set<MessageFlag> = emptySet(),
 )
+
+internal fun ThreadMember.withFlag(
+    flag: MessageFlag,
+    on: Boolean,
+): ThreadMember = copy(flags = if (on) flags + flag else flags - flag)

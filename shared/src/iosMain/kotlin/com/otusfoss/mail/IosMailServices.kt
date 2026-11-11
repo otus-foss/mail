@@ -10,9 +10,12 @@ import com.otusfoss.mail.app.MailServices
 import com.otusfoss.mail.core.cache.MailDatabase
 import com.otusfoss.mail.core.cache.SqlMailCache
 import com.otusfoss.mail.core.files.FileDownloadFolder
+import com.otusfoss.mail.core.files.prepareDownloadRoot
 import com.otusfoss.mail.core.settings.presentation.MailBehaviorState
+import com.otusfoss.mail.core.storage.FileMapStore
 import com.otusfoss.mail.feature.folders.domain.ReadLaterStore
 import com.otusfoss.mail.feature.notifications.domain.InstantPush
+import kotlinx.io.files.Path
 import platform.Foundation.NSApplicationSupportDirectory
 import platform.Foundation.NSCachesDirectory
 import platform.Foundation.NSSearchPathDirectory
@@ -27,18 +30,18 @@ internal val iosMailBehavior: MailBehaviorState by lazy { MailBehaviorState(IosM
 
 internal fun iosMailServices(push: InstantPush?): MailServices {
     val cacheDirectory = userDirectory(NSCachesDirectory)
-    // Each store keeps one user-defaults dictionary; Read later keeps the name of the first release.
+    val supportDirectory = userDirectory(NSApplicationSupportDirectory)
+    // User defaults go into backups, so the stores live in files that stay out of them.
+    val storeFolder = Path(supportDirectory, "stores").also(::prepareDownloadRoot)
     return MailServices(
         // Names kept from the first release so saved accounts keep working.
         IosLoginStore(listKey = "otus.accounts", service = "otus.mail.account"),
         avatarStore = FileAvatarStore("$cacheDirectory/avatars-v1"),
         stores =
             MailDeviceStores.named(
-                { name, _ ->
-                    UserDefaultsMap("otus.mail." + if (name == ReadLaterStore.name) "read_later_folders" else name)
-                },
+                { name, _ -> FileMapStore(Path(storeFolder, "$name.json"), legacyStore(name)) },
                 SqlMailCache(cacheDriver(cacheDirectory)),
-                FileDownloadFolder("${userDirectory(NSApplicationSupportDirectory)}/attachments"),
+                FileDownloadFolder("$supportDirectory/attachments"),
             ),
         host =
             MailPlatform(
@@ -47,6 +50,10 @@ internal fun iosMailServices(push: InstantPush?): MailServices {
             ),
     )
 }
+
+/** Where releases before the files kept store [name]; Read later keeps the name of the first release. */
+private fun legacyStore(name: String) =
+    UserDefaultsMap("otus.mail." + if (name == ReadLaterStore.name) "read_later_folders" else name)
 
 /** The path of the app's [directory], such as its Caches. */
 private fun userDirectory(directory: NSSearchPathDirectory): String =

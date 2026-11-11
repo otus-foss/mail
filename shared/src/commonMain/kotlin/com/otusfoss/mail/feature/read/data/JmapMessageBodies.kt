@@ -2,7 +2,6 @@ package com.otusfoss.mail.feature.read.data
 
 import com.otusfoss.core.jmap.GetMethod
 import com.otusfoss.core.jmap.JmapConnections
-import com.otusfoss.core.jmap.JmapException
 import com.otusfoss.core.jmap.JmapIds
 import com.otusfoss.core.jmap.jmapCallOr
 import com.otusfoss.core.jmap.jmapDecoding
@@ -27,7 +26,9 @@ import com.otusfoss.mail.core.messages.domain.MailMessage
 import com.otusfoss.mail.core.messages.domain.MessageBodies
 import com.otusfoss.mail.core.messages.domain.MessageContent
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.flowOn
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonPrimitive
 import kotlin.coroutines.CoroutineContext
@@ -39,27 +40,28 @@ import kotlin.coroutines.CoroutineContext
  * so [cache] keeps the fetched Email object, with only these properties, under its id per login;
  * the message opens again at once and offline. It is saved with its received time, so trimming old
  * bodies can drop it. Images the HTML shows by `cid:` are downloaded on each open, since the cache
- * keeps only the Email object. Reading the body, up to a megabyte of HTML per part, and inlining its
- * images runs on [parsing], off the caller's main thread.
+ * keeps only the Email object, so the body comes first and again once they arrive. Reading the
+ * body, up to a megabyte of HTML per part, and inlining its images runs on [parsing], off the
+ * caller's main thread.
  */
 class JmapMessageBodies(
     private val connections: JmapConnections,
     private val cache: MailCache = InMemoryMailCache(),
     private val parsing: CoroutineContext = Dispatchers.Default,
 ) : MessageBodies {
-    override suspend fun content(message: MailMessage): MessageContent? =
-        withContext(parsing) {
-            jmapCallOr(null) {
-                val loginId = message.location.accountId
-                cache.withAccount(loginId) { accountCache ->
-                    val email = accountCache.cached(loginId, message.emailId) ?: accountCache.fetched(loginId, message)
-                    email?.let { found ->
-                        val content = jmapDecoding { found.toMessageContent() }
-                        withImages(loginId, content, found.inlineParts(content.html?.html))
-                    }
+    override fun content(message: MailMessage): Flow<MessageContent?> =
+        flow {
+            val loginId = message.location.accountId
+            val email =
+                jmapCallOr(null) {
+                    cache.withAccount(loginId) { it.cached(loginId, message.emailId) ?: it.fetched(loginId, message) }
                 }
-            }
-        }
+            val body = email?.let { found -> jmapCallOr(null) { jmapDecoding { found.toMessageContent() } } }
+            emit(body)
+            if (email == null || body == null) return@flow
+            val parts = email.inlineParts(body.html?.html)
+            if (parts.isNotEmpty()) emit(withImages(loginId, body, parts))
+        }.flowOn(parsing)
 
     /** Offline, the message still opens; only its `cid:` images are missing. */
     private suspend fun withImages(
@@ -67,14 +69,8 @@ class JmapMessageBodies(
         content: MessageContent,
         parts: List<EmailBodyPart>,
     ): MessageContent =
-        if (parts.isEmpty()) {
-            content
-        } else {
-            try {
-                connections.mailAccount(loginId)?.withInlineImages(content, parts) ?: content
-            } catch (expected: JmapException) {
-                content
-            }
+        jmapCallOr(content) {
+            connections.mailAccount(loginId)?.withInlineImages(content, parts) ?: content
         }
 
     private suspend fun MailCache.cached(

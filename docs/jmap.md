@@ -95,7 +95,9 @@ original message is not included.]".
 
 When an `htmlBody` part is `text/html`, the reader shows the HTML body instead of the text; otherwise
 it keeps the text body. Plain parts between HTML parts keep their line breaks, and parts without a
-value, such as inline `cid:` images, are left out. A failed load also keeps the text body.
+value, such as inline `cid:` images, are left out. A failed load also keeps the text body. The body
+shows as soon as it is read, from the device or the server, and shows again with its inline `cid:`
+images once they download.
 
 Drafts (`JmapComposeMail`, RFC 8621 sections 2, 4.6, and 6) live in the mail account:
 

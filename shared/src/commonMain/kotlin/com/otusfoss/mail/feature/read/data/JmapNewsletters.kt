@@ -1,5 +1,6 @@
 package com.otusfoss.mail.feature.read.data
 
+import com.otusfoss.core.avatar.AvatarDomainResolver
 import com.otusfoss.core.jmap.GetMethod
 import com.otusfoss.core.jmap.GetResult
 import com.otusfoss.core.jmap.JmapCall
@@ -47,8 +48,9 @@ class JmapNewsletters(
     sender: DraftSender,
     private val writer: EmailWriter,
     private val mailboxes: Mailboxes,
+    domains: AvatarDomainResolver,
 ) : Newsletters {
-    private val unsubscriber = ListUnsubscriber(drafts, sender)
+    private val unsubscriber = ListUnsubscriber(drafts, sender, domains)
 
     override suspend fun list(message: MailMessage): MailingList? =
         jmapCallOr(null) {
@@ -67,7 +69,10 @@ class JmapNewsletters(
         if (emailIds.isEmpty()) return true
         val archived = jmapCallOr(null) { connections.mailAccount(accountId)?.archived(emailIds) }
         return archived != null &&
-            (archived.isEmpty() || writer.setMailboxes(accountId, archived).containsAll(archived.keys))
+            (
+                archived.after.isEmpty() ||
+                    writer.setMailboxes(accountId, archived.before, archived.after).containsAll(archived.after.keys)
+            )
     }
 
     private suspend fun MailAccount.list(message: MailMessage): MailingList? {
@@ -121,15 +126,25 @@ class JmapNewsletters(
      * The emails of [emailIds] that still exist, each in Archive alone, out of every mailbox it is
      * in; null without an Archive folder on the server now.
      */
-    private suspend fun MailAccount.archived(emailIds: List<String>): Map<String, Set<String>>? {
+    private suspend fun MailAccount.archived(emailIds: List<String>): Refile? {
         lateinit var emails: JmapCall<GetResult<EmailFolders>>
         val (folders, response) =
             mailboxes.sendFresh(this) {
-                emails = call(GetMethod(EmailFoldersType, id, JmapIds.Of(emailIds), listOf("id")))
+                emails = call(GetMethod(EmailFoldersType, id, JmapIds.Of(emailIds), listOf("id", "mailboxIds")))
             }
         val target = folders.firstOrNull { it.role == MailboxRole.Archive }?.id ?: return null
-        return response[emails].list.associate { email -> email.id to setOf(target) }
+        val found = response[emails].list
+        return Refile(
+            before = found.associate { it.id to it.mailboxIds.keys },
+            after = found.associate { it.id to setOf(target) },
+        )
     }
+
+    /** Each email's mailboxes [before] and [after] archiving, by Email id. */
+    private class Refile(
+        val before: Map<String, Set<String>>,
+        val after: Map<String, Set<String>>,
+    )
 
     private companion object {
         const val SCAN = 100

@@ -19,13 +19,8 @@ import com.otusfoss.mail.core.mail.EmailType
 import com.otusfoss.mail.core.mail.MailAccount
 import com.otusfoss.mail.core.mail.ORIGINAL_TO_PROPERTY
 import com.otusfoss.mail.core.mail.ThreadType
-import com.otusfoss.mail.core.mail.isDraft
 import com.otusfoss.mail.core.mail.isMuted
-import com.otusfoss.mail.core.mail.isSeen
 import com.otusfoss.mail.core.mail.mailAccount
-import com.otusfoss.mail.core.mail.received
-import com.otusfoss.mail.core.mailbox.MailFolder
-import com.otusfoss.mail.core.mailbox.MailboxRole
 import com.otusfoss.mail.core.mailbox.Mailboxes
 import com.otusfoss.mail.core.storage.DeviceStore
 import com.otusfoss.mail.feature.notifications.domain.AlertedMail
@@ -38,7 +33,6 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.withContext
-import kotlin.time.Clock
 
 /**
  * Reads `Email/changes` since each login's saved state (RFC 8620, section 5.2) and reports created
@@ -109,31 +103,45 @@ class JmapNewMailChecker(
         since: String,
         showing: List<String>,
     ): LoginCheck {
-        var state = since
-        var created = emptyList<String>()
-        var touched = emptySet<String>()
-        var pages = 0
-        do {
-            val page =
-                try {
-                    account.connection.call(ChangesMethod(EmailType, account.id, state, MAX_CHANGES))
-                } catch (error: JmapException.MethodError) {
-                    // The server forgot the old state; start again from now rather than report old
-                    // mail, and look at every alert, since any of them may have changed.
-                    if (error.type != CANNOT_CALCULATE_CHANGES) throw error
-                    return startFromNow(account, handled(account, showing))
-                }
-            created = created + page.created
-            touched = touched + page.updated + page.destroyed
-            state = page.newState
-            pages++
-        } while (page.hasMoreChanges && pages < MAX_PAGES)
-        return LoginCheck(
-            account.login.id,
-            state,
-            unreadInInbox(account, created.takeLast(MAX_FETCHED)),
-            handled(account, showing.filter { it in touched }),
-        )
+        val changes =
+            try {
+                changePages(account, since)
+            } catch (error: JmapException.MethodError) {
+                // The server forgot the old state; start again from now rather than report old
+                // mail, and look at every alert, since any of them may have changed.
+                if (error.type != CANNOT_CALCULATE_CHANGES) throw error
+                null
+            }
+        return changes?.let {
+            LoginCheck(
+                account.login.id,
+                it.state,
+                unreadInInbox(account, it.created.takeLast(MAX_FETCHED)),
+                handled(account, showing.filter { id -> id in it.touched }),
+            )
+        } ?: startFromNow(account, handled(account, showing))
+    }
+
+    /**
+     * Every page of changes since [since], or null past [MAX_PAGES]: saving a state short of the
+     * newest would alert older mail now and the newest only later, so that far behind starts again.
+     */
+    private suspend fun changePages(
+        account: MailAccount,
+        since: String,
+    ): Changes? {
+        var changes = Changes(since)
+        repeat(MAX_PAGES) {
+            val page = account.connection.call(ChangesMethod(EmailType, account.id, changes.state, MAX_CHANGES))
+            changes =
+                Changes(
+                    page.newState,
+                    changes.created + page.created,
+                    changes.touched + page.updated + page.destroyed,
+                )
+            if (!page.hasMoreChanges) return changes
+        }
+        return null
     }
 
     /** The alerted [ids] whose mail is no longer unread in an inbox, or is gone. */
@@ -217,6 +225,12 @@ class JmapNewMailChecker(
             null
         }
 
+    private class Changes(
+        val state: String,
+        val created: List<String> = emptyList(),
+        val touched: Set<String> = emptySet(),
+    )
+
     private class LoginCheck(
         val loginId: String,
         /** Null when the check failed and the saved state stays. */
@@ -228,7 +242,9 @@ class JmapNewMailChecker(
     private companion object {
         const val CANNOT_CALCULATE_CHANGES = "cannotCalculateChanges"
         const val MAX_CHANGES = 100
-        const val MAX_PAGES = 5
+
+        /** Pages carry only ids, so a check reads them all up to this many, to reach the newest mail. */
+        const val MAX_PAGES = 100
 
         /** After a long time offline, only the latest messages are worth a notification. */
         const val MAX_FETCHED = 50
@@ -251,31 +267,4 @@ class JmapNewMailChecker(
         val MEMBER_PROPERTIES = listOf("id", "threadId", "keywords", "receivedAt")
         val ALERTED_PROPERTIES = listOf("id", "mailboxIds", "keywords", "receivedAt")
     }
-}
-
-private fun inboxIds(folders: List<MailFolder>): Set<String> =
-    folders
-        .filter { it.role == MailboxRole.Inbox }
-        .map { it.id }
-        .toSet()
-
-/** Unread, not a draft, and in one of [inboxes]: mail worth an alert. */
-private fun EmailObject.waitsIn(inboxes: Set<String>): Boolean =
-    mailboxIds.any { it.value && it.key in inboxes } &&
-        !isSeen &&
-        !isDraft
-
-private fun EmailObject.toNewMail(account: MailAccount): NewMail {
-    val from = from?.firstOrNull()
-    return NewMail(
-        loginId = account.login.id,
-        accountName = account.login.name,
-        emailId = id,
-        sender = from?.name?.takeIf { it.isNotBlank() } ?: from?.email.orEmpty(),
-        subject = subject.orEmpty(),
-        preview = preview,
-        // One malformed date must not stop every later check.
-        receivedAt = received ?: Clock.System.now(),
-        recipients = (to.orEmpty() + cc.orEmpty()).map { it.email } + deliveredAddresses,
-    )
 }

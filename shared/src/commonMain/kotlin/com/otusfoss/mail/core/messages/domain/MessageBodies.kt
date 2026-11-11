@@ -1,5 +1,7 @@
 package com.otusfoss.mail.core.messages.domain
 
+import kotlinx.coroutines.flow.Flow
+
 /**
  * A message's HTML body. [remoteContent] tells whether it refers to images, styles, or fonts on
  * other servers, which load only when the user asks. [truncated] when the server sent only its start.
@@ -27,8 +29,11 @@ data class MessageContent(
 
 /** Loads the full body of an open message, since the list loads only previews. */
 interface MessageBodies {
-    /** The message's body; null when the server could not be reached. */
-    suspend fun content(message: MailMessage): MessageContent?
+    /**
+     * The message's body as soon as it is read, then again with the images its HTML shows inline
+     * once they download. A single null when the server could not be reached.
+     */
+    fun content(message: MailMessage): Flow<MessageContent?>
 }
 
 /**

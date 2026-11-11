@@ -10,6 +10,8 @@ from contextlib import closing, contextmanager
 ROUTE_LIFETIME = 8 * 86400
 # A route that is not active, such as one still waiting for its verification push, lives only this
 # long after its last update, so registrations nobody completes free their quota slot quickly.
+# A route stays inactive until a push has been delivered to it, so a registration alone cannot
+# hold a quota slot for the full route lifetime.
 INACTIVE_ROUTE_LIFETIME = 3600
 MAX_ROUTES = 10000
 MAX_ROUTES_PER_DEVICE = 32
@@ -30,7 +32,7 @@ class Store:
                 PRAGMA journal_mode=WAL;
                 CREATE TABLE IF NOT EXISTS routes (
                     id TEXT PRIMARY KEY, secret TEXT, token TEXT, key_id TEXT,
-                    active INTEGER DEFAULT 0, expires INTEGER
+                    active INTEGER DEFAULT 0, expires INTEGER, delivered INTEGER DEFAULT 0
                 );
                 CREATE TABLE IF NOT EXISTS messages (
                     id TEXT PRIMARY KEY, route TEXT REFERENCES routes(id) ON DELETE CASCADE,
@@ -41,6 +43,11 @@ class Store:
                 CREATE INDEX IF NOT EXISTS routes_expires ON routes(expires);
                 CREATE INDEX IF NOT EXISTS routes_token ON routes(token);
             """)
+            columns = {row["name"] for row in database.execute("PRAGMA table_info(routes)")}
+            if "delivered" not in columns:
+                # Routes active before this column existed were verified by a delivered push.
+                database.execute("ALTER TABLE routes ADD COLUMN delivered INTEGER DEFAULT 0")
+                database.execute("UPDATE routes SET delivered=active")
 
     @contextmanager
     def connect(self):
@@ -74,7 +81,7 @@ class Store:
             if total >= MAX_ROUTES or device >= MAX_ROUTES_PER_DEVICE:
                 raise OverflowError("Route quota reached")
             database.execute(
-                "INSERT INTO routes VALUES (?, ?, ?, ?, 0, ?)",
+                "INSERT INTO routes (id, secret, token, key_id, expires) VALUES (?, ?, ?, ?, ?)",
                 (route, digest(secret), token, key_id, now + INACTIVE_ROUTE_LIFETIME),
             )
         return {"id": route, "secret": secret}
@@ -86,11 +93,18 @@ class Store:
             ).fetchone()
 
     def update(self, route, active):
-        lifetime = ROUTE_LIFETIME if active else INACTIVE_ROUTE_LIFETIME
         with self.connect() as database:
             database.execute(
-                "UPDATE routes SET active=?, expires=? WHERE id=?",
-                (active, int(time.time()) + lifetime, route),
+                "UPDATE routes SET active = ? AND delivered,"
+                " expires = ? + CASE WHEN ? AND delivered THEN ? ELSE ? END WHERE id=?",
+                (
+                    active,
+                    int(time.time()),
+                    active,
+                    ROUTE_LIFETIME,
+                    INACTIVE_ROUTE_LIFETIME,
+                    route,
+                ),
             )
 
     def delete(self, route):
@@ -113,6 +127,7 @@ class Store:
                 "INSERT INTO messages VALUES (?, ?, ?, ?)",
                 (message, route, payload, now + min(ttl, MAX_MESSAGE_LIFETIME)),
             )
+            database.execute("UPDATE routes SET delivered=1 WHERE id=?", (route,))
         return message
 
     def messages(self, route):

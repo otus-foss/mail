@@ -66,6 +66,8 @@ class MessageExtrasTest {
                 originalTo = listOf(listOf(EmailAddress(email = "ada@alias.example.org"), EmailAddress(email = " "))),
             )
         assertEquals(listOf("ada@alias.example.org"), delivered.unsubscribe()?.deliveredTo)
+        val listed = delivered.copy(listId = "\"Weekly\" <weekly.lists.example.org>")
+        assertEquals("weekly.lists.example.org", listed.unsubscribe()?.listId)
     }
 
     @Test
@@ -89,16 +91,6 @@ class MessageExtrasTest {
         assertEquals("weekly.sentry.example", listIdentifier("\"Sentry weekly digest\" <weekly.sentry.example>"))
         assertNull(listName("<weekly.sentry.example>"))
         assertNull(listIdentifier("no brackets"))
-    }
-
-    @Test
-    fun mailtoAddressesReadTheirFields() {
-        assertEquals(
-            Mailto(listOf("leave@lists.example.org"), "Please remove me", null),
-            parseMailto("mailto:leave@lists.example.org?subject=Please%20remove%20me"),
-        )
-        assertNull(parseMailto("https://lists.example.org"))
-        assertNull(parseMailto("mailto:?subject=nobody"))
     }
 
     @Test

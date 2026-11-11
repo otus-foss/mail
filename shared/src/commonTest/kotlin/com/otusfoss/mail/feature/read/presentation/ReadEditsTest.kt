@@ -112,7 +112,7 @@ class ReadEditsTest {
     private fun updates(): List<JsonObject> = server.calls("Email/set").map { it.getValue("update").jsonObject }
 
     @Test
-    fun foldersChangeEveryEmailOfTheConversationInOneCallWithWholeMailboxSets() =
+    fun foldersChangeEveryEmailOfTheConversationInOneCallFolderByFolder() =
         runTest {
             val (changes, feed) = changes()
             val before = mapOf("e1" to setOf("a"), "e2" to setOf("ar", "fi"), "e3" to setOf("a"))
@@ -122,9 +122,9 @@ class ReadEditsTest {
             assertEquals(
                 listOf(
                     json(
-                        """{"e1": {"mailboxIds": {"a": true, "cl": true}},
-                        "e2": {"mailboxIds": {"ar": true, "cl": true}},
-                        "e3": {"mailboxIds": {"a": true, "cl": true}}}""",
+                        """{"e1": {"mailboxIds/cl": true},
+                        "e2": {"mailboxIds/fi": null, "mailboxIds/cl": true},
+                        "e3": {"mailboxIds/cl": true}}""",
                     ),
                 ),
                 updates(),

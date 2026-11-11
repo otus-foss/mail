@@ -61,9 +61,14 @@ class EmailShortcutsTest {
     fun trashAndSpamPutTheEmailInTheirMailboxAlone() =
         runTest {
             assertTrue(shortcuts().trash("ada", "m1"))
-            assertTrue("\"update\":{\"m1\":{\"mailboxIds\":{\"t\":true}}}" in sent[1], sent[1])
             assertTrue(shortcuts().reportSpam("ada", "m1"))
-            assertTrue("\"update\":{\"m1\":{\"mailboxIds\":{\"j\":true}}}" in sent[3], sent[3])
+            listOf(sent[1] to "t", sent[3] to "j").forEach { (body, bin) ->
+                assertTrue("\"mailboxIds/$bin\":true" in body, body)
+                listOf("i", "a", "t", "j", "p")
+                    .filter { it != bin }
+                    .forEach { assertTrue("\"mailboxIds/$it\":null" in body, body) }
+                assertFalse("\"mailboxIds\":{" in body, "Other mailboxes added meanwhile stay")
+            }
         }
 
     @Test

@@ -38,6 +38,7 @@ import com.otusfoss.mail.feature.read.presentation.PageBody
 import com.otusfoss.mail.feature.read.presentation.ReadContext
 import com.otusfoss.mail.feature.read.presentation.ReadSheet
 import com.otusfoss.mail.feature.read.presentation.ReadState
+import kotlinx.coroutines.flow.Flow
 
 /**
  * How the Read view's pages look: whether each one's remote images load, by the privacy setting,
@@ -168,7 +169,7 @@ internal fun ReadPages(
     state: ReadState,
     swipes: ReadSwipes,
     look: ReadPageLook,
-    loadContent: suspend (MailMessage) -> MessageContent?,
+    loadContent: (MailMessage) -> Flow<MessageContent?>,
     onDetails: () -> Unit,
     modifier: Modifier = Modifier,
     insets: PaddingValues = PaddingValues(),

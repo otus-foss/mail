@@ -38,6 +38,7 @@ internal fun EmailObject.unsubscribe(): Unsubscribe? {
             web = https ?: urls.firstOrNull { it.startsWith("http://", ignoreCase = true) },
             mail = urls.firstOrNull { it.startsWith("mailto:", ignoreCase = true) },
             deliveredTo = deliveredAddresses,
+            listId = listIdentifier(listId),
         )
     return found.takeIf { it.web != null || it.mail != null }
 }

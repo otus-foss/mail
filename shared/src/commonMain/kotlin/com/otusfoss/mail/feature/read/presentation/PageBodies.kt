@@ -5,6 +5,7 @@ import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateMapOf
 import com.otusfoss.mail.core.messages.domain.MailMessage
 import com.otusfoss.mail.core.messages.domain.MessageContent
+import kotlinx.coroutines.flow.Flow
 
 /** A page's body: still loading, loaded, or failed, when the preview stays with a note. */
 sealed interface PageBody {
@@ -24,18 +25,23 @@ sealed interface PageBody {
 @Stable
 class PageBodies {
     private val bodies = mutableStateMapOf<String, PageBody>()
+    private val complete = mutableSetOf<String>()
     private val imagesShown = mutableStateListOf<String>()
     private val bannersDismissed = mutableStateListOf<String>()
 
     fun body(message: MailMessage): PageBody = bodies[message.id] ?: PageBody.Loading
 
-    /** Loads [message]'s body once; a failure shows only after the load answered. */
+    /**
+     * Loads [message]'s body once, showing each version [loadContent] gives, such as the text before
+     * its inline images; a failure shows only after the load answered. A load cut short runs again.
+     */
     suspend fun load(
         message: MailMessage,
-        loadContent: suspend (MailMessage) -> MessageContent?,
+        loadContent: (MailMessage) -> Flow<MessageContent?>,
     ) {
-        if (bodies[message.id] is PageBody.Loaded) return
-        bodies[message.id] = loadContent(message)?.let(PageBody::Loaded) ?: PageBody.Failed
+        if (message.id in complete) return
+        loadContent(message).collect { bodies[message.id] = it?.let(PageBody::Loaded) ?: PageBody.Failed }
+        if (bodies[message.id] is PageBody.Loaded) complete += message.id
     }
 
     /** Remote images the user showed for this message only. */
