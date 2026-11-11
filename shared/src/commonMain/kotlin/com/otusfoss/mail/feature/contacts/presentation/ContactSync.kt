@@ -3,6 +3,7 @@ package com.otusfoss.mail.feature.contacts.presentation
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import com.otusfoss.core.jscontact.Card
 import com.otusfoss.mail.core.storage.DeviceStore
 import com.otusfoss.mail.feature.contacts.domain.CardKey
 import com.otusfoss.mail.feature.contacts.domain.ContactEdit
@@ -28,53 +29,19 @@ private val ContactEdit.dependsOn: String? get() = (this as? ContactEdit.Delete)
 internal fun ContactEdit.isReady(refused: Map<String, ContactWriteFailure>): Boolean =
     id !in refused && !isHeld(refused)
 
-/** The first change ready to send that is not about the card of one of [passed], nor waits for one of them. */
-private fun List<ContactEdit>.nextToSend(
+/** The changes ready to send, in order, that are not about the card of one of [passed], nor wait for one of them. */
+private fun List<ContactEdit>.readyToSend(
     refused: Map<String, ContactWriteFailure>,
     passed: List<ContactEdit>,
-): ContactEdit? =
-    firstOrNull { edit -> edit.isReady(refused) && passed.none { it.key == edit.key || it.id == edit.dependsOn } }
+): Sequence<ContactEdit> =
+    asSequence()
+        .filter { edit -> edit.isReady(refused) && passed.none { it.key == edit.key || it.id == edit.dependsOn } }
 
-/** What came of sending one change. */
-private enum class Outcome { Sent, Refused, Unclear, Offline }
-
-private val ContactWriteFailure.outcome: Outcome
-    get() =
-        when (this) {
-            ContactWriteFailure.Offline -> Outcome.Offline
-            ContactWriteFailure.Failing -> Outcome.Unclear
-            else -> Outcome.Refused
-        }
-
-/** How often each change failed without a clear answer since the app started. */
-private class FailedTries {
-    private var counts = emptyMap<String, Int>()
-
-    /**
-     * Whether a change [id] that failed with [failure] is set aside now: a refused one at once, one
-     * without a clear answer once it failed [MAX_TRIES] times, and one that found no connection never.
-     */
-    fun setsAside(
-        id: String,
-        failure: ContactWriteFailure,
-    ): Boolean {
-        if (failure != ContactWriteFailure.Failing) return failure != ContactWriteFailure.Offline
-        val count = (counts[id] ?: 0) + 1
-        counts = counts + (id to count)
-        return count >= MAX_TRIES
-    }
-
-    /** Forgets the changes that are no longer in [edits]. */
-    fun keep(edits: List<ContactEdit>) {
-        counts = counts.filterKeys { id -> edits.any { it.id == id } }
-    }
-}
-
-/** How many times a change may fail without a clear answer before it is set aside. */
-internal const val MAX_TRIES = 3
-
-/** How many changes in a row may fail without a clear answer before a flush stops. */
-internal const val MAX_UNCLEAR = 2
+/**
+ * How many changes a flush sends between two saves of the queue, so a large import does not
+ * rewrite the whole queue for each card.
+ */
+internal const val SAVE_BATCH = 50
 
 /** How [ContactSync] tells the contact list about a change the server accepted. */
 internal typealias SentChange = ((ContactsSnapshot) -> ContactsSnapshot) -> Unit
@@ -86,6 +53,7 @@ internal typealias SentChange = ((ContactsSnapshot) -> ContactsSnapshot) -> Unit
  * saves it elsewhere or drops it, and so does each delete that waits for it. A change that fails
  * without a clear answer is passed over for that flush and set aside as
  * [ContactWriteFailure.Failing] after [MAX_TRIES] tries, so one bad card does not hold up the rest.
+ * A flush saves the queue once per [SAVE_BATCH] changes and once at the end, not per change.
  */
 internal class ContactSync(
     private val repository: ContactRepository,
@@ -112,6 +80,10 @@ internal class ContactSync(
 
     private val tries = FailedTries()
 
+    // The changes of the current batch, and its new cards first kept as sent when it began.
+    private var batch = emptySet<String>()
+    private var firstTries = emptySet<String>()
+
     init {
         reload()
     }
@@ -133,32 +105,63 @@ internal class ContactSync(
     /** Queues [changes] and saves the queue once, so a large import does not save it per card. */
     fun add(
         changes: List<ContactEdit>,
+        flushed: () -> Unit = {},
         sent: SentChange,
     ) {
         edits = changes.fold(edits) { queued, edit -> enqueue(queued, edit, inFlight) }
         save()
-        scope.launch { flush(sent) }
+        scope.launch { flush(flushed, sent) }
     }
 
     /**
      * Sends every waiting change it can. It stops at the first one that finds no connection, and
      * after [MAX_UNCLEAR] changes in a row fail without a clear answer, which looks like the server
      * rather than those cards. A change that failed so is passed over, with the changes that need it.
+     * [sent] runs for each change the server accepted, and [flushed] once at the end when there was one.
      */
-    suspend fun flush(sent: SentChange) {
+    suspend fun flush(
+        flushed: () -> Unit = {},
+        sent: SentChange,
+    ) {
         if (sending.isLocked) return
         sending.withLock {
             var passed = emptyList<ContactEdit>()
             var unclearInARow = 0
-            var next = edits.nextToSend(refused, passed)
-            while (next != null && unclearInARow < MAX_UNCLEAR) {
-                val outcome = sendOne(next, sent)
-                if (outcome == Outcome.Offline) break
-                if (outcome == Outcome.Unclear) passed = passed + next
-                unclearInARow = if (outcome == Outcome.Unclear) unclearInARow + 1 else 0
-                next = edits.nextToSend(refused, passed)
+            var sentAny = false
+            var next = edits.readyToSend(refused, passed).firstOrNull()
+            try {
+                while (next != null && unclearInARow < MAX_UNCLEAR) {
+                    if (next.id !in batch) startBatch(passed)
+                    val outcome = sendOne(next, sent)
+                    if (outcome == SendOutcome.Offline) break
+                    if (outcome == SendOutcome.Unclear) passed = passed + next
+                    sentAny = sentAny || outcome == SendOutcome.Sent
+                    unclearInARow = if (outcome == SendOutcome.Unclear) unclearInARow + 1 else 0
+                    next = edits.readyToSend(refused, passed).firstOrNull()
+                }
+            } finally {
+                if (batch.isNotEmpty()) save()
+                batch = emptySet()
+                firstTries = emptySet()
             }
+            if (sentAny) flushed()
         }
+    }
+
+    /**
+     * Saves the queue with the next [SAVE_BATCH] changes' new cards kept as sent, so a lost answer
+     * to any of them is looked into on the next try, even after a restart.
+     */
+    private fun startBatch(passed: List<ContactEdit>) {
+        val next = edits.readyToSend(refused, passed).take(SAVE_BATCH).toList()
+        batch = next.map { it.id }.toSet()
+        firstTries =
+            next
+                .filter { it is ContactEdit.Create && it.sent == null }
+                .map { it.id }
+                .toSet()
+        edits = edits.map { if (it is ContactEdit.Create && it.id in firstTries) it.copy(sent = it.card) else it }
+        save()
     }
 
     /**
@@ -169,12 +172,12 @@ internal class ContactSync(
     private suspend fun sendOne(
         edit: ContactEdit,
         sent: SentChange,
-    ): Outcome =
+    ): SendOutcome =
         try {
             inFlight = edit.id
             val created =
                 when (edit) {
-                    is ContactEdit.Create -> create(edit)
+                    is ContactEdit.Create -> create(edit, edit.sent?.takeIf { edit.id !in firstTries })
                     is ContactEdit.Update -> repository.sendUpdate(edit)
                     is ContactEdit.Delete -> repository.sendDelete(edit)
                 }
@@ -185,9 +188,8 @@ internal class ContactSync(
                 edits = rekey(edits, edit.key, created)
                 links = ContactLinks(links.sets.map { set -> set.map { if (it == edit.key) created else it }.toSet() })
             }
-            save()
             sent { it.copy(cards = afterSent(it.cards, edit, created)) }
-            Outcome.Sent
+            SendOutcome.Sent
         } catch (error: ContactWriteException) {
             if (tries.setsAside(edit.id, error.failure)) refused = refused + (edit.id to error.failure)
             error.failure.outcome
@@ -197,7 +199,7 @@ internal class ContactSync(
             // Anything else, such as an unreadable reply, fails without a clear answer rather than crashing.
             val failing = ContactWriteFailure.Failing
             if (tries.setsAside(edit.id, failing)) refused = refused + (edit.id to failing)
-            Outcome.Unclear
+            SendOutcome.Unclear
         } finally {
             inFlight = null
         }
@@ -229,19 +231,19 @@ internal class ContactSync(
 
     /**
      * Creates [edit]'s card, unless a try whose answer was lost stored it already: that card then
-     * takes the changes made since, and is the new card. The card is kept as sent before it goes,
-     * so a lost answer is looked into on the next try, even after a restart.
+     * takes the changes made since, and is the new card. [tried] is the card an earlier batch sent;
+     * null on the first try.
      */
-    private suspend fun create(edit: ContactEdit.Create): CardKey {
-        val sent = edit.sent
+    private suspend fun create(
+        edit: ContactEdit.Create,
+        tried: Card?,
+    ): CardKey {
         val others = edits.filter { it.id != edit.id }.map { it.key }.toSet()
-        val earlier = sent?.let { repository.findCreated(edit.book, it, ignore = others) }
-        if (sent != null && earlier != null) {
-            repository.update(earlier, sent, edit.card)
+        val earlier = tried?.let { repository.findCreated(edit.book, it, ignore = others) }
+        if (tried != null && earlier != null) {
+            repository.update(earlier, tried, edit.card)
             return earlier
         }
-        edits = edits.map { if (it.id == edit.id) edit.copy(sent = edit.card) else it }
-        save()
         return repository.create(edit.book, edit.card)
     }
 

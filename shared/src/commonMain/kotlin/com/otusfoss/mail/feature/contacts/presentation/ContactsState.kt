@@ -126,7 +126,7 @@ internal class ContactsState(
                 val loaded = repository.load()
                 show(loaded)
                 if (loaded.failedLogins.isNotEmpty() && loaded.cards.isEmpty()) notice = "Couldn’t load your contacts."
-                sync.flush(this@ContactsState::sent)
+                sync.flush(::flushed, ::sent)
             } finally {
                 loading = false
             }
@@ -149,7 +149,7 @@ internal class ContactsState(
         plan: ImportPlan,
         mode: ImportMode,
     ) {
-        sync.add(plan.edits(mode, id = ::newId, uid = ::newUid), ::sent)
+        sync.add(plan.edits(mode, id = ::newId, uid = ::newUid), ::flushed, ::sent)
         importing = null
     }
 
@@ -164,13 +164,16 @@ internal class ContactsState(
     }
 
     /** Queues [edit]: it shows at once and goes to the server once it is reachable. */
-    fun send(edit: ContactEdit) = sync.add(listOf(edit), ::sent)
+    fun send(edit: ContactEdit) = sync.add(listOf(edit), ::flushed, ::sent)
 
-    /** Keeps the device's view, and the avatars mail shows, in step with a change the server accepted. */
+    /** Keeps the device's view in step with a change the server accepted. */
     private fun sent(update: (ContactsSnapshot) -> ContactsSnapshot) {
-        val after = snapshot?.let(update) ?: return
-        snapshot = after
-        avatars?.shown(after)
+        snapshot?.let { snapshot = update(it) }
+    }
+
+    /** Brings the avatars mail shows in step once a flush sent its changes, not once per card. */
+    private fun flushed() {
+        snapshot?.let { avatars?.shown(it) }
     }
 }
 
