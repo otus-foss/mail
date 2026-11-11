@@ -18,6 +18,7 @@ import com.otusfoss.mail.core.mail.MailFailure
 import com.otusfoss.mail.core.mail.SubmissionCapability
 import com.otusfoss.mail.core.mail.mailAccount
 import com.otusfoss.mail.core.mailbox.MailboxRole
+import com.otusfoss.mail.core.mailbox.Mailboxes
 import com.otusfoss.mail.core.messages.data.EmailChangeQueue
 import com.otusfoss.mail.core.messages.domain.AnsweredMessage
 import com.otusfoss.mail.core.messages.domain.Draft
@@ -72,7 +73,7 @@ class JmapDraftSender internal constructor(
             val account =
                 connections.mailAccount(draft.accountId) ?: failSend(SendFailure.Mail(MailFailure.ServerProblem))
             val from = draft.from?.address?.takeIf { account.mayUse(JmapCapability.SUBMISSION) }
-            val route = account.route(from ?: failSend(SendFailure.NoIdentity))
+            val route = account.route(from ?: failSend(SendFailure.NoIdentity), copies.mailboxes)
             val sent = account.submit(draft, route, time, stored)
             // Undo or a cancel can still stop a held or scheduled send, so it takes back a mark it added.
             val marked = if (time == SendTime.Now) null else answered?.let { account.unmarked(it) }
@@ -90,21 +91,6 @@ class JmapDraftSender internal constructor(
             // Content that cannot be encoded fails the send rather than the app.
             Result.failure(SendException(SendFailure.Mail(MailFailure.ServerProblem), error))
         }
-
-    /** The identity that sends as [from], and the folders the sent copy moves between. */
-    private suspend fun MailAccount.route(from: String): SendRoute {
-        lateinit var identities: JmapCall<GetResult<IdentityObject>>
-        val identityGet = GetMethod(IdentityType, id, properties = listOf("id", "email"))
-        // Fresh folders, so a Sent re-created on another client still gets the sent copy.
-        val (folders, response) = copies.mailboxes.sendFresh(this) { identities = call(identityGet) }
-        return SendRoute(
-            identityId = response[identities].list.sendingAs(from) { it.email }?.id ?: failSend(SendFailure.NoIdentity),
-            drafts = folders.firstOrNull { it.role == MailboxRole.Drafts }?.id,
-            sent = folders.firstOrNull { it.role == MailboxRole.Sent }?.id,
-            scheduled = folders.scheduledFolder()?.id,
-            adoptable = folders.adoptableScheduled(),
-        )
-    }
 
     /**
      * Stores the draft, tells [stored] the copy's id, and then submits that copy, so a submission
@@ -256,6 +242,24 @@ class JmapDraftSender internal constructor(
     private companion object {
         const val EMAIL = "draft"
     }
+}
+
+/** The identity that sends as [from], and the folders the sent copy moves between. */
+private suspend fun MailAccount.route(
+    from: String,
+    mailboxes: Mailboxes,
+): SendRoute {
+    lateinit var identities: JmapCall<GetResult<IdentityObject>>
+    val identityGet = GetMethod(IdentityType, id, properties = listOf("id", "email"))
+    // Fresh folders, so a Sent re-created on another client still gets the sent copy.
+    val (folders, response) = mailboxes.sendFresh(this) { identities = call(identityGet) }
+    return SendRoute(
+        identityId = response[identities].list.sendingAs(from) { it.email }?.id ?: failSend(SendFailure.NoIdentity),
+        drafts = folders.firstOrNull { it.role == MailboxRole.Drafts }?.id,
+        sent = folders.firstOrNull { it.role == MailboxRole.Sent }?.id,
+        scheduled = folders.scheduledFolder()?.id,
+        adoptable = folders.adoptableScheduled(),
+    )
 }
 
 /** Destroys the [copy] a refused submission left, and fails the send with [failure]. */

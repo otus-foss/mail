@@ -29,16 +29,18 @@ class AndroidSavedFilesTest {
         return shadowOf(app).nextStartedActivity
     }
 
+    // One test opens every file: FileProvider caches its root folder for the process, and
+    // Robolectric gives each test a new files folder, so a second test's file would fall outside it.
     @Test
-    fun aFileTheSenderLabelsAsAnAppDoesNotOpenTheInstaller() {
-        val intent = opened("invoice.pdf", "application/vnd.android.package-archive")
-        assertEquals(Intent.ACTION_VIEW, intent.action)
-        assertTrue(intent.type != "application/vnd.android.package-archive")
+    fun noAttachmentOpensTheInstaller() {
+        val labelled = opened("invoice.pdf", "application/vnd.android.package-archive")
+        assertEquals(Intent.ACTION_VIEW, labelled.action)
+        assertTrue(labelled.type != "application/vnd.android.package-archive")
+        assertEquals("application/octet-stream", opened("setup.apk", "application/vnd.android.package-archive").type)
     }
 
     @Test
-    fun anAppPackageOpensAsPlainBytes() {
-        assertEquals("application/octet-stream", opened("setup.apk", "application/vnd.android.package-archive").type)
+    fun executableTypesOpenAsPlainBytes() {
         assertEquals("application/octet-stream", viewType("tool", "Application/X-MSDownload; name=tool"))
         assertEquals("application/pdf", viewType("invoice", "application/pdf"))
     }

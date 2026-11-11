@@ -12,6 +12,7 @@ import com.otusfoss.mail.feature.compose.presentation.Outgoing
 import com.otusfoss.mail.feature.compose.presentation.OutgoingDraft
 import com.otusfoss.mail.feature.compose.presentation.SignatureEditorState
 import com.otusfoss.mail.feature.compose.presentation.reopening
+import com.otusfoss.mail.feature.compose.presentation.reopeningSaved
 import com.otusfoss.mail.feature.compose.presentation.screens.ComposeScreen
 import com.otusfoss.mail.feature.compose.presentation.screens.SignatureEditorScreen
 import com.otusfoss.mail.feature.compose.presentation.screens.SignaturesScreen

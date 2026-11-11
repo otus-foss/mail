@@ -3,6 +3,7 @@ package com.otusfoss.mail.feature.compose.presentation
 import com.otusfoss.mail.core.messages.domain.AnsweredMessage
 import com.otusfoss.mail.core.messages.domain.ComposeRequest
 import com.otusfoss.mail.core.messages.domain.Draft
+import kotlinx.coroutines.sync.withLock
 import kotlinx.datetime.LocalDateTime
 
 /**
@@ -51,3 +52,6 @@ fun ComposeState.reopening(): ComposeRequest.Resume {
         held = resumed?.held,
     )
 }
+
+/** [reopening] once any save in progress has ended, so it opens the copy saved last. */
+suspend fun ComposeState.reopeningSaved(): ComposeRequest.Resume = saving.withLock { reopening() }

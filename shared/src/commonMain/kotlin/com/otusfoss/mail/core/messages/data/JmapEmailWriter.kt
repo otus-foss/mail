@@ -64,16 +64,17 @@ class JmapEmailWriter(
         returning: Set<String>,
     ): Boolean {
         val back = returning - folderId - ""
-        if (back.isEmpty()) return false
         val patches =
             message.memberMailboxes
+                .takeIf { back.isNotEmpty() }
+                .orEmpty()
                 .mapValues { (_, before) ->
                     jmapPatch {
                         if (folderId !in before) remove("mailboxIds", folderId)
                         back.intersect(before.ifEmpty { back }).forEach { set(JsonPrimitive(true), "mailboxIds", it) }
                     }
-                }.ifEmpty { return false }
-        return queue.update(message.location.accountId, patches).containsAll(patches.keys)
+                }
+        return patches.isNotEmpty() && queue.update(message.location.accountId, patches).containsAll(patches.keys)
     }
 
     override suspend fun setInFolder(

@@ -124,7 +124,8 @@ class ComposeState(
     val edited: Boolean
         get() = draft.content() != unwritten.content()
 
-    private val saving = Mutex()
+    /** Held while a save runs, so a reopen or send waits for the copy it writes. */
+    internal val saving = Mutex()
     private var pending: Job? = null
     private var stored by mutableStateOf(start.takeIf { it.emailId != null })
 
@@ -200,9 +201,6 @@ class ComposeState(
         pending?.cancel()
         return { scope.launch { saving.withLock { stored?.discardCopy(drafts) } } }
     }
-
-    /** [reopening] once any save in progress has ended, so it opens the copy saved last. */
-    suspend fun reopeningSaved(): ComposeRequest.Resume = saving.withLock { reopening() }
 
     /**
      * Stops saving and hands the draft over for sending. Its [OutgoingDraft.ready] waits for any

@@ -177,9 +177,21 @@ internal class ContactSync(
             inFlight = edit.id
             val created =
                 when (edit) {
-                    is ContactEdit.Create -> create(edit, edit.sent?.takeIf { edit.id !in firstTries })
-                    is ContactEdit.Update -> repository.sendUpdate(edit)
-                    is ContactEdit.Delete -> repository.sendDelete(edit)
+                    is ContactEdit.Create -> {
+                        repository.createOnce(
+                            edit,
+                            tried = edit.sent?.takeIf { edit.id !in firstTries },
+                            waiting = edits,
+                        )
+                    }
+
+                    is ContactEdit.Update -> {
+                        repository.sendUpdate(edit)
+                    }
+
+                    is ContactEdit.Delete -> {
+                        repository.sendDelete(edit)
+                    }
                 }
             edits = edits.filterNot { it.id == edit.id }
             tries.keep(edits)
@@ -229,24 +241,6 @@ internal class ContactSync(
         save()
     }
 
-    /**
-     * Creates [edit]'s card, unless a try whose answer was lost stored it already: that card then
-     * takes the changes made since, and is the new card. [tried] is the card an earlier batch sent;
-     * null on the first try.
-     */
-    private suspend fun create(
-        edit: ContactEdit.Create,
-        tried: Card?,
-    ): CardKey {
-        val others = edits.filter { it.id != edit.id }.map { it.key }.toSet()
-        val earlier = tried?.let { repository.findCreated(edit.book, it, ignore = others) }
-        if (tried != null && earlier != null) {
-            repository.update(earlier, tried, edit.card)
-            return earlier
-        }
-        return repository.create(edit.book, edit.card)
-    }
-
     private fun save() {
         // Only these three change; the others, such as the frequent scores, stay.
         store?.update { saved ->
@@ -268,4 +262,25 @@ private suspend fun ContactRepository.sendUpdate(edit: ContactEdit.Update): Card
 private suspend fun ContactRepository.sendDelete(edit: ContactEdit.Delete): CardKey? {
     delete(listOf(edit.key))
     return null
+}
+
+/**
+ * Creates [edit]'s card, unless a try whose answer was lost stored it already: that card then takes
+ * the changes made since, and is the new card. [tried] is the card an earlier batch sent; null on
+ * the first try. The lookup skips the cards of the other [waiting] edits.
+ */
+private suspend fun ContactRepository.createOnce(
+    edit: ContactEdit.Create,
+    tried: Card?,
+    waiting: List<ContactEdit>,
+): CardKey {
+    val earlier =
+        tried?.let { card ->
+            findCreated(edit.book, card, ignore = waiting.filter { it.id != edit.id }.map { it.key }.toSet())
+        }
+    if (tried != null && earlier != null) {
+        update(earlier, tried, edit.card)
+        return earlier
+    }
+    return create(edit.book, edit.card)
 }
