@@ -21,21 +21,20 @@ internal const val EXTRA_EMAIL_ID = "com.otusfoss.mail.extra.EMAIL_ID"
 private const val EXTRA_REPLY = "com.otusfoss.mail.extra.REPLY"
 
 /**
- * Hands what [intent] opens Mail with to [MailRequests]: the message of a tapped alert, a reply to
- * it from the alert's Reply button, or a draft for a `mailto:` link that another app viewed or
- * sent to. An intent the recent apps list gives back asks for nothing new, so it opens nothing
+ * Hands the draft for a `mailto:` link that another app viewed or sent to [MailRequests]. Alert
+ * extras count only through [AlertOpenActivity]: MainActivity is exported, so any app could send
+ * them here. An intent the recent apps list gives back asks for nothing new, so it opens nothing
  * again.
  */
 internal fun MailRequests.take(intent: Intent) {
-    if (intent.flags and Intent.FLAG_ACTIVITY_LAUNCHED_FROM_HISTORY != 0) return
-    val loginId = intent.getStringExtra(EXTRA_LOGIN_ID)
-    val emailId = intent.getStringExtra(EXTRA_EMAIL_ID)
-    val draft = intent.mailtoDraft()
-    when {
-        loginId != null && emailId != null && intent.replies -> reply(loginId, emailId)
-        loginId != null && emailId != null -> openMessage(loginId, emailId)
-        draft != null -> compose(draft)
-    }
+    if (intent.fromHistory) return
+    intent.mailtoDraft()?.let { compose(it) }
+}
+
+/** Hands the message of a tapped alert, or a reply to it from the alert's Reply button, to [MailRequests]. */
+internal fun MailRequests.takeAlert(intent: Intent) {
+    val mail = intent.alertedMail()?.takeUnless { intent.fromHistory } ?: return
+    if (intent.replies) reply(mail.loginId, mail.emailId) else openMessage(mail.loginId, mail.emailId)
 }
 
 /**
@@ -57,15 +56,13 @@ internal fun Intent.mailtoDraft(): ComposeRequest.New? {
 
 private val Intent.replies: Boolean get() = getBooleanExtra(EXTRA_REPLY, false)
 
+private val Intent.fromHistory: Boolean get() = flags and Intent.FLAG_ACTIVITY_LAUNCHED_FROM_HISTORY != 0
+
 /**
  * The alert a Reply button answered, which goes once Mail opens the reply; null for every other
  * intent. Android leaves an alert showing after a button that opens an app.
  */
-internal fun Intent.repliedAlert(): AlertedMail? {
-    val fromHistory = flags and Intent.FLAG_ACTIVITY_LAUNCHED_FROM_HISTORY != 0
-    if (!replies || fromHistory) return null
-    return alertedMail()
-}
+internal fun Intent.repliedAlert(): AlertedMail? = alertedMail()?.takeIf { replies && !fromHistory }
 
 /** The message an alert's intent names; null when either id is missing. */
 private fun Intent.alertedMail(): AlertedMail? {
@@ -78,8 +75,8 @@ private fun Intent.addresses(extra: String): List<MailSender> =
     getStringArrayExtra(extra).orEmpty().flatMap(::parseRecipients)
 
 /**
- * Opens Mail on the message [emailId] of [loginId]. An open Mail comes to the front and takes the
- * request in place; a closed one starts with it.
+ * Opens Mail on the message [emailId] of [loginId], through [AlertOpenActivity]. An open Mail comes
+ * to the front and takes the request in place; a closed one starts with it.
  */
 internal fun Context.openMessage(
     loginId: String,
@@ -88,11 +85,11 @@ internal fun Context.openMessage(
     PendingIntent.getActivity(
         this,
         0,
-        Intent(this, MainActivity::class.java)
+        Intent(this, AlertOpenActivity::class.java)
             .setData(alertUri(loginId, emailId))
             .putExtra(EXTRA_LOGIN_ID, loginId)
             .putExtra(EXTRA_EMAIL_ID, emailId)
-            .addFlags(IN_PLACE),
+            .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
         PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
     )
 
@@ -104,12 +101,12 @@ internal fun Context.replyTo(
     PendingIntent.getActivity(
         this,
         0,
-        Intent(this, MainActivity::class.java)
+        Intent(this, AlertOpenActivity::class.java)
             .setData(alertUri(loginId, emailId, "reply"))
             .putExtra(EXTRA_LOGIN_ID, loginId)
             .putExtra(EXTRA_EMAIL_ID, emailId)
             .putExtra(EXTRA_REPLY, true)
-            .addFlags(IN_PLACE),
+            .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
         PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
     )
 
@@ -128,6 +125,9 @@ internal fun alertUri(
         .build()
 
 private const val ALERT_SCHEME = "otusfoss-alert"
+
+/** Brings Mail to the front, reusing the running activity so its pages and state stay, or starts it. */
+internal fun Context.mailInPlace(): Intent = Intent(this, MainActivity::class.java).addFlags(IN_PLACE)
 
 /** Reuses the running activity, so its pages and state stay, and starts one when there is none. */
 private const val IN_PLACE =
