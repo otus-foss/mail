@@ -13,6 +13,7 @@ data class MailAttachment(
 /**
  * How to leave the mailing list a message came from, read from its `List-Unsubscribe` header
  * (RFC 2369). [web] is an address to open, [mail] a mailto address.
+ * [listId] is the id inside the `List-Id` header (RFC 2919), such as `weekly.example.org`.
  * [deliveredTo] holds the addresses the mail was delivered to, from `Delivered-To` and
  * `X-Original-To`, which a mailto request should come from when the list wrote to a Bcc.
  */
@@ -20,6 +21,7 @@ data class Unsubscribe(
     val web: String? = null,
     val mail: String? = null,
     val deliveredTo: List<String> = emptyList(),
+    val listId: String? = null,
 )
 
 /**

@@ -1,5 +1,6 @@
 package com.otusfoss.mail.feature.read.data
 
+import com.otusfoss.core.avatar.AvatarDomainResolver
 import com.otusfoss.core.jmap.JmapClient
 import com.otusfoss.core.jmap.JmapConnections
 import com.otusfoss.core.jmap.login.InMemoryLoginStore
@@ -68,7 +69,8 @@ class JmapNewslettersTest {
             }
         val connections = JmapConnections(JmapClient(engine), store)
         val cache = InMemoryMailCache()
-        return JmapNewsletters(connections, drafts, sender, emailWriter(connections, cache), Mailboxes(cache))
+        val domains = AvatarDomainResolver { host -> host.split('.').takeLast(2).joinToString(".") }
+        return JmapNewsletters(connections, drafts, sender, emailWriter(connections, cache), Mailboxes(cache), domains)
     }
 
     @Test
@@ -161,6 +163,25 @@ class JmapNewslettersTest {
             assertEquals(listOf("leave@sentry.example"), draft.to.map { it.address })
             assertEquals("stop", draft.subject)
             assertEquals("ada@work.example.org", draft.from?.address)
+        }
+
+    @Test
+    fun aMailtoLinkReachesOneListAddressWithoutTheSendersText() =
+        runTest {
+            val newsletters = newsletters()
+            val spread =
+                "mailto:a@x.org,leave@sentry.example?to=c@z.org&cc=d@z.org&body=hi&subject=stop%0D%0ABcc:%20e@z.org"
+            assertEquals(UnsubscribeResult.Done, newsletters.unsubscribe(newsletter, Unsubscribe(mail = spread)))
+            val draft = sent.single()
+            assertEquals(listOf("leave@sentry.example"), (draft.to + draft.cc + draft.bcc).map { it.address })
+            assertEquals("", draft.body)
+            assertEquals("stop Bcc: e@z.org", draft.subject, "The subject stays on one line")
+            val web = "https://sentry.example/u/1"
+            val foreign = Unsubscribe(web = web, mail = "mailto:a@x.org,b@y.org?to=c@z.org&body=hi")
+            assertEquals(UnsubscribeResult.OpenLink(web), newsletters.unsubscribe(newsletter, foreign))
+            val listed = Unsubscribe(mail = "mailto:leave@lists.example.net", listId = "weekly.lists.example.net")
+            assertEquals(UnsubscribeResult.Done, newsletters.unsubscribe(newsletter, listed))
+            assertEquals(2, sent.size, "Only mail on the list's or sender's domain is sent: $sent")
         }
 
     @Test

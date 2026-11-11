@@ -1,5 +1,6 @@
 package com.otusfoss.mail.feature.read.data
 
+import com.otusfoss.core.avatar.AvatarDomainResolver
 import com.otusfoss.core.jmap.GetMethod
 import com.otusfoss.core.jmap.GetResult
 import com.otusfoss.core.jmap.JmapCall
@@ -47,8 +48,9 @@ class JmapNewsletters(
     sender: DraftSender,
     private val writer: EmailWriter,
     private val mailboxes: Mailboxes,
+    domains: AvatarDomainResolver,
 ) : Newsletters {
-    private val unsubscriber = ListUnsubscriber(drafts, sender)
+    private val unsubscriber = ListUnsubscriber(drafts, sender, domains)
 
     override suspend fun list(message: MailMessage): MailingList? =
         jmapCallOr(null) {
