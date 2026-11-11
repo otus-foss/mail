@@ -57,7 +57,7 @@ See [Apple push delivery](docs/apple-push.md) for APNs bridge deployment, signin
 Versions are pinned in otus-meta's `gradle/libs.versions.toml`, the suite catalog, and in
 `gradle/app.versions.toml` for what only Mail uses. The Gradle wrapper includes a distribution
 checksum. Derived from [Kotlin/KMP-App-Template](https://github.com/Kotlin/KMP-App-Template) at
-commit `6b6d09e4f3f5e845116422d59b658791ed6149c6`; its Apache 2.0 license is retained in `LICENSE`.
+commit `6b6d09e4f3f5e845116422d59b658791ed6149c6`; its Apache 2.0 license is retained in `LICENSES/Apache-2.0-KMP-App-Template.txt`.
 Sample museum code and unrelated platform targets were removed.
 
 ## Engineering policy
@@ -115,3 +115,8 @@ and generated-avatar service.
 Meta is the central owner of visual elements, reusable components, tokens, and symbols.
 Mail retains feature screens and adapters. Message rows use Meta's `CompactContentRow`, empty
 states `EmptyState`, and all symbols and tokens come from `designsystem`.
+
+## License
+
+GPL-3.0-or-later, with an [additional permission](LICENSE-EXCEPTION.md) that allows app-store
+distribution while the source stays public. See [LICENSE](LICENSE).
