@@ -11,6 +11,7 @@ import com.otusfoss.mail.core.mail.keywordPatch
 import com.otusfoss.mail.core.mail.mailAccount
 import com.otusfoss.mail.core.mail.mailboxPatch
 import com.otusfoss.mail.core.mail.movePatch
+import com.otusfoss.mail.core.mail.refilePatch
 import com.otusfoss.mail.core.mailbox.MailFolder
 import com.otusfoss.mail.core.mailbox.MailboxRole
 import com.otusfoss.mail.core.mailbox.Mailboxes
@@ -19,10 +20,7 @@ import com.otusfoss.mail.core.messages.domain.EmailWriter
 import com.otusfoss.mail.core.messages.domain.MailMessage
 import com.otusfoss.mail.core.messages.domain.MessageFlag
 import com.otusfoss.mail.core.messages.domain.memberMailboxes
-import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
-import kotlinx.serialization.json.buildJsonObject
-import kotlinx.serialization.json.put
 
 /**
  * Every email change as `Email/set` patches (RFC 8621, sections 4.1.1 and 4.6) through [queue],
@@ -84,17 +82,22 @@ class JmapEmailWriter(
         inFolder: Boolean,
     ): Boolean = queue.updateRow(message, mailboxPatch(folderId, inFolder))
 
-    /** Sends each email's whole `mailboxIds`, so one call files a conversation whose emails differ. */
+    /**
+     * Sends each email its own patch, so one call files a conversation whose emails differ. Emails
+     * already where they belong send nothing and count as done.
+     */
     override suspend fun setMailboxes(
         accountId: String,
-        mailboxes: Map<String, Set<String>>,
-    ): Set<String> =
-        queue.update(
-            accountId,
-            mailboxes.mapValues { (_, boxes) ->
-                buildJsonObject { put("mailboxIds", JsonObject(boxes.associateWith { JsonPrimitive(true) })) }
-            },
-        )
+        before: Map<String, Set<String>>,
+        after: Map<String, Set<String>>,
+    ): Set<String> {
+        val patches =
+            after
+                .mapValues { (emailId, boxes) -> refilePatch(before[emailId].orEmpty(), boxes) }
+                .filterValues { it.isNotEmpty() }
+        val unchanged = after.keys - patches.keys
+        return if (patches.isEmpty()) unchanged else queue.update(accountId, patches) + unchanged
+    }
 
     /** Each listed email of the row leaves the Spam folder it is in; with keywords, `$notjunk` replaces `$junk`. */
     override suspend fun notSpam(

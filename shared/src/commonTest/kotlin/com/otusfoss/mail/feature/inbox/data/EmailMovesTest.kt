@@ -120,6 +120,22 @@ class EmailMovesTest {
         }
 
     @Test
+    fun refilingNamesOnlyTheFoldersThatChange() =
+        runTest {
+            val sent = mutableListOf<String>()
+            val mover =
+                mover {
+                    sent += it
+                    """{"methodResponses": [["Email/set", {"newState": "e2", "updated": {"m1": null}}, "c0"]]}"""
+                }
+            val before = mapOf("m1" to setOf("a", "l"), "m2" to setOf("r"))
+            val after = mapOf("m1" to setOf("a", "r"), "m2" to setOf("r"))
+            assertEquals(setOf("m1", "m2"), mover.setMailboxes("ada", before, after), "m2 needs no change")
+            val update = "\"update\":{\"m1\":{\"mailboxIds/l\":null,\"mailboxIds/r\":true}}"
+            assertTrue(update in sent.single(), sent.single())
+        }
+
+    @Test
     fun folderIdsAreEscapedInPatchPaths() =
         runTest {
             val sent = mutableListOf<String>()

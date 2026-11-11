@@ -27,6 +27,19 @@ internal fun movePatch(
     }
 
 /**
+ * The patch that moves an email from the mailboxes [before] to those of [after], naming only the
+ * mailboxes that differ, so a mailbox another client added meanwhile stays.
+ */
+internal fun refilePatch(
+    before: Set<String>,
+    after: Set<String>,
+): JsonObject =
+    jmapPatch {
+        (before - after).forEach { remove(MAILBOX_IDS, it) }
+        (after - before).forEach { set(JsonPrimitive(true), MAILBOX_IDS, it) }
+    }
+
+/**
  * The patch that puts [key] into the set-like [property] (RFC 8621, section 4.1.1), or takes it
  * out when it is no [member]. Other keys stay as they are.
  */

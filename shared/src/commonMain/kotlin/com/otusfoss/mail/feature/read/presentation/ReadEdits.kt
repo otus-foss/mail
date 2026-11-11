@@ -110,11 +110,15 @@ class ReadEdits(
             )
         edits.show(edit)
         edits.scope.launch {
-            val updated = edits.writer.setMailboxes(row.location.accountId, change.after)
+            val updated = edits.writer.setMailboxes(row.location.accountId, change.before, change.after)
             val kept = updated.containsAll(change.after.keys)
             edits.settle(edit, kept)
             if (!kept) {
-                edits.writer.setMailboxes(row.location.accountId, change.before.filterKeys { it in updated })
+                edits.writer.setMailboxes(
+                    row.location.accountId,
+                    change.after,
+                    change.before.filterKeys { it in updated },
+                )
                 // A removed row comes back only in the list it left, and at its end; a reload puts it in place.
                 feed.refresh()
                 feed.report("Couldn't change the folders of this conversation. Try again.")

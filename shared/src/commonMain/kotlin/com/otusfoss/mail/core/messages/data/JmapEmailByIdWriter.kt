@@ -20,8 +20,6 @@ import com.otusfoss.mail.core.messages.domain.MailMessage
 import com.otusfoss.mail.core.messages.domain.MessageFlag
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
-import kotlinx.serialization.json.buildJsonObject
-import kotlinx.serialization.json.put
 
 /**
  * The changes of one email by id as `Email/set` patches through [queue], as [JmapEmailWriter]
@@ -66,15 +64,17 @@ class JmapEmailByIdWriter(
 
     /**
      * Puts the email in the account's mailbox with [role] alone, as the list's Delete and Spam do:
-     * it leaves every other mailbox, Read later included.
+     * it leaves every other mailbox, Read later included. It names each known mailbox instead of
+     * replacing `mailboxIds`, so it merges with other waiting changes as queued patches must.
      */
     private suspend fun discard(
         loginId: String,
         emailId: String,
         role: MailboxRole,
     ): Boolean {
-        val bin = folders(loginId).withRole(role) ?: return false
-        return updateOne(loginId, emailId, buildJsonObject { put("mailboxIds", buildJsonObject { put(bin.id, true) }) })
+        val folders = folders(loginId)
+        val bin = folders.withRole(role) ?: return false
+        return updateOne(loginId, emailId, movePatch(folders.map { it.id }, bin.id))
     }
 
     private suspend fun updateOne(

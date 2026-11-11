@@ -23,6 +23,7 @@ import com.otusfoss.mail.testing.stalwartLike
 import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
@@ -220,7 +221,9 @@ class JmapNewslettersTest {
                 }
             assertTrue(newsletters.archive("ada", listOf("n4", "n3")))
             val set = requests.last()
-            listOf("n4", "n3").forEach { id -> assertTrue("\"$id\":{\"mailboxIds\":{\"arch\":true}}" in set, set) }
+            val n4 = "\"update\":{\"n4\":{\"mailboxIds/a\":null,\"mailboxIds/r\":null,\"mailboxIds/arch\":true}}"
+            assertTrue(n4 in set, set)
+            assertFalse("\"n3\"" in set, "n3 is already in Archive alone")
         }
 
     private companion object {

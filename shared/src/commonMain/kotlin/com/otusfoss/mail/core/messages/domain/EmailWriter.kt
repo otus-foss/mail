@@ -43,10 +43,15 @@ interface EmailWriter {
         inFolder: Boolean,
     ): Boolean
 
-    /** Puts each email of [mailboxes], by Email id, in exactly those mailboxes of the login [accountId]. */
+    /**
+     * Moves each email of [after], by Email id, from its mailboxes in [before] to those in [after], in
+     * the login [accountId]. Only the mailboxes that differ change, so one another client added
+     * meanwhile stays.
+     */
     suspend fun setMailboxes(
         accountId: String,
-        mailboxes: Map<String, Set<String>>,
+        before: Map<String, Set<String>>,
+        after: Map<String, Set<String>>,
     ): Set<String>
 
     /**
