@@ -227,14 +227,15 @@ order:
 - `# Summary`: a few plain sentences on what changes and why.
 - `# Paired PRs`: a link to each pull request in another repository that this one needs or that
   needs it, one per line, or "No paired PR" when there is none.
-- `# Closes`: one `Closes #123` line per issue, at the bottom.
+- `# Closes`: at the bottom, every issue on one line with the keyword before each, such as
+  `Closes #123, closes #124`. GitHub links only the first issue of `Closes #123, #124`.
 
 GitHub fills the template in on the website, but `gh pr create --body` skips it, so write that
 shape yourself. The title follows the commit title rules above. Leave out "Generated with" footers
 and session links. `gh` cannot upload images, so link recorded screenshots at the head commit, and
 send phone captures to the user to drag in.
 
-When the pull request finishes an issue, list `Closes #123` under `# Closes`, one issue per line, or
+When the pull request finishes an issue, list `Closes #123` under `# Closes`, or
 `Closes otus-foss/core#45` for an issue in another repository, so GitHub closes it on merge. Write
 `Part of #123` for a step that leaves the issue open. Search the open issues before you open the
 pull request. The `issue link` workflow warns about a pull request that closes no issue.
