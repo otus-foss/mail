@@ -53,6 +53,13 @@ struct WebPushKey: Codable {
         guard plain.popLast() == 2 else { throw PushCryptoError.invalidRecord }
         return plain
     }
+
+    func isStateChange(_ payload: Data) -> Bool {
+        guard let plain = try? decrypt(payload),
+              let body = try? JSONSerialization.jsonObject(with: plain) as? [String: Any]
+        else { return false }
+        return body["@type"] as? String == "StateChange"
+    }
 }
 
 enum PushCryptoError: Error {

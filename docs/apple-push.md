@@ -120,10 +120,15 @@ local capability is discarded; an unreachable bridge can therefore delay account
 The next foreground check also cleans up routes for logins no longer present. Failure to read the
 login store does not count as removing every account.
 
-The extension has a time limit and may not run before the first device unlock or when alerts are
-disabled. Its fallback remains a generic alert. APNs may delay, coalesce or drop pushes; notifications
-are hints, not the mail store. A generic alert can remain when a notice cannot be downloaded or
-validated. This version does not promise exactly-once notification presentation.
+Anyone holding a route URL can make the bridge send an APNs alert, so the extension shows "New mail"
+only after it downloads a notice that decrypts with the route's key to a JMAP `StateChange`. When the
+key is unknown, the download fails, the notice is not a `StateChange` or the time limit runs out, it
+finishes with empty content, for which iOS shows no alert. Without Apple's notification filtering
+entitlement (`com.apple.developer.usernotifications.filtering`), which Otus does not have, iOS still
+shows the APNs "New mail" alert whenever the extension does not run or finish: before the first
+device unlock, after it crashes or exceeds its memory limit, or when iOS skips it. APNs may delay,
+coalesce or drop pushes; notifications are hints, not the mail store. This version does not promise
+exactly-once notification presentation.
 
 ## Validation
 

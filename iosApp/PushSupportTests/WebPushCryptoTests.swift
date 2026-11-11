@@ -39,6 +39,15 @@ final class WebPushCryptoTests: XCTestCase {
         XCTAssertThrowsError(try key.decrypt(Data(original.prefix(40))))
     }
 
+    func testOnlyAStateChangeCountsAsVerified() throws {
+        let (key, body) = try example()
+        var changed = body
+        changed[changed.count - 1] ^= 1
+        XCTAssertFalse(key.isStateChange(body))
+        XCTAssertFalse(key.isStateChange(changed))
+        XCTAssertFalse(WebPushKey.create().isStateChange(body))
+    }
+
     func testExportContainsOnlyPublicKeyAndAuthSecret() throws {
         let key = WebPushKey.create()
         let exported = try JSONDecoder().decode([String: String].self, from: Data(key.subscription().utf8))

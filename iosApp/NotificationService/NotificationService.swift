@@ -3,7 +3,6 @@ import UserNotifications
 
 final class NotificationService: UNNotificationServiceExtension {
     private var completion: ((UNNotificationContent) -> Void)?
-    private var content: UNMutableNotificationContent?
     private var task: URLSessionDataTask?
     private let lock = NSLock()
 
@@ -12,7 +11,6 @@ final class NotificationService: UNNotificationServiceExtension {
         withContentHandler contentHandler: @escaping (UNNotificationContent) -> Void
     ) {
         completion = contentHandler
-        content = request.content.mutableCopy() as? UNMutableNotificationContent
         guard let keyID = request.content.userInfo["otusKey"] as? String,
               let message = request.content.userInfo["otusMessage"] as? String,
               message.range(of: "^[A-Za-z0-9_-]{32,64}$", options: .regularExpression) != nil,
@@ -20,43 +18,37 @@ final class NotificationService: UNNotificationServiceExtension {
               let origin = URL(string: base), origin.scheme == "https",
               let saved = PushSecrets().read("key-\(keyID)"),
               let key = try? JSONDecoder().decode(WebPushKey.self, from: saved)
-        else { finish(request.content); return }
+        else { finish(nil); return }
         let url = origin.appendingPathComponent("v1/messages/\(message)")
         var download = URLRequest(url: url)
         download.timeoutInterval = 15
         task = URLSession.shared.dataTask(with: download) { [weak self] data, response, _ in
             guard let self else { return }
-            if isStateChange(data, response: response, key: key) {
-                content?.title = "Otus Mail"
-                content?.body = "New mail"
-                var acknowledge = URLRequest(url: url)
-                acknowledge.httpMethod = "DELETE"
-                URLSession.shared.dataTask(with: acknowledge).resume()
-            }
-            finish(request.content)
+            guard (response as? HTTPURLResponse)?.statusCode == 200, let data, key.isStateChange(data)
+            else { finish(nil); return }
+            var acknowledge = URLRequest(url: url)
+            acknowledge.httpMethod = "DELETE"
+            URLSession.shared.dataTask(with: acknowledge).resume()
+            let content = request.content.mutableCopy() as? UNMutableNotificationContent
+            content?.title = "Otus Mail"
+            content?.body = "New mail"
+            finish(content)
         }
         task?.resume()
     }
 
-    private func isStateChange(_ data: Data?, response: URLResponse?, key: WebPushKey) -> Bool {
-        guard (response as? HTTPURLResponse)?.statusCode == 200, let data,
-              let plain = try? key.decrypt(data),
-              let body = try? JSONSerialization.jsonObject(with: plain) as? [String: Any]
-        else { return false }
-        return body["@type"] as? String == "StateChange"
-    }
-
     override func serviceExtensionTimeWillExpire() {
         task?.cancel()
-        finish(UNMutableNotificationContent())
+        finish(nil)
     }
 
-    private func finish(_ fallback: UNNotificationContent) {
+    /// Anyone holding a route URL can trigger the APNs alert, so only a verified notice shows it.
+    /// Empty content shows nothing; see docs/apple-push.md for the cases iOS still shows it.
+    private func finish(_ content: UNNotificationContent?) {
         lock.lock()
         let handler = completion
         completion = nil
-        let result = content ?? fallback
         lock.unlock()
-        handler?(result)
+        handler?(content ?? UNNotificationContent())
     }
 }
