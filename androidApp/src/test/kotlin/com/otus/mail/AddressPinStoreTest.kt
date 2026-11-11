@@ -20,8 +20,8 @@ class AddressPinStoreTest {
         val pins =
             AddressPins(
                 listOf(
-                    MailScopeChoice.Address("ada https://mail.example.org/jmap/session", "hi@design.ch"),
-                    MailScopeChoice.Address("ada https://mail.example.org/jmap/session", "test@design.ch"),
+                    MailScopeChoice.Address("ada https://mail.example.org/jmap/session", "hi@ruu.by"),
+                    MailScopeChoice.Address("ada https://mail.example.org/jmap/session", "test@ruu.by"),
                     MailScopeChoice.Address("bob https://mail.example.com/jmap/session", "bob@example.com"),
                 ),
             )

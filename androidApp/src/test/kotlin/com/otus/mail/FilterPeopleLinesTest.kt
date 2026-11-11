@@ -41,28 +41,28 @@ class FilterPeopleLinesTest {
         compose.waitForIdle()
         compose.onNodeWithText("ChatGPT").performClick()
         compose.waitForIdle()
-        compose.onNodeWithContentDescription("noreply@openai.com, updates@openai.com").assertIsDisplayed()
+        compose.onNodeWithContentDescription("noreply@openai.example, updates@openai.example").assertIsDisplayed()
         compose.onNodeWithContentDescription("From").assertTextEquals("")
     }
 
     @Test
     fun tappingAChipPutsTheirAddressBackInTheLine() {
         compose.showFilterPanel()
-        compose.onNodeWithContentDescription("From").performTextInput("new@x.org")
+        compose.onNodeWithContentDescription("From").performTextInput("new@x.example")
         compose.onNodeWithContentDescription("From").performImeAction()
         compose.waitForIdle()
-        compose.onNodeWithContentDescription("new@x.org").performClick()
+        compose.onNodeWithContentDescription("new@x.example").performClick()
         compose.waitForIdle()
-        compose.onNodeWithContentDescription("From").assertTextEquals("new@x.org")
+        compose.onNodeWithContentDescription("From").assertTextEquals("new@x.example")
     }
 
     @Test
     fun enterPicksATypedAddress() {
         compose.showFilterPanel()
-        compose.onNodeWithContentDescription("From").performTextInput("new@x.org")
+        compose.onNodeWithContentDescription("From").performTextInput("new@x.example")
         compose.onNodeWithContentDescription("From").performImeAction()
         compose.waitForIdle()
-        compose.onNodeWithContentDescription("new@x.org").assertIsDisplayed()
+        compose.onNodeWithContentDescription("new@x.example").assertIsDisplayed()
     }
 
     @Test

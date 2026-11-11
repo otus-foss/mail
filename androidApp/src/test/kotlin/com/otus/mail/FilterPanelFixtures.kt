@@ -53,7 +53,7 @@ internal object FilterPanelFixtures {
         FilterOptions(
             addresses =
                 listOf(
-                    FilterAddress(OwnAddress("ada", "this@companyA.com"), ChipAvatar("CA", colorIndex = 2)),
+                    FilterAddress(OwnAddress("ada", "this@companyA.example"), ChipAvatar("CA", colorIndex = 2)),
                     FilterAddress(OwnAddress("ada", "otus@rubylabs.design"), ChipAvatar("RL", colorIndex = 5)),
                 ),
             accounts = listOf(FilterAccount("ada", "Ada", ChipAvatar("A", colorIndex = 1), folders)),
@@ -74,7 +74,7 @@ internal object FilterPanelFixtures {
     val grace = SenderKey("Grace Hopper", setOf("grace@navy.example"))
 
     /** Both of ChatGPT's addresses, which the From line merges into one person. */
-    val chatGpt = SenderKey("ChatGPT", setOf("noreply@openai.com", "updates@openai.com"))
+    val chatGpt = SenderKey("ChatGPT", setOf("noreply@openai.example", "updates@openai.example"))
 
     val messages =
         listOf(
@@ -83,8 +83,8 @@ internal object FilterPanelFixtures {
             message("3", "Lena Park", "Trip itinerary", daysAgo = 3),
             message("4", "Grace Hopper", "Compiler notes", daysAgo = 4, address = "grace@navy.example"),
             message("5", "Grace Hopper", "Re: Compiler notes", daysAgo = 5, address = "grace@navy.example"),
-            message("6", "ChatGPT", "Your weekly summary", daysAgo = 6, address = "noreply@openai.com"),
-            message("7", "ChatGPT", "New features", daysAgo = 7, address = "updates@openai.com"),
+            message("6", "ChatGPT", "Your weekly summary", daysAgo = 6, address = "noreply@openai.example"),
+            message("7", "ChatGPT", "New features", daysAgo = 7, address = "updates@openai.example"),
         )
 
     private fun system(

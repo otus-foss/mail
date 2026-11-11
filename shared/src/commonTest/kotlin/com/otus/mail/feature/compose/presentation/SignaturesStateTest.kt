@@ -17,8 +17,8 @@ import kotlin.test.assertNull
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class SignaturesStateTest {
-    private val sales = MailSender("Sales", "sales@companya.com", "a1")
-    private val support = MailSender("Support", "support@companya.com", "a1")
+    private val sales = MailSender("Sales", "sales@companya.example", "a1")
+    private val support = MailSender("Support", "support@companya.example", "a1")
     private val saved = mutableListOf<Pair<String, Signature>>()
     private var failing = false
 
@@ -48,7 +48,7 @@ class SignaturesStateTest {
             val source = state.identity(SendIdentityKey("a1", sales.address))!!.copy(textSignature = "Company A Sales")
             state.copy(source, listOf(state.identity(SendIdentityKey("a1", support.address))!!))
             runCurrent()
-            assertEquals(listOf("support@companya.com" to Signature(text = "Company A Sales")), saved)
+            assertEquals(listOf("support@companya.example" to Signature(text = "Company A Sales")), saved)
             assertEquals("Company A Sales", state.identity(SendIdentityKey("a1", support.address))?.signature?.text)
             assertNull(state.notice)
         }

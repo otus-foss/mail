@@ -10,7 +10,7 @@ import kotlin.test.assertTrue
 
 class ReadRulesTest {
     private val known = setOf(EmailAddressKey("grace@example.org"))
-    private val allowed = listOf("News@Sentry.io")
+    private val allowed = listOf("News@Sentry.example")
 
     private fun shows(
         setting: RemoteImages,
@@ -34,7 +34,7 @@ class ReadRulesTest {
     fun knownLoadsFromKnownPeopleIgnoringCase() = assertTrue(shows(RemoteImages.Known, "Grace@Example.org"))
 
     @Test
-    fun knownLoadsFromAllowedSenders() = assertTrue(shows(RemoteImages.Known, "news@sentry.io"))
+    fun knownLoadsFromAllowedSenders() = assertTrue(shows(RemoteImages.Known, "news@sentry.example"))
 
     @Test
     fun knownBlocksUnknownSenders() = assertFalse(shows(RemoteImages.Known, "stranger@example.com"))

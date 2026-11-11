@@ -7,17 +7,17 @@ class AllowedSendersTest {
     @Test
     fun aSenderIsAllowedOnceInLowercaseNewestFirst() {
         val behavior =
-            ReadBehavior(allowedSenders = listOf("grace@example.org", "news@sentry.io"))
-                .allowingSender(" News@Sentry.io ")
-        assertEquals(listOf("news@sentry.io", "grace@example.org"), behavior.allowedSenders)
+            ReadBehavior(allowedSenders = listOf("grace@example.org", "news@sentry.example"))
+                .allowingSender(" News@Sentry.example ")
+        assertEquals(listOf("news@sentry.example", "grace@example.org"), behavior.allowedSenders)
     }
 
     @Test
     fun removingASenderIgnoresCase() {
         val behavior =
-            ReadBehavior(allowedSenders = listOf("grace@example.org", "news@sentry.io"))
+            ReadBehavior(allowedSenders = listOf("grace@example.org", "news@sentry.example"))
                 .withoutSender("Grace@Example.org")
-        assertEquals(listOf("news@sentry.io"), behavior.allowedSenders)
+        assertEquals(listOf("news@sentry.example"), behavior.allowedSenders)
     }
 
     @Test

@@ -58,7 +58,7 @@ class RemoteImagesPersistenceTest {
                 read =
                     ReadBehavior(
                         remoteImages = RemoteImages.Never,
-                        allowedSenders = listOf("grace@example.org", "news@sentry.io"),
+                        allowedSenders = listOf("grace@example.org", "news@sentry.example"),
                     ),
             )
         AndroidMailBehaviorStore(context).write(saved)

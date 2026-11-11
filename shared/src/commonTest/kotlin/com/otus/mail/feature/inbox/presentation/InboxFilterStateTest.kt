@@ -89,7 +89,7 @@ class InboxFilterStateTest {
     fun peopleSearchWaitsForTheTextAndClearsWithThePanel() =
         runTest {
             val asked = mutableListOf<Pair<PeopleField, String>>()
-            val grace = FoundPerson(MailSender("Grace", "grace@x.org"), 3)
+            val grace = FoundPerson(MailSender("Grace", "grace@x.example"), 3)
             val state =
                 InboxFilterState(scope = this, findPeople = { field, text ->
                     asked += field to text

@@ -43,7 +43,7 @@ class QuoteLevelsTest {
             """
             fjdjss
             -------- Original Message --------
-            On Saturday, 10/17/26 at 17:50 Florian Ruby <florian@purbank.ch> wrote:
+            On Saturday, 10/17/26 at 17:50 Florian Ruby <florian@purbank.example> wrote:
             > jdjchcbeb
             >
             > On 2026-10-17 17:33, Florian Ruby wrote:
@@ -53,7 +53,7 @@ class QuoteLevelsTest {
             >> Sent from [Proton Mail](https://proton.me/mail/home) for Android.
             >>
             >> -------- Original Message --------
-            >> On Saturday, 10/17/26 at 17:31 Florian Ruby <ruby.florian@proton.me> wrote:
+            >> On Saturday, 10/17/26 at 17:31 Florian Ruby <ruby.florian@ruu.by> wrote:
             >>
             >>> dhisisxh
             """.trimIndent()

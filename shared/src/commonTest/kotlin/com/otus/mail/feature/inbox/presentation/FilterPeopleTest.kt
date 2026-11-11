@@ -33,19 +33,23 @@ class FilterPeopleTest {
         cc = cc,
     )
 
-    private val noreply = MailSender("OpenAI", "noreply@openai.com")
-    private val news = MailSender("OpenAI", "News@OpenAI.com")
-    private val sam = MailSender("Sam", "sam@x.org")
-    private val kim = MailSender("Kim", "kim@x.org")
+    private val noreply = MailSender("OpenAI", "noreply@openai.example")
+    private val news = MailSender("OpenAI", "News@OpenAI.example")
+    private val sam = MailSender("Sam", "sam@x.example")
+    private val kim = MailSender("Kim", "kim@x.example")
 
     @Test
     fun sendersWithTheSameNameAndDomainMerge() {
         val people = fromPeople(listOf(message(1, noreply), message(2, news), message(3, noreply), message(4, sam)))
         val openAi = people.first()
         assertEquals("OpenAI", openAi.name)
-        assertEquals(listOf("noreply@openai.com", "News@OpenAI.com"), openAi.addresses, "The most used address first")
+        assertEquals(
+            listOf("noreply@openai.example", "News@OpenAI.example"),
+            openAi.addresses,
+            "The most used address first",
+        )
         assertEquals(3, openAi.conversations)
-        assertEquals(SenderKey("OpenAI", setOf("noreply@openai.com", "news@openai.com")), openAi.key)
+        assertEquals(SenderKey("OpenAI", setOf("noreply@openai.example", "news@openai.example")), openAi.key)
         val other = MailSender("OpenAI", "noreply@example.org")
         assertEquals(
             2,
@@ -56,8 +60,8 @@ class FilterPeopleTest {
 
     @Test
     fun namelessSendersStayApart() {
-        val first = MailSender("", "a@x.org")
-        val second = MailSender("", "b@x.org")
+        val first = MailSender("", "a@x.example")
+        val second = MailSender("", "b@x.example")
         assertEquals(2, fromPeople(listOf(message(1, first), message(2, second))).size)
     }
 
@@ -77,9 +81,9 @@ class FilterPeopleTest {
     fun searchResultsJoinTheLoadedSenders() {
         val found =
             listOf(
-                FoundPerson(MailSender("Grace Hopper", "grace@x.org"), 4, "2026-09-01T10:00"),
-                FoundPerson(MailSender("", "sam@x.org"), 1, "2026-01-01T10:00"),
-                FoundPerson(MailSender("Lin", "lin@x.org")),
+                FoundPerson(MailSender("Grace Hopper", "grace@x.example"), 4, "2026-09-01T10:00"),
+                FoundPerson(MailSender("", "sam@x.example"), 1, "2026-01-01T10:00"),
+                FoundPerson(MailSender("Lin", "lin@x.example")),
             )
         val people = fromPeople(listOf(message(1, sam), message(2, sam)), found, query = "")
         assertEquals(listOf("Grace Hopper", "Sam", "Lin"), people.map { it.label })
@@ -94,7 +98,7 @@ class FilterPeopleTest {
         val picked = InboxFilters().withSender(openAi, on = true)
         assertEquals(setOf(openAi.key), picked.from)
         assertTrue(picked.hasSender(openAi))
-        val lone = InboxFilters(from = setOf(SenderKey.of("noreply@openai.com")))
+        val lone = InboxFilters(from = setOf(SenderKey.of("noreply@openai.example")))
         assertTrue(lone.hasSender(openAi), "A sender saved by one of the addresses counts as picked")
         assertEquals(setOf(openAi.key), lone.withSender(openAi, on = true).from, "Picking replaces the lone address")
         assertFalse(picked.withSender(openAi, on = false).hasSender(openAi))
@@ -111,13 +115,13 @@ class FilterPeopleTest {
                 message(3, sam, to = listOf(me)),
             )
         val people = toPeople(messages, own, mapOf("ada" to "Work"))
-        assertEquals(listOf("ada@example.org", "hi@example.org", "kim@x.org"), people.map { it.addresses.first() })
+        assertEquals(listOf("ada@example.org", "hi@example.org", "kim@x.example"), people.map { it.addresses.first() })
         assertEquals(listOf(2, 0, 2), people.map { it.conversations })
         assertEquals("Work", people.first().accountName)
         assertEquals(own.first(), people.first().own)
         val picked = InboxFilters().withRecipient(people[0], true).withRecipient(people[2], true)
         assertEquals(setOf(own.first()), picked.sentTo)
-        assertEquals(setOf("kim@x.org"), picked.to)
+        assertEquals(setOf("kim@x.example"), picked.to)
         assertTrue(picked.hasRecipient(people[2]))
         assertFalse(picked.withRecipient(people[0], false).hasRecipient(people[0]))
     }
@@ -144,11 +148,15 @@ class FilterPeopleTest {
     fun aTypedAddressPicksTheListedPersonWhoUsesIt() {
         val own = OwnAddress("ada", "ada@example.org")
         val openAi = fromPeople(listOf(message(1, noreply), message(2, news)))
-        assertEquals(openAi.single(), openAi.typed(" news@openai.com "), "A merged sender keeps all their addresses")
+        assertEquals(
+            openAi.single(),
+            openAi.typed(" news@openai.example "),
+            "A merged sender keeps all their addresses",
+        )
         val mine = toPeople(emptyList(), listOf(own)).typed("Ada@Example.org")
         assertEquals(own, mine?.own, "An own address picks as Sent to")
-        assertEquals(FilterPerson("", listOf("new@x.org")), openAi.typed("new@x.org"))
+        assertEquals(FilterPerson("", listOf("new@x.example")), openAi.typed("new@x.example"))
         assertEquals(null, openAi.typed("grace"), "A name is not an address")
-        assertEquals(null, openAi.typed("a@x.org, b@x.org"))
+        assertEquals(null, openAi.typed("a@x.example, b@x.example"))
     }
 }

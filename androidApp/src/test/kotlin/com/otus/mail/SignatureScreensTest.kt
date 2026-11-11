@@ -51,7 +51,7 @@ class SignatureScreensTest {
 
     private val alex =
         identity(
-            "this@companya.com",
+            "this@companya.example",
             "a1",
             Signature(
                 SignatureParts("<p>Alex Rivera</p><p>Product lead · Company A</p>", listOf(logo())).html(),
@@ -59,8 +59,8 @@ class SignatureScreensTest {
             ),
         )
     private val sales =
-        identity("sales@companya.com", "a1", Signature("<p>Company A Sales</p>", "Company A Sales\n+49 30 1234567"))
-    private val support = identity("support@companya.com", "a1")
+        identity("sales@companya.example", "a1", Signature("<p>Company A Sales</p>", "Company A Sales\n+49 30 1234567"))
+    private val support = identity("support@companya.example", "a1")
     private val otus = identity("otus@rubylabs.design", "a2", Signature("<p>Alex</p>", "Alex\nRubylabs"))
     private val hello = identity("hello@rubylabs.design", "a2")
 
@@ -136,13 +136,13 @@ class SignatureScreensTest {
             SignatureEditorScreen(state, editor, onBack = {}, onCopied = { copied = true })
         }
         compose.onNodeWithContentDescription("Copy signature").performClick()
-        compose.onNodeWithText("Replaces the signature of this@companya.com.").assertExists()
+        compose.onNodeWithText("Replaces the signature of this@companya.example.").assertExists()
         compose.onNode(hasText("Copy") and hasClickAction()).assertIsNotEnabled()
         compose.onNodeWithText("otus@rubylabs.design").performClick()
         compose.screenshot("compose/signature_copy")
         compose.onNode(hasText("Copy") and hasClickAction()).assertIsEnabled().performClick()
         compose.waitUntil(TIMEOUT) { copied }
-        assertEquals("this@companya.com" to Signature("<p>Alex</p>", "Alex\nRubylabs"), saved.first())
+        assertEquals("this@companya.example" to Signature("<p>Alex</p>", "Alex\nRubylabs"), saved.first())
     }
 
     private fun identity(

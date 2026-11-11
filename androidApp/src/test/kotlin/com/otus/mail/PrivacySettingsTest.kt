@@ -41,7 +41,10 @@ class PrivacySettingsTest {
     private val server = FakeFolderServer()
     private val behavior =
         MailBehaviorState(
-            initial = MailBehavior(read = ReadBehavior(allowedSenders = listOf("news@sentry.io", "grace@example.org"))),
+            initial =
+                MailBehavior(
+                    read = ReadBehavior(allowedSenders = listOf("news@sentry.example", "grace@example.org")),
+                ),
         )
 
     private fun openPrivacy() {
@@ -76,9 +79,9 @@ class PrivacySettingsTest {
     fun removingAnAllowedSenderMakesItAskAgain() {
         openPrivacy()
         compose.onNodeWithText("2 senders").performClick()
-        compose.onNodeWithText("news@sentry.io").assertIsDisplayed()
+        compose.onNodeWithText("news@sentry.example").assertIsDisplayed()
         compose.screenshot("settings/allowed_senders")
-        compose.onNodeWithContentDescription("Remove news@sentry.io").performClick()
+        compose.onNodeWithContentDescription("Remove news@sentry.example").performClick()
         assertEquals(listOf("grace@example.org"), behavior.behavior.read.allowedSenders)
         compose.onNodeWithContentDescription("Remove grace@example.org").performClick()
         compose

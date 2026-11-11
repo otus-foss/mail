@@ -20,7 +20,7 @@ import kotlin.test.assertTrue
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class FilterPeopleSearchTest {
-    private val grace = FoundPerson(MailSender("Grace", "grace@x.org"), 3)
+    private val grace = FoundPerson(MailSender("Grace", "grace@x.example"), 3)
 
     @Test
     fun aFailedSearchStopsSearching() =

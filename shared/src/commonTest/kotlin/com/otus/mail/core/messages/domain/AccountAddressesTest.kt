@@ -5,20 +5,20 @@ import kotlin.test.assertEquals
 
 class AccountAddressesTest {
     private val design =
-        AccountAddresses("design", "Design", listOf("hi@design.ch", "test@design.ch", "info@company.com"))
+        AccountAddresses("design", "Design", listOf("hi@ruu.by", "test@ruu.by", "info@company.example"))
 
     @Test
     fun addressesGroupByDomainInOrderOfFirstAppearance() {
         assertEquals(
             listOf(
                 DomainGroup(
-                    "design.ch",
+                    "ruu.by",
                     listOf(
-                        MailScopeChoice.Address("design", "hi@design.ch"),
-                        MailScopeChoice.Address("design", "test@design.ch"),
+                        MailScopeChoice.Address("design", "hi@ruu.by"),
+                        MailScopeChoice.Address("design", "test@ruu.by"),
                     ),
                 ),
-                DomainGroup("company.com", listOf(MailScopeChoice.Address("design", "info@company.com"))),
+                DomainGroup("company.example", listOf(MailScopeChoice.Address("design", "info@company.example"))),
             ),
             domainGroups(listOf(design)),
         )
@@ -27,7 +27,7 @@ class AccountAddressesTest {
     @Test
     fun searchFindsAddressesContainingTheQueryIgnoringCase() {
         assertEquals(
-            listOf(MailScopeChoice.Address("design", "info@company.com")),
+            listOf(MailScopeChoice.Address("design", "info@company.example")),
             searchAddresses(listOf(design), " COMPANY "),
         )
     }

@@ -6,7 +6,7 @@ import kotlin.test.assertNull
 
 class HtmlQuotesTest {
     /** Margaret's header, whose pill shows [fullDate], as the quote's own line writes it. */
-    private fun margaret(fullDate: String = "10 Oct") = QuoteHeader("Margaret Knuth", "m@x.org", "10 Oct", fullDate)
+    private fun margaret(fullDate: String = "10 Oct") = QuoteHeader("Margaret Knuth", "m@x.example", "10 Oct", fullDate)
 
     private val reply = "<div dir=\"ltr\">Sounds good.</div>"
     private val earlier = "<div>I went through the plan.</div>"
@@ -16,7 +16,7 @@ class HtmlQuotesTest {
         val html =
             "$reply<br><div class=\"gmail_quote gmail_quote_container\"><div dir=\"ltr\" class=\"gmail_attr\">" +
                 "On Thu, Oct 10, 2026 at 9:14 AM Margaret Knuth " +
-                "&lt;<a href=\"mailto:m@x.org\">m@x.org</a>&gt; wrote:<br></div>" +
+                "&lt;<a href=\"mailto:m@x.example\">m@x.example</a>&gt; wrote:<br></div>" +
                 "<blockquote class=\"gmail_quote\" style=\"margin:0\">$earlier</blockquote></div>"
         assertEquals(HtmlQuoteSplit("$reply<br>", earlier, margaret("10 Oct 2026, 9:14 AM")), splitHtmlQuote(html))
     }
@@ -25,7 +25,7 @@ class HtmlQuotesTest {
     fun splitsAppleMailCite() {
         val html =
             "<html><body>$reply<div><br><blockquote type=\"cite\">On 10 Oct 2026, at 09:14, Margaret Knuth " +
-                "&lt;m@x.org&gt; wrote:<br><br></blockquote></div>" +
+                "&lt;m@x.example&gt; wrote:<br><br></blockquote></div>" +
                 "<blockquote type=\"cite\">$earlier</blockquote></body></html>"
         assertEquals(
             HtmlQuoteSplit("<html><body>$reply<div><br></body></html>", earlier, margaret("10 Oct 2026, 09:14")),
@@ -36,7 +36,7 @@ class HtmlQuotesTest {
     @Test
     fun readsTheAttributionAboveACite() {
         val html =
-            "$reply<div>On 10 Oct 2026, at 09:14, Margaret Knuth &lt;m@x.org&gt; wrote:</div><br>" +
+            "$reply<div>On 10 Oct 2026, at 09:14, Margaret Knuth &lt;m@x.example&gt; wrote:</div><br>" +
                 "<blockquote type=\"cite\">$earlier</blockquote>"
         assertEquals(HtmlQuoteSplit(reply, earlier, margaret("10 Oct 2026, 09:14")), splitHtmlQuote(html))
     }
@@ -51,7 +51,7 @@ class HtmlQuotesTest {
     @Test
     fun splitsOutlookWebReply() {
         val header =
-            "<div id=\"divRplyFwdMsg\" dir=\"ltr\"><font><b>From:</b> Margaret Knuth &lt;m@x.org&gt;<br>" +
+            "<div id=\"divRplyFwdMsg\" dir=\"ltr\"><font><b>From:</b> Margaret Knuth &lt;m@x.example&gt;<br>" +
                 "<b>Sent:</b> Thursday, October 10, 2026 9:14 AM<br><b>Subject:</b> Q4</font><div>&nbsp;</div></div>"
         val html = "$reply<hr style=\"display:inline-block\">$header$earlier"
         assertEquals(HtmlQuoteSplit(reply, earlier, margaret("10 Oct 2026, 9:14 AM")), splitHtmlQuote(html))
@@ -60,7 +60,8 @@ class HtmlQuotesTest {
     @Test
     fun splitsOutlookDesktopReply() {
         val header =
-            "<div style=\"border:none;border-top:solid #E1E1E1 1.0pt\"><p><b>From:</b> Margaret Knuth &lt;m@x.org&gt;" +
+            "<div style=\"border:none;border-top:solid #E1E1E1 1.0pt\">" +
+                "<p><b>From:</b> Margaret Knuth &lt;m@x.example&gt;" +
                 "<br><b>Sent:</b> Thursday, October 10, 2026 9:14 AM</p></div>"
         val split = splitHtmlQuote("$reply$header$earlier")
         assertEquals(HtmlQuoteSplit(reply, earlier, margaret("10 Oct 2026, 9:14 AM")), split)
@@ -69,7 +70,7 @@ class HtmlQuotesTest {
     @Test
     fun anOutlookQuoteLeavesTheReplysWrapperEndsBehind() {
         val header =
-            "<div id=\"divRplyFwdMsg\"><b>From:</b> Margaret Knuth &lt;m@x.org&gt;<br>" +
+            "<div id=\"divRplyFwdMsg\"><b>From:</b> Margaret Knuth &lt;m@x.example&gt;<br>" +
                 "<b>Sent:</b> Thursday, October 10, 2026 9:14 AM</div>"
         val html = "<html><head><style>p{color:red}</style></head><body><div>$reply$header$earlier</div></body></html>"
         assertEquals(earlier, splitHtmlQuote(html)?.quote)
@@ -78,7 +79,7 @@ class HtmlQuotesTest {
     @Test
     fun wrapperEndsAndTheRuleAboveGoInAnyCaseAndSpacing() {
         val header =
-            "<div id=\"divRplyFwdMsg\"><b>From:</b> Margaret Knuth &lt;m@x.org&gt;<br>" +
+            "<div id=\"divRplyFwdMsg\"><b>From:</b> Margaret Knuth &lt;m@x.example&gt;<br>" +
                 "<b>Sent:</b> Thursday, October 10, 2026 9:14 AM</div>"
         val html = "<BODY><DIV>$reply<HR size=1>\n$header$earlier\n</DIV >\n</BODY>\n</HTML>\n"
         assertEquals(
@@ -90,7 +91,7 @@ class HtmlQuotesTest {
     @Test
     fun anAttributionInItsOwnElementGoesWithIt() {
         val html =
-            "$reply<p class=\"cite\">On 10 Oct 2026, at 09:14, Margaret Knuth &lt;m@x.org&gt; wrote:</p>\n" +
+            "$reply<p class=\"cite\">On 10 Oct 2026, at 09:14, Margaret Knuth &lt;m@x.example&gt; wrote:</p>\n" +
                 "<BLOCKQUOTE>$earlier</BLOCKQUOTE>"
         assertEquals(HtmlQuoteSplit(reply, earlier, margaret("10 Oct 2026, 09:14")), splitHtmlQuote(html))
     }

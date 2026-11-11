@@ -22,8 +22,8 @@ internal class TwoAccountDrafts(
 
     private fun companyIdentities() =
         listOf(
-            identity("Alex Rivera", "this@companya.com", "a1"),
-            identity("Company A Sales", "sales@companya.com", "a1"),
+            identity("Alex Rivera", "this@companya.example", "a1"),
+            identity("Company A Sales", "sales@companya.example", "a1"),
         ) + moreCompanyAddresses.map { identity("Alex Rivera", it, "a1") }
 
     override suspend fun save(draft: Draft): Result<String> {
