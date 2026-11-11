@@ -6,12 +6,14 @@ import com.otusfoss.core.jmap.login.InMemoryLoginStore
 import com.otusfoss.core.jmap.login.JmapLogin
 import com.otusfoss.mail.core.mailbox.MailboxRole
 import com.otusfoss.mail.core.messages.data.JmapEmailWriter
+import com.otusfoss.mail.core.messages.domain.MailAttributes
 import com.otusfoss.mail.core.messages.domain.MailLocation
 import com.otusfoss.mail.core.messages.domain.MailMessage
 import com.otusfoss.mail.core.messages.domain.MailSender
 import com.otusfoss.mail.core.messages.domain.MessageFlag
 import com.otusfoss.mail.core.messages.domain.ReceivedAt
 import com.otusfoss.mail.core.messages.domain.ThreadMember
+import com.otusfoss.mail.core.messages.presentation.MarkOutcome
 import com.otusfoss.mail.testing.ADA_LOGIN
 import com.otusfoss.mail.testing.STALWART_SESSION
 import com.otusfoss.mail.testing.conversationOf
@@ -188,6 +190,27 @@ class EmailMarksTest {
                 marker(smallBatches) { setReply(it, refused = setOf("m1")) }
                     .mark(listOf(row), MessageFlag.Read, true)
             assertTrue(changed.isEmpty())
+        }
+
+    @Test
+    fun undoOfAMarkOnAConversationSetsBackOnlyTheEmailsItChanged() =
+        runTest {
+            val sent = mutableListOf<String>()
+            val read = ThreadMember("m1", setOf("a"), "a", setOf(MessageFlag.Read))
+            val unread = ThreadMember("m2", setOf("a"), "a")
+            val row =
+                message("m1").copy(
+                    attributes = MailAttributes(unread = true),
+                    conversation = conversationOf(listOf(read, unread)),
+                )
+            val writer =
+                marker {
+                    sent += it
+                    setReply(it)
+                }
+            val marked = writer.mark(listOf(row), MessageFlag.Read, true)
+            writer.mark(MarkOutcome(listOf(row), marked, MessageFlag.Read, on = true).changed, MessageFlag.Read, false)
+            assertEquals(listOf(listOf("m1", "m2"), listOf("m2")), sent.map(::updateIds), "m1 was read before")
         }
 
     private companion object {

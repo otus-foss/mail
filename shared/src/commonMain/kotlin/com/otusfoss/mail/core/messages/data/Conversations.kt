@@ -9,6 +9,7 @@ import com.otusfoss.mail.core.mail.received
 import com.otusfoss.mail.core.mail.receivedTime
 import com.otusfoss.mail.core.messages.domain.MailConversation
 import com.otusfoss.mail.core.messages.domain.MailMessage
+import com.otusfoss.mail.core.messages.domain.MessageFlag
 import com.otusfoss.mail.core.messages.domain.ReceivedAt
 import com.otusfoss.mail.core.messages.domain.ReplyState
 import com.otusfoss.mail.core.messages.domain.ThreadEmail
@@ -54,7 +55,7 @@ internal fun MailMessage.inConversation(
                     .distinctBy { EmailAddressKey(it.address) },
             answered = counted.any { it.isAnswered },
             invite = counted.any { it.hasInvite },
-            members = listed.map { ThreadMember(it.id, it.boxes, mailboxId) },
+            members = listed.map { ThreadMember(it.id, it.boxes, mailboxId, it.flags) },
             exchanged = counted.any(view::isSent) && counted.any { !view.isSent(it) },
             reply =
                 ReplyState(
@@ -75,6 +76,10 @@ internal fun MailMessage.inConversation(
         location = location.copy(mailboxIds = newestFirst.flatMap { it.boxes }.toSet()),
     )
 }
+
+/** The marks this email has, which [ThreadMember.flags] keeps. */
+private val EmailObject.flags: Set<MessageFlag>
+    get() = setOfNotNull(MessageFlag.Read.takeIf { isSeen }, MessageFlag.Flagged.takeIf { isFlagged })
 
 /**
  * One row per thread, newest conversation first. Each mailbox of a list lists its own row of a

@@ -7,6 +7,8 @@ import com.otusfoss.mail.core.messages.domain.MailMessage
 import com.otusfoss.mail.core.messages.domain.MailSender
 import com.otusfoss.mail.core.messages.domain.MessageFlag
 import com.otusfoss.mail.core.messages.domain.ReceivedAt
+import com.otusfoss.mail.core.messages.domain.ThreadMember
+import com.otusfoss.mail.testing.conversationOf
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
@@ -40,6 +42,17 @@ class MarkOutcomeTest {
         val messages = listOf(message("flagged", flagged = true), message("plain"))
         val outcome = MarkOutcome(messages, marked = setOf("flagged", "plain"), MessageFlag.Flagged, on = false)
         assertEquals(listOf("flagged"), outcome.changed.map { it.id })
+    }
+
+    @Test
+    fun undoOfAConversationKeepsOnlyTheEmailsWhoseMarkChanged() {
+        val members =
+            listOf(ThreadMember("r", setOf("i"), "i", setOf(MessageFlag.Read)), ThreadMember("u", setOf("i"), "i"))
+        val row = message("row", unread = true).copy(conversation = conversationOf(members))
+        val unread = MarkOutcome(listOf(row), setOf("row"), MessageFlag.Read, on = false).changed.single()
+        assertEquals(listOf("r"), unread.conversation?.members?.map { it.emailId }, "The unread email was not changed")
+        val read = MarkOutcome(listOf(row), setOf("row"), MessageFlag.Read, on = true).changed.single()
+        assertEquals(listOf(ThreadMember("u", setOf("i"), "i", setOf(MessageFlag.Read))), read.conversation?.members)
     }
 
     @Test

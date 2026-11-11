@@ -26,8 +26,9 @@ interface EmailWriter {
     ): Boolean
 
     /**
-     * Undoes a [move] of [message] into [folderId]: puts it back in [returning], the mailboxes the
-     * move took it out of, and takes it out of [folderId] unless it was already there before.
+     * Undoes a [move] of [message] into [folderId]: puts each of its emails back in the mailboxes
+     * of [returning], the ones the move took it out of, that the email was in, and takes it out of
+     * [folderId] unless it was already there before.
      */
     suspend fun moveBack(
         message: MailMessage,

@@ -18,6 +18,7 @@ import com.otusfoss.mail.core.messages.domain.Deletion
 import com.otusfoss.mail.core.messages.domain.EmailWriter
 import com.otusfoss.mail.core.messages.domain.MailMessage
 import com.otusfoss.mail.core.messages.domain.MessageFlag
+import com.otusfoss.mail.core.messages.domain.memberMailboxes
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.buildJsonObject
@@ -55,6 +56,10 @@ class JmapEmailWriter(
         return queue.updateRow(message, movePatch(left, folderId))
     }
 
+    /**
+     * Each email of the row goes back only to the folders of [returning] it was in before the move,
+     * so a conversation whose emails were in different folders does not end up in all of them.
+     */
     override suspend fun moveBack(
         message: MailMessage,
         folderId: String,
@@ -62,12 +67,15 @@ class JmapEmailWriter(
     ): Boolean {
         val back = returning - folderId - ""
         if (back.isEmpty()) return false
-        val patch =
-            jmapPatch {
-                if (folderId !in message.location.mailboxIds) remove("mailboxIds", folderId)
-                back.forEach { set(JsonPrimitive(true), "mailboxIds", it) }
-            }
-        return queue.updateRow(message, patch)
+        val patches =
+            message.memberMailboxes
+                .mapValues { (_, before) ->
+                    jmapPatch {
+                        if (folderId !in before) remove("mailboxIds", folderId)
+                        back.intersect(before.ifEmpty { back }).forEach { set(JsonPrimitive(true), "mailboxIds", it) }
+                    }
+                }.ifEmpty { return false }
+        return queue.update(message.location.accountId, patches).containsAll(patches.keys)
     }
 
     override suspend fun setInFolder(

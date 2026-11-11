@@ -5,6 +5,7 @@ import com.otusfoss.mail.core.mail.EmailObject
 import com.otusfoss.mail.core.mail.Keywords
 import com.otusfoss.mail.core.messages.domain.MailLocation
 import com.otusfoss.mail.core.messages.domain.MailMessage
+import com.otusfoss.mail.core.messages.domain.MessageFlag
 import com.otusfoss.mail.core.messages.domain.ThreadMember
 import kotlinx.datetime.TimeZone
 import kotlin.test.Test
@@ -81,7 +82,8 @@ class ConversationsTest {
         )
         assertTrue(conversation.answered)
         assertEquals(listOf("e2", "e1"), conversation.members.map { it.emailId }, "Only Inbox mail, the row first")
-        assertEquals(ThreadMember("e1", setOf("inbox"), "inbox"), conversation.members[1])
+        assertEquals(ThreadMember("e1", setOf("inbox"), "inbox", setOf(MessageFlag.Read)), conversation.members[1])
+        assertEquals(emptySet(), conversation.members[0].flags, "Each email keeps its own marks")
     }
 
     @Test

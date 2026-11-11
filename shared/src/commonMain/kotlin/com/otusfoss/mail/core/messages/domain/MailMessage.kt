@@ -121,7 +121,10 @@ data class MailAttributes(
 /** A mark the user can turn on or off for one message. */
 enum class MessageFlag { Read, Flagged }
 
-/** [message] with [flag] turned [on], as the server will show it once the change is saved. */
+/**
+ * [message] with [flag] turned [on] for every email of its conversation, as the server will show it
+ * once the change is saved.
+ */
 fun MailMessage.withFlag(
     flag: MessageFlag,
     on: Boolean,
@@ -129,7 +132,24 @@ fun MailMessage.withFlag(
     when (flag) {
         MessageFlag.Read -> copy(attributes = attributes.copy(unread = !on))
         MessageFlag.Flagged -> copy(attributes = attributes.copy(flagged = on))
-    }
+    }.copy(
+        conversation =
+            conversation?.let { thread -> thread.copy(members = thread.members.map { it.withFlag(flag, on) }) },
+    )
+
+/**
+ * This row narrowed to the emails of its conversation that setting [flag] to [on] changes, or null
+ * when it changes none. Undo sets back only these, so a conversation with mixed marks gets each
+ * email's own mark back.
+ */
+fun MailMessage.changedBy(
+    flag: MessageFlag,
+    on: Boolean,
+): MailMessage? {
+    val thread = conversation ?: return takeIf { hasFlag(flag) != on }
+    val members = thread.members.filter { (flag in it.flags) != on }
+    return if (members.isEmpty()) null else copy(conversation = thread.copy(members = members))
+}
 
 /** [message] added to [folderId], or taken out of it, as the server will show it once the change is saved. */
 fun MailMessage.inFolder(
