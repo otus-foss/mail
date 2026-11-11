@@ -48,7 +48,7 @@ class MailRequests internal constructor(
 
     /** Starts a draft from [request], such as one a `mailto:` link filled in. */
     fun compose(request: ComposeRequest) {
-        pages.showLater(MailPage.Compose(request))
+        pages.showLater { MailPage.Compose(request) }
     }
 
     /** Marks [request] handled, unless a newer request replaced it meanwhile. */

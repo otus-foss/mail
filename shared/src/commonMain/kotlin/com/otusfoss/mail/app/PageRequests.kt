@@ -27,9 +27,9 @@ internal class PageRequests(
         request.taken.await()
     }
 
-    /** [show] for a toast's action, which cannot wait. */
-    fun showLater(page: MailPage) {
-        work.launch { show(page) }
+    /** [show] for a toast's action, which cannot wait; [page] may wait, as for a save to end. */
+    fun showLater(page: suspend () -> MailPage) {
+        work.launch { show(page()) }
     }
 
     /** Hands each requested page to [show], for as long as the caller's composition runs. */

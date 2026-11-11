@@ -37,7 +37,7 @@ internal fun ComposePage(
 
                 override fun discarded(delete: () -> Unit) {
                     val pages = states.requests.pages
-                    val undo = UiAction("Undo") { pages.showLater(page.copy(request = compose.reopening())) }
+                    val undo = UiAction("Undo") { pages.showLater { page.copy(request = compose.reopeningSaved()) } }
                     val remove = { states.compose.heldEdits.discard(resumed?.held, delete) }
                     states.moveToasts.toasts.show(ToastMessage("Draft discarded", undo, onClose = remove))
                     onClose()

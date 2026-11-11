@@ -201,6 +201,9 @@ class ComposeState(
         return { scope.launch { saving.withLock { stored?.discardCopy(drafts) } } }
     }
 
+    /** [reopening] once any save in progress has ended, so it opens the copy saved last. */
+    suspend fun reopeningSaved(): ComposeRequest.Resume = saving.withLock { reopening() }
+
     /**
      * Stops saving and hands the draft over for sending. Its [OutgoingDraft.ready] waits for any
      * save in progress, so the draft knows its saved copy. Null when the draft has no From address

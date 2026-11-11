@@ -33,6 +33,13 @@ internal class Outgoing(
 /** This draft once the scheduled send it edits is canceled; that send's copy is the draft it replaces. */
 internal fun Outgoing.released(): Outgoing = Outgoing(draft, reopen.copy(held = null), scheduledBefore, filed, open)
 
+/**
+ * [Outgoing.reopen] with the copy saved last. A save still running at Send may replace the copy
+ * the request names, so Undo would open the older one and leave the newer in Drafts.
+ */
+internal suspend fun Outgoing.reopenSaved(): ComposeRequest.Resume =
+    reopen.copy(draft = reopen.draft.copy(emailId = draft.ready().emailId))
+
 /** The request that opens this draft again as it is, such as after Undo; it keeps the send it edits. */
 fun ComposeState.reopening(): ComposeRequest.Resume {
     val resumed = request as? ComposeRequest.Resume
