@@ -63,8 +63,9 @@ starts and keeps an existing schedule. WorkManager starts on demand from `OtusMa
 Each run calls `JmapNewMailChecker`:
 
 - The first run for a login only saves its current Email state, so old mail never notifies.
-- Later runs read `Email/changes` since the saved state (RFC 8620, section 5.2), up to 5 pages of
-  100 changes, and fetch at most the 50 newest created messages.
+- Later runs read `Email/changes` since the saved state (RFC 8620, section 5.2), every page of
+  100 changes, and fetch at most the 50 newest created messages. A login more than 100 pages
+  behind starts again from now, like one whose state the server forgot.
 - A message notifies when it is in a mailbox with the `inbox` role and has neither `$seen` nor
   `$draft`.
 - A message whose notification is still showing and that `Email/changes` lists as updated or
