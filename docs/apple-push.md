@@ -70,7 +70,9 @@ Do not expose the backend port directly. Public registration has no account logi
 Attest check; configure ingress limits before making it publicly reachable.
 
 A route that is not active, such as a new one waiting for its verification push, expires one hour
-after its last update, so registrations nobody completes free their quota slot quickly. Active
+after its last update, so registrations nobody completes free their quota slot quickly. A route
+can become active only after a push has been delivered to it, such as the verification notice;
+until then a request to activate it leaves it inactive with the one-hour lifetime. Active
 routes expire after eight days without upkeep. Ciphertext expires after at most one hour, or
 sooner when acknowledged. Deleting a route deletes its pending messages. APNs rejects an invalid
 device token with a permanent error; the bridge revokes that route. Transient APNs errors, and

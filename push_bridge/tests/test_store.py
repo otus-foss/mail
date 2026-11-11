@@ -11,6 +11,12 @@ TOKEN = "ab" * 32
 KEY = "12345678-1234-1234-1234-123456789012"
 
 
+def activate(target, route):
+    """Delivers and acknowledges a verification push, then activates the route."""
+    target.acknowledge(route, target.save(route, b"x", 60, active=False))
+    target.update(route, True)
+
+
 class StoreTest(unittest.TestCase):
     def setUp(self):
         self.directory = tempfile.TemporaryDirectory()
@@ -24,7 +30,7 @@ class StoreTest(unittest.TestCase):
     def test_unverified_registrations_free_the_quota_within_an_hour(self):
         with patch.object(store, "MAX_ROUTES", 3):
             kept = self.store.create(TOKEN, KEY)
-            self.store.update(kept["id"], True)
+            activate(self.store, kept["id"])
             self.store.create("cd" * 32, KEY)
             self.store.create("ef" * 32, KEY)
             with self.assertRaises(OverflowError):
@@ -35,11 +41,31 @@ class StoreTest(unittest.TestCase):
 
     def test_an_active_route_lives_until_it_is_renewed(self):
         route = self.store.create(TOKEN, KEY)["id"]
-        self.store.update(route, True)
+        activate(self.store, route)
         with self.later(store.ROUTE_LIFETIME - 60):
             self.assertIsNotNone(self.store.route(route))
         with self.later(store.ROUTE_LIFETIME + 1):
             self.assertIsNone(self.store.route(route))
+
+    def test_a_route_without_a_delivered_push_stays_inactive(self):
+        route = self.store.create(TOKEN, KEY)["id"]
+        self.store.update(route, True)
+        self.assertFalse(self.store.route(route)["active"])
+        with self.later(store.INACTIVE_ROUTE_LIFETIME + 1):
+            self.assertIsNone(self.store.route(route))
+
+    def test_routes_active_before_delivery_tracking_stay_active(self):
+        path = self.directory.name + "/old.sqlite"
+        with sqlite3.connect(path) as database:
+            database.execute(
+                "CREATE TABLE routes (id TEXT PRIMARY KEY, secret TEXT, token TEXT, key_id TEXT,"
+                " active INTEGER DEFAULT 0, expires INTEGER)"
+            )
+            database.execute("INSERT INTO routes VALUES ('kept', '', ?, ?, 1, 0)", (TOKEN, KEY))
+        database.close()
+        upgraded = Store(path)
+        upgraded.update("kept", True)
+        self.assertTrue(upgraded.route("kept")["active"])
 
     def test_an_inactive_route_holds_only_a_few_messages(self):
         route = self.store.create(TOKEN, KEY)["id"]

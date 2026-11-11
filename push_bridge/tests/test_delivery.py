@@ -48,6 +48,13 @@ class DeliveryTest(unittest.TestCase):
             "/v1/push/" + self.route["id"], "POST", self.payload, HTTP_CONTENT_ENCODING="aes128gcm"
         )
 
+    def activate(self):
+        """Delivers and acknowledges a verification push, then activates the route."""
+        self.assertEqual(self.push()[0], 201)
+        route = self.route["id"]
+        self.store.acknowledge(route, self.store.messages(route)[0]["id"])
+        self.store.update(route, True)
+
     def test_verification_is_buffered_without_an_alert(self):
         self.assertEqual(self.push()[0], 201)
         self.apns.send.assert_not_called()
@@ -62,6 +69,7 @@ class DeliveryTest(unittest.TestCase):
     def test_activation_requires_management_secret(self):
         path = "/v1/routes/" + self.route["id"]
         self.assertEqual(self.request(path, "PATCH", b'{"active":true}', secret="wrong")[0], 404)
+        self.assertEqual(self.push()[0], 201)
         self.assertEqual(
             self.request(path, "PATCH", b'{"active":true}', secret=self.route["secret"])[0], 204
         )
@@ -69,13 +77,13 @@ class DeliveryTest(unittest.TestCase):
         self.apns.send.assert_called_once()
 
     def test_invalid_device_revokes_route(self):
-        self.store.update(self.route["id"], True)
+        self.activate()
         self.apns.send.return_value = False
         self.assertEqual(self.push()[0], 410)
         self.assertIsNone(self.store.route(self.route["id"]))
 
     def test_temporary_failure_is_retryable_and_does_not_fill_storage(self):
-        self.store.update(self.route["id"], True)
+        self.activate()
         self.apns.send.side_effect = httpx.ConnectError("offline")
         self.assertEqual(self.push()[0], 503)
         self.assertEqual(self.store.messages(self.route["id"]), [])
@@ -129,7 +137,7 @@ class DeliveryTest(unittest.TestCase):
         self.assertEqual(self.push()[0], 410)
 
     def test_route_and_message_quotas_bound_storage(self):
-        self.store.update(self.route["id"], True)
+        self.activate()
         for _ in range(32):
             self.assertEqual(self.push()[0], 201)
         self.assertEqual(self.push()[0], 429)
