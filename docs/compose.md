@@ -309,56 +309,59 @@ carries `HOLDUNTIL` (RFC 4865), closes the page, and shows "Scheduled for Mon 19
 The scheduled copy waits in the Scheduled folder without `$draft`. Undo sets the submission's
 `undoStatus` to `canceled`. Only after the server confirms cancellation does Mail mark the copy
 `$draft` again, take back the original's mark as for a held send, and open it. If restoring the
-draft fails, Mail reports that the send was canceled but the draft could not be restored.
+draft fails, Mail reports that the send was canceled but the draft could not be restored. If the
+cancel fails, a sticky "Couldn't cancel" toast offers Retry.
 
 ### Scheduled folder
 
 Mail finds the Scheduled folder by the `scheduled` role only (IANA IMAP Mailbox Name Attributes).
 A folder that is only named Scheduled does not count. When the account has no such folder, the
-first scheduled send creates one named Scheduled with that role. Nothing else creates it. If
-creating it fails, the copy is stored in Drafts, or in Sent without Drafts, and waits there
-without `$draft` until the account has a Scheduled folder.
+first scheduled send creates one named Scheduled with that role, and so does filing, below, when
+it finds mail scheduled from another client. An empty folder named Scheduled without a role gets
+the role instead of a second folder being made. If creating it fails, a scheduled send stores its
+copy in Drafts, or in Sent without Drafts, and the copy waits there without `$draft` until the
+account has a Scheduled folder. After a refused create, filing does not try again until the app
+restarts.
 
 When the accounts load or change, on pull to refresh, and on a push, or when Mail returns after
-one, Mail files
-scheduled mail by its submission (RFC 8621, section 7). It looks at the copies in Scheduled and at
-the copies in Drafts without `$draft`, and reads the `undoStatus` of each copy's submission,
-leaving out canceled ones:
+one, Mail files scheduled mail by its submissions (RFC 8621, section 7). Only one filing runs at a
+time. It reads every submission of each copy without `$draft`, taking pending over sent over
+canceled, and queries every pending submission with its `sendAt`, which finds copies another
+client filed:
 
-- A copy whose submission is `final` moves to Sent, since some servers send held mail but leave
-  its copy where it was. Without a Sent folder nothing is filed.
-- A copy in Drafts whose submission is `pending` moves to Scheduled, once the account has that
-  folder. Older builds left scheduled copies there.
+- A copy whose send is pending further ahead than an Undo hold can be moves from Drafts or Sent
+  to Scheduled. Other clients often file scheduled mail in Sent. That limit is the longest Undo
+  delay, plus the server's spare, plus 30 seconds of slack for other devices' clocks. A nearer
+  send is an Undo hold and stays put.
+- A copy in Scheduled whose send went, or whose submission the server no longer keeps, moves to
+  Sent. Some servers send held mail but leave its copy where it was. A copy without a submission
+  counts as gone only when the server's answer was not cut short at its limit.
+- A copy in Scheduled whose every send was canceled, in Mail or another client, goes back to
+  Drafts as a draft.
+- A copy that still has `$draft` stays, since Mail may not have submitted it yet.
 
-Rows in Scheduled cannot be selected. Tapping one opens it in Read, where the bar offers
-**Send now** and **Edit**. Both load the copy first and check that its send still waits. When
-either check fails, or Send now cannot cancel the send, a "Couldn't change scheduled mail" toast
-shows and the message stays scheduled.
+Scheduled lists each email on its own row, not one per conversation, and the filter panel counts
+it the same way. Rows in Scheduled cannot be selected. Tapping one opens it in Read, where the bar
+offers **Send now** and **Edit**. Both load the copy first and check that its send still waits.
+
+When a cancel is refused or its answer is lost, Mail reads the copy's submissions again before it
+acts. A canceled send stops, and its copy becomes a draft again; if that fails, the action still
+goes ahead and filing turns the copy back into a draft later. A pending send still waits. A sent
+one already went.
 
 - **Edit** opens the copy in Write with its scheduled time, and the send keeps waiting unchanged.
   Write never saves this draft. Only Send replaces the old send: it cancels it first, then sends
-  the edit now or at the time the page shows. If the cancel fails, the old send still waits and a
-  "Couldn't change scheduled mail" toast offers Open, which shows the edit again. Discard shows
-  "Draft discarded" with Undo. Once that toast leaves, Mail cancels the old send and deletes its
-  copy. If the cancel fails, the copy stays. Leaving Write any other way drops the changes and
-  keeps the send as it was.
+  the edit now or at the time the page shows. If the old send still waits, a sticky "Couldn't
+  change scheduled mail" toast offers Open, which shows the edit again. If it already went, Send
+  saves the edit as a new draft and says "Already sent. Edit saved as draft" with Open; when the
+  server cannot say, the toast starts "Couldn't confirm the send". Send never sends that edit by
+  itself. Discard shows "Draft discarded" with Undo. Once that toast leaves, Mail cancels the old
+  send and deletes its copy. If the send may still go, a sticky "Couldn't discard. Scheduled mail
+  may still send" toast offers Retry. Leaving Write any other way drops the changes and keeps the
+  send as it was.
 - **Send now** cancels the send and sends the copy as it is, dated now, through the usual send
-  with its "Sending…" toast and Undo. If the cancel fails, the "Couldn't change scheduled mail"
-  toast shows and nothing is sent.
-
-Known gaps, open as issues:
-
-- Mail scheduled from another client, such as webmail, shows in Sent instead of Scheduled
-  ([#320](https://github.com/reazndev/otus-mail/issues/320)).
-- Scheduled seems to list only some of the scheduled mails
-  ([#321](https://github.com/reazndev/otus-mail/issues/321)).
-- When the cancel succeeds but restoring `$draft` fails, Send, Discard, and Send now treat the
-  send as still waiting. The copy then stays in Scheduled with no send behind it, so it never goes
-  ([#331](https://github.com/reazndev/otus-mail/issues/331)).
-- When the old send cannot be canceled, the Open toast after Send is not sticky, so the edit is
-  lost once it times out. A failed Discard shows no toast, though the old send still goes
-  ([#333](https://github.com/reazndev/otus-mail/issues/333)). Open decision in that issue: what
-  Send should do once the old send has already gone.
+  with its "Sending…" toast and Undo. If loading or the cancel fails, a sticky "Couldn't change
+  scheduled mail" toast offers Retry and nothing is sent.
 
 ### Opening a saved draft
 
@@ -368,16 +371,23 @@ does not load, Write stays shut and a "Couldn't open draft" toast shows, since a
 replace the copy with less than it had.
 
 Loading splits the saved copy into what Write edits. The quote and the signature come off the
-body, and Write adds the identity's signature again as it does for a reply. Inline images that
-only the cut parts show are left out; attached files always stay. Only drafts that Mail wrote are
-split, since Mail finds the parts by its own `otus-signature` and `otus-quote` marks. An HTML
-draft from another app loads whole, so with the reply-signature setting on it gets a second
-signature. The draft opens as its stored copy, so leaving Write
-without a change saves nothing. Once edited, it saves over that copy like any other draft.
+body, and Write adds the identity's signature again. Mail finds the quote first, by Write's own
+intro and forward header, then looks for the `-- ` signature line only before it, so a
+forwarded message's own signature is not taken for yours. Inline images that only the cut parts
+show are left out; attached files always stay. Only drafts that Mail wrote are split, since Mail
+finds the parts by its own `otus-signature` and `otus-quote` marks. An HTML draft from another app
+loads whole, so with the reply-signature setting on it gets a second signature.
 
-Known gap: a saved new message, or an edit of a scheduled one, loses its signature when the
-Writing setting that adds the signature to replies is off
-([#334](https://github.com/reazndev/otus-mail/issues/334)).
+Whether Write signs the draft again follows the saved copy, for a reply too and whatever the reply
+setting says. A copy that had a signature gets one. A copy saved without one stays unsigned when
+its identity has a signature, since the user turned it off. When nothing tells, for example the
+identity has no signature or the copy has no From address, a copy without a quote is signed like
+a new message and one with a quote follows the reply setting. The same applies to a scheduled
+mail opened with Edit, and to Undo after Send. Formatted mail from an identity with only a
+plain-text signature carries that signature in its HTML too, so it comes back on reopen.
+
+The draft opens as its stored copy, so leaving Write without a change saves nothing. Once edited,
+it saves over that copy like any other draft.
 
 ## Limits
 
@@ -427,10 +437,12 @@ delayed saves, saving on close, discard and its later delete, failure notices, k
 copy after a failed save, a change or discard during a save, the sending identity, resumed
 drafts, and moving a draft to another account.
 `DraftEmailTest` checks the text and HTML parts with the quote, and uploaded files in `multipart/mixed`.
-`SavedDraftTest` and `SavedDraftEmailTest` cover splitting a saved copy for Write. `HeldEditTest`
+`SavedDraftTest` and `SavedDraftEmailTest` cover splitting a saved copy for Write, and
+`SavedSignatureTest` and `SavedSignatureEmailTest` whether a reopened draft is signed. `HeldEditTest`
 covers Send, Discard, and Edit on a scheduled mail, and `FolderBarsTest` the Scheduled bar.
 `ScheduledCancellationTest` covers canceling a held or scheduled send, restoring its draft, and
-Send now. No test covers `fileScheduled`.
+reading the submissions after a refused or lost cancel. `ScheduledSendNowTest` covers Send now,
+and `ScheduledFilingTest` filing scheduled mail between Drafts, Sent, and Scheduled.
 `ComposeAttachmentsTest` covers uploading a picked file, retrying a failed upload, uploading again
 after a move to another account, and removing a file. `ComposeAttachmentScreenTest` renders the
 chips under the body. `ComposeRecipientsTest` covers
