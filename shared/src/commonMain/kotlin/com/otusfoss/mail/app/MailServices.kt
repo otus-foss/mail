@@ -81,10 +81,12 @@ import com.otusfoss.mail.feature.read.data.JmapKnownPeople
 import com.otusfoss.mail.feature.read.data.JmapMessageBodies
 import com.otusfoss.mail.feature.read.data.JmapMessageHeaders
 import com.otusfoss.mail.feature.read.data.JmapNewsletters
+import com.otusfoss.mail.feature.read.data.JmapSenderMails
 import com.otusfoss.mail.feature.read.domain.ConversationMessages
 import com.otusfoss.mail.feature.read.domain.KnownPeople
 import com.otusfoss.mail.feature.read.domain.MessageHeaders
 import com.otusfoss.mail.feature.read.domain.Newsletters
+import com.otusfoss.mail.feature.read.domain.SenderMails
 import com.otusfoss.mail.feature.read.presentation.NewsletterSteps
 import com.otusfoss.mail.resources.Res
 import kotlinx.coroutines.CoroutineScope
@@ -208,6 +210,7 @@ class MailServices(
     internal val newsletters: Newsletters by lazy {
         JmapNewsletters(connections, drafts, sender, writer, mailboxes)
     }
+    internal val senderMails: SenderMails by lazy { JmapSenderMails(connections, mailboxes) }
     internal val headers: MessageHeaders by lazy { JmapMessageHeaders(connections) }
     internal val blocks: SenderBlocks by lazy { RuleSenderBlocks(rules, folders) }
 

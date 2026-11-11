@@ -20,6 +20,7 @@ import com.otusfoss.mail.feature.read.domain.MessageHeaders
 import com.otusfoss.mail.feature.read.domain.MessagePrinter
 import com.otusfoss.mail.feature.read.domain.Newsletters
 import com.otusfoss.mail.feature.read.domain.OfflineAttachments
+import com.otusfoss.mail.feature.read.domain.SenderMails
 import com.otusfoss.mail.feature.read.presentation.components.NewFolderSheet
 import com.otusfoss.mail.feature.read.presentation.components.PersonSheet
 import kotlinx.datetime.LocalDate
@@ -113,7 +114,8 @@ class ReadFiles(
  * The services behind the newsletter strip and the ⋯ menu, including the [edits] the view makes,
  * [person], what tapping a person or the menu's contact entries open, and the Inbox's
  * [categories]; each is null where none is wired, and without [person] the pills stay plain.
- * [files] handles attachments and printing.
+ * [files] handles attachments and printing. [senderMails] finds a sender's other mail, and
+ * [openMail] opens one of them by its login and email id.
  */
 class ReadServices(
     val newsletters: Newsletters?,
@@ -123,6 +125,8 @@ class ReadServices(
     val person: PersonSheet?,
     val files: ReadFiles,
     val categories: ReadCategories?,
+    val senderMails: SenderMails? = null,
+    val openMail: ((loginId: String, emailId: String) -> Unit)? = null,
 )
 
 /**

@@ -96,6 +96,8 @@ internal class ReadWiring(
                     person,
                     files,
                     categories.takeIf { sorted },
+                    services.senderMails,
+                    services.requests::openMessage,
                 ),
             effects = effects,
             display =

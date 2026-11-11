@@ -3,6 +3,7 @@ package com.otusfoss.mail.feature.read.domain
 import com.otusfoss.mail.core.mail.EmailAddressKey
 import com.otusfoss.mail.core.messages.domain.MailMessage
 import com.otusfoss.mail.core.messages.domain.MailingList
+import com.otusfoss.mail.core.messages.domain.ReceivedAt
 import com.otusfoss.mail.core.messages.domain.Unsubscribe
 
 /** Loads every message of a conversation, for the Read view's pages. */
@@ -69,4 +70,30 @@ fun interface MessagePrinter {
         title: String,
         html: String,
     )
+}
+
+/** One of a sender's other emails, as the Read view lists it under "More from". */
+data class SenderMail(
+    val emailId: String,
+    val subject: String,
+    val preview: String,
+    val received: ReceivedAt,
+    val unread: Boolean,
+)
+
+/** A sender's other mail in the account of a message. */
+fun interface SenderMails {
+    /**
+     * The newest conversations from [message]'s sender in its account, up to [SHOWN], without the
+     * emails in [except] and mail in Trash or Spam; none when the server is out of reach.
+     */
+    suspend fun newest(
+        message: MailMessage,
+        except: Set<String>,
+    ): List<SenderMail>
+
+    companion object {
+        /** How many conversations "More from" lists. */
+        const val SHOWN: Int = 3
+    }
 }

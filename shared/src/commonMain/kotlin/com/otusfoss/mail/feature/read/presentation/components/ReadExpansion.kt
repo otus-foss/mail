@@ -94,9 +94,9 @@ internal class ReadRoom(
     }
 
     /** The page's files as the panel shows them; null until its body loads and when it has none. */
-    fun files(): ReadFiles? {
+    fun files(): PanelFiles? {
         val files = parts.content(page)?.attachments?.takeIf { it.isNotEmpty() } ?: return null
-        return ReadFiles(
+        return PanelFiles(
             files.map { it.shown(strips.isKept(page, it), state.thumbnails.of(page, it)) },
             attachmentSummary(files),
             strips.files(page, files),
@@ -105,7 +105,7 @@ internal class ReadRoom(
 }
 
 /** A page's files as [shown] in the panel, their [summary] line, and what a tap on one does. */
-internal class ReadFiles(
+internal class PanelFiles(
     val shown: List<AttachmentFile>,
     val summary: String,
     val actions: AttachmentActions,
@@ -162,7 +162,7 @@ internal fun ReadExpandedContent(
 
 /**
  * What the full stop adds under the details: how the message was delivered, its files as a list,
- * and its original source.
+ * more mail from its sender, and its original source.
  */
 @Composable
 private fun ReadDetails(room: ReadRoom) {
@@ -175,6 +175,7 @@ private fun ReadDetails(room: ReadRoom) {
     Column(Modifier.fillMaxWidth().sheetInset()) {
         DetailRows(deliveryLines(room.page, delivered), divided = true)
         room.files()?.let { AttachmentList(it.shown, it.summary, it.actions) }
+        ReadMoreMail(room)
         SettingPageRow(
             "Show original",
             { room.open(ReadSheet.Details(room.page)) },
