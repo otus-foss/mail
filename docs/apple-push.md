@@ -101,8 +101,9 @@ entitlement to `development`; Release sets it to `production`. Match the bridge 
 signing environment. The extension is an embedded Xcode target with its own provisioning profile.
 
 The app stores route capabilities, device tokens and push keys in a shared Keychain group using
-`AfterFirstUnlockThisDeviceOnly`. The extension has no access to the mail credential service.
-Normal mail credentials keep their existing storage and names.
+`AfterFirstUnlockThisDeviceOnly`. The app lists its own Keychain group first, so mail logins,
+which Core saves without an explicit group, land there and the extension cannot read them. Logins
+saved by builds that listed only the push group stay in that group until Core moves them.
 
 ## Lifecycle and limits
 
