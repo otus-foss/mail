@@ -22,6 +22,7 @@ import com.otusfoss.mail.core.messages.domain.ReceivedAt
 import com.otusfoss.mail.core.messages.domain.ThreadEmail
 import com.otusfoss.mail.testing.ADA_LOGIN
 import com.otusfoss.mail.testing.FakeMailServer
+import com.otusfoss.mail.testing.STALWART_SESSION
 import com.otusfoss.mail.testing.stalwartLike
 import kotlinx.coroutines.test.runTest
 import kotlinx.datetime.TimeZone
@@ -113,10 +114,28 @@ class JmapConversationMessagesTest {
             assertEquals(listOf("ada/r2", "ada/r1"), pages.messages(row)?.map { it.id })
         }
 
+    @Test
+    fun aThreadTooLargeForOneGetArrivesInSmallerOnes() =
+        runTest {
+            server.maxIdsInGet = 2
+            val session = STALWART_SESSION.replace("\"$CORE\": {}", "\"$CORE\": {\"maxObjectsInGet\": 2}")
+            val chunked =
+                JmapConversationMessages(
+                    JmapConnections(JmapClient(stalwartLike(session = session, api = server::answer)), store),
+                    cache,
+                    Mailboxes(cache),
+                    zone = { TimeZone.UTC },
+                )
+            assertEquals(listOf("ada/s1", "ada/r2", "ada/x1", "ada/r1"), chunked.messages(row)?.map { it.id })
+            assertEquals(1, server.fetchedIds().count { it.size > 2 }, "Only the back-reference asks for too many")
+        }
+
     private companion object {
         const val MAILBOXES = """{"id": "a", "name": "Inbox", "role": "inbox"},
             {"id": "s", "name": "Sent", "role": "sent"}, {"id": "d", "name": "Drafts", "role": "drafts"},
             {"id": "x", "name": "Trash", "role": "trash"}"""
+
+        const val CORE = "urn:ietf:params:jmap:core"
 
         val THREAD = """
             {"id": "r1", "threadId": "t1", "mailboxIds": {"a": true}, "keywords": {},
