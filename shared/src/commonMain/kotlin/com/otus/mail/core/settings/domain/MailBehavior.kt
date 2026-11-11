@@ -6,7 +6,8 @@ import com.otus.mail.core.messages.domain.MailAction
  * Every saved Mail setting, grouped by the feature that reads it. [readLater] adds a Read later
  * folder to each account, an action that saves mail there, and its pill, so it reaches the list,
  * the actions, and the sidebar alike. [updateToasts] shows a toast when a newer build is out, at
- * most once per launch; only the updates feature reads it.
+ * most once per launch; only the updates feature reads it. [lettersAtEnd] puts the Contacts letter
+ * index on the end edge, for the other thumb.
  */
 data class MailBehavior(
     val readLater: Boolean = false,
@@ -18,6 +19,7 @@ data class MailBehavior(
     val privacy: PrivacyBehavior = PrivacyBehavior(),
     val sidebar: SidebarBehavior = SidebarBehavior(),
     val updateToasts: Boolean = true,
+    val lettersAtEnd: Boolean = false,
 ) {
     /**
      * Turning Read later on adds its pill to the end of the row. Turning it off removes the pill,

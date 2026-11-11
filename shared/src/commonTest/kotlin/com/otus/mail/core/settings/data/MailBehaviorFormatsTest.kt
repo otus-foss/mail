@@ -223,6 +223,12 @@ class MailBehaviorFormatsTest {
     }
 
     @Test
+    fun theContactLetterSideReadsItsSavedFlag() {
+        assertEquals(true, read("contact_letters_at_end" to true).lettersAtEnd)
+        assertEquals(false, read().lettersAtEnd)
+    }
+
+    @Test
     fun theSidebarSettingsReadTheirSavedText() {
         val sidebar =
             read(

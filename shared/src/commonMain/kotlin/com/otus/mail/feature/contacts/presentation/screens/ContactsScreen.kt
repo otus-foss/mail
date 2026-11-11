@@ -11,6 +11,7 @@ import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
 import com.otus.designsystem.shared.actionbar.components.ActionBarHost
 import com.otus.designsystem.shared.contacts.components.LetterIndex
+import com.otus.designsystem.shared.contacts.components.LetterIndexSide
 import com.otus.designsystem.shared.contacts.components.LetterIndexState
 import com.otus.designsystem.shared.contacts.components.rememberLetterIndexState
 import com.otus.designsystem.shared.pages.components.belowControlPanel
@@ -46,12 +47,14 @@ import com.otus.mail.feature.contacts.presentation.members
 internal fun ContactsScreen(
     state: ContactsState,
     navigation: ContactsNavigation,
+    letterSide: LetterIndexSide,
+    onLetterSideChange: (LetterIndexSide) -> Unit,
 ) {
     val view = rememberContactsView()
     val letterIndex = rememberLetterIndexState()
     val chosen = state.people.filter { it.main.key in view.selected }
     ProvideTextStyle(panelTextStyle()) {
-        LetterIndex(letterIndex, view.letterSide, { view.letterSide = it }, Modifier.fillMaxSize()) {
+        LetterIndex(letterIndex, letterSide, onLetterSideChange, Modifier.fillMaxSize()) {
             ActionBarHost(
                 bar = { ContactsPageBar(state, view, chosen, navigation) },
                 Modifier.fillMaxSize().belowControlPanel(),

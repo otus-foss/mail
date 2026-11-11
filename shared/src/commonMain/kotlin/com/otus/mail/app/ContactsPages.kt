@@ -2,10 +2,12 @@ package com.otus.mail.app
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import com.otus.designsystem.shared.contacts.components.LetterIndexSide
 import com.otus.designsystem.shared.feedback.components.ToastMessage
 import com.otus.designsystem.shared.feedback.components.ToastState
 import com.otus.mail.core.messages.domain.ComposeRequest
 import com.otus.mail.core.messages.domain.MailSender
+import com.otus.mail.core.settings.presentation.MailBehaviorState
 import com.otus.mail.feature.contacts.domain.ContactAddress
 import com.otus.mail.feature.contacts.presentation.ContactNavigation
 import com.otus.mail.feature.contacts.presentation.ContactsNavigation
@@ -44,6 +46,7 @@ internal fun ContactsPages(
     page: MailPage,
     contacts: ContactsState,
     toasts: ToastState,
+    behavior: MailBehaviorState,
     navigation: MailNavigation,
     back: () -> Unit,
 ) {
@@ -60,7 +63,7 @@ internal fun ContactsPages(
     when (page) {
         is MailPage.Contact -> ContactPage(page, contacts, navigation, back, write)
         is MailPage.ContactEditor -> ContactEditorPage(page, contacts, navigation, back)
-        else -> ContactListPage(contacts, navigation, write)
+        else -> ContactListPage(contacts, behavior, navigation, write)
     }
 }
 
@@ -99,6 +102,7 @@ private fun ContactEditorPage(
 @Composable
 private fun ContactListPage(
     contacts: ContactsState,
+    behavior: MailBehaviorState,
     navigation: MailNavigation,
     write: (List<ContactAddress>) -> Unit,
 ) {
@@ -110,5 +114,7 @@ private fun ContactListPage(
             onNew = { navigation.go(MailPage.ContactEditor()) },
             onWrite = write,
         ),
+        if (behavior.behavior.lettersAtEnd) LetterIndexSide.End else LetterIndexSide.Start,
+        { side -> behavior.update { it.copy(lettersAtEnd = side == LetterIndexSide.End) } },
     )
 }
