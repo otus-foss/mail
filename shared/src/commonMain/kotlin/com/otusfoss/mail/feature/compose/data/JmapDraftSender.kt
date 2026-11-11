@@ -7,6 +7,7 @@ import com.otusfoss.core.jmap.JmapCapability
 import com.otusfoss.core.jmap.JmapConnections
 import com.otusfoss.core.jmap.JmapException
 import com.otusfoss.core.jmap.SetMethod
+import com.otusfoss.core.jmap.isTemporary
 import com.otusfoss.core.jmap.jmapCallOr
 import com.otusfoss.core.jmap.login.LoginStoreException
 import com.otusfoss.mail.core.mail.EmailType
@@ -100,7 +101,7 @@ class JmapDraftSender internal constructor(
     /**
      * Stores the draft, tells [stored] the copy's id, and then submits that copy, so a submission
      * whose answer is lost can be looked up by the id. A refused submission destroys the copy, so
-     * Drafts keeps only the draft's earlier copy. A scheduled copy waits in Scheduled, made when the
+     * Drafts keeps only the draft's earlier copy; a server failing for now keeps it. A scheduled copy waits in Scheduled, made when the
      * account has none, so Drafts holds only drafts.
      */
     private suspend fun MailAccount.submit(
@@ -127,6 +128,9 @@ class JmapDraftSender internal constructor(
             try {
                 connection.call(submission(route, folder, copy, draft, time))
             } catch (error: JmapException.MethodError) {
+                // The copy may still go, or have gone in part (RFC 8620, section 3.6.2), so it stays
+                // for the outbox to look up by its id before anything is destroyed.
+                if (error.isTemporary) throw error
                 refused(copy, error.toSendFailure())
             }
         val refusal = submitted.notCreated[SUBMISSION]
