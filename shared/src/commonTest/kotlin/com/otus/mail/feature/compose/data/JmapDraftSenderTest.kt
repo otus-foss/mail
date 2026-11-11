@@ -160,7 +160,7 @@ class JmapDraftSenderTest {
     @Test
     fun aWildcardIdentitySendsForAnyAddressInItsDomain() =
         runTest {
-            val wildcard = """{"id": "w1", "email": "*@EXAMPLE.org"}, {"id": "o1", "email": "ada@other.org"}"""
+            val wildcard = """{"id": "w1", "email": "*@EXAMPLE.org"}, {"id": "o1", "email": "ada@other.example"}"""
             sender(identities = wildcard).send(reply, answered = null, SendTime.Now).getOrThrow()
             assertEquals("w1", methods(calls[2])[0].arguments.at("create", "send").text("identityId"))
         }
@@ -168,7 +168,7 @@ class JmapDraftSenderTest {
     @Test
     fun withoutAMatchingIdentityOrSubmissionNothingIsSent() =
         runTest {
-            val other = sender(identities = """{"id": "o1", "email": "ada@other.org"}""")
+            val other = sender(identities = """{"id": "o1", "email": "ada@other.example"}""")
             assertEquals(SendFailure.NoIdentity, other.send(reply, answered = null, SendTime.Now).failure())
             assertEquals(1, calls.size)
 

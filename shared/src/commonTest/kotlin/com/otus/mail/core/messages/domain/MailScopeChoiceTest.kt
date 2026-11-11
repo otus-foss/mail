@@ -28,10 +28,10 @@ class MailScopeChoiceTest {
 
     private val messages =
         listOf(
-            message("toHi", "design", to = listOf("Hi@Design.ch")),
-            message("ccTest", "design", cc = listOf("test@design.ch")),
-            message("company", "company", to = listOf("hi@design.ch")),
-            message("sent", "design", to = listOf("grace@example.org"), mailbox = "sent", from = "hi@design.ch"),
+            message("toHi", "design", to = listOf("Hi@Ruu.by")),
+            message("ccTest", "design", cc = listOf("test@ruu.by")),
+            message("company", "company", to = listOf("hi@ruu.by")),
+            message("sent", "design", to = listOf("grace@example.org"), mailbox = "sent", from = "hi@ruu.by"),
         )
 
     @Test
@@ -48,17 +48,17 @@ class MailScopeChoiceTest {
     fun anAddressShowsItsAccountsMailToOrFromItIgnoringCase() {
         assertEquals(
             listOf("toHi", "sent"),
-            messages.within(MailScopeChoice.Address("design", "hi@design.ch")).map { it.id },
+            messages.within(MailScopeChoice.Address("design", "hi@ruu.by")).map { it.id },
         )
         assertEquals(
             listOf("ccTest"),
-            messages.within(MailScopeChoice.Address("design", "TEST@design.ch")).map { it.id },
+            messages.within(MailScopeChoice.Address("design", "TEST@ruu.by")).map { it.id },
         )
     }
 
     @Test
     fun aRemovedAccountsChoiceFallsBackToAllMail() {
-        val address = MailScopeChoice.Address("design", "hi@design.ch")
+        val address = MailScopeChoice.Address("design", "hi@ruu.by")
         assertEquals(address, address.within(listOf("design")))
         assertEquals(MailScopeChoice.All, address.within(listOf("company")))
         assertEquals(MailScopeChoice.All, MailScopeChoice.Account("gone").within(emptyList()))
@@ -68,15 +68,15 @@ class MailScopeChoiceTest {
     fun anAddressCountsItsInboxMailByTheCountsSetting() {
         val inbox =
             listOf(
-                message("a", "design", to = listOf("hi@design.ch"), unread = true),
-                message("b", "design", to = listOf("hi@design.ch")),
-                message("archived", "design", to = listOf("hi@design.ch"), mailbox = "Archive", unread = true),
-                message("other", "design", to = listOf("test@design.ch"), unread = true),
+                message("a", "design", to = listOf("hi@ruu.by"), unread = true),
+                message("b", "design", to = listOf("hi@ruu.by")),
+                message("archived", "design", to = listOf("hi@ruu.by"), mailbox = "Archive", unread = true),
+                message("other", "design", to = listOf("test@ruu.by"), unread = true),
             )
-        val address = MailScopeChoice.Address("design", "hi@design.ch")
+        val address = MailScopeChoice.Address("design", "hi@ruu.by")
         assertEquals(1L, addressCount(inbox, address, SidebarCount.Unread))
         assertEquals(2L, addressCount(inbox, address, SidebarCount.Total))
         assertEquals(null, addressCount(inbox, address, SidebarCount.None))
-        assertEquals(null, addressCount(inbox, MailScopeChoice.Address("design", "none@design.ch"), SidebarCount.Total))
+        assertEquals(null, addressCount(inbox, MailScopeChoice.Address("design", "none@ruu.by"), SidebarCount.Total))
     }
 }

@@ -97,8 +97,8 @@ class ComposeScreenTest {
                                     ComposeOrigin(
                                         "a1",
                                         listOf(ComposeAccount("a1", "Company A"), ComposeAccount("a2", "Rubylabs")),
-                                        listOf("this@companya.com"),
-                                        recentFrom = listOf("this@companya.com"),
+                                        listOf("this@companya.example"),
+                                        recentFrom = listOf("this@companya.example"),
                                     ),
                                     saveDelayMillis = 60_000,
                                 )
@@ -106,7 +106,7 @@ class ComposeScreenTest {
                         ComposeScreen(
                             state,
                             ActionBehavior(),
-                            listOf("this@companya.com"),
+                            listOf("this@companya.example"),
                             object : ComposeExits {
                                 override fun close() {
                                     shown = false
@@ -149,7 +149,7 @@ class ComposeScreenTest {
     fun anEmptyMessageStartsWithADisabledSend() {
         open()
         compose.onNodeWithText("New message").assertExists()
-        button("Send from this@companya.com. Change").assertExists()
+        button("Send from this@companya.example. Change").assertExists()
         button("Send").assertIsNotEnabled()
         compose.screenshot("compose/new_empty")
     }
@@ -187,7 +187,7 @@ class ComposeScreenTest {
         button("Send, to ada@example.com").performClick()
         compose.waitUntil(TIMEOUT) { closed }
         assertEquals("Lunch", sent.single().subject)
-        assertEquals("this@companya.com", sent.single().from?.address)
+        assertEquals("this@companya.example", sent.single().from?.address)
         assertTrue("A sent draft is not saved again", drafts.saved.isEmpty())
     }
 
@@ -204,7 +204,7 @@ class ComposeScreenTest {
     @Test
     fun theFromPillListsRecentAddressesThenEachAccount() {
         open()
-        button("Send from this@companya.com. Change").performClick()
+        button("Send from this@companya.example. Change").performClick()
         compose.onNodeWithText("Recent").assertExists()
         compose.onNodeWithText("Rubylabs").assertExists()
         compose.screenshot("compose/from_dropdown")
@@ -284,7 +284,7 @@ class ComposeScreenTest {
             emailId = "m1",
             subject = "Q4 launch plan",
             from = MailSender("Grace Hopper", "grace@example.com"),
-            to = listOf(MailSender("Alex Rivera", "this@companya.com")),
+            to = listOf(MailSender("Alex Rivera", "this@companya.example")),
             cc = emptyList(),
             sentLabel = "2026-10-11 09:12",
             body = "Can we meet Thursday?",

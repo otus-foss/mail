@@ -35,7 +35,7 @@ class JmapNewslettersTest {
     private val newsletter =
         MailMessage(
             "ada/n5",
-            MailSender("Sentry", "weekly@sentry.io"),
+            MailSender("Sentry", "weekly@sentry.example"),
             "Your week",
             "",
             ReceivedAt("2026-10-15", "08:00"),
@@ -83,7 +83,7 @@ class JmapNewslettersTest {
             assertEquals(2, requests.size)
             val query = requests.last()
             val filter =
-                """{"operator":"AND","conditions":[{"header":["List-Id","weekly.sentry.io"]},""" +
+                """{"operator":"AND","conditions":[{"header":["List-Id","weekly.sentry.example"]},""" +
                     """{"before":"2026-10-15T08:00:00Z"}]}"""
             assertTrue("\"filter\":$filter" in query, query)
             assertTrue("\"limit\":100" in query, query)
@@ -96,8 +96,8 @@ class JmapNewslettersTest {
             val first =
                 WITHOUT_LIST_ID
                     .replace(
-                        "\"email\": \"weekly@sentry.io\"}",
-                        "\"email\": \"Weekly@Sentry.io\"}, {\"email\": \"other@example.org\"}",
+                        "\"email\": \"weekly@sentry.example\"}",
+                        "\"email\": \"Weekly@Sentry.example\"}, {\"email\": \"other@example.org\"}",
                     ).replace("2026-10-15T08:00:00Z", "2026-10-15T08:00:00.000Z")
             val list =
                 newsletters { body ->
@@ -109,7 +109,7 @@ class JmapNewslettersTest {
             assertEquals(2, requests.size)
             val query = requests.last()
             val filter =
-                """{"operator":"AND","conditions":[{"from":"Weekly@Sentry.io"},""" +
+                """{"operator":"AND","conditions":[{"from":"Weekly@Sentry.example"},""" +
                     """{"before":"2026-10-15T08:00:00.000Z"}]}"""
             assertTrue("\"filter\":$filter" in query, query)
             assertTrue("\"limit\":100" in query, query)
@@ -128,7 +128,7 @@ class JmapNewslettersTest {
                 requests.clear()
                 val first =
                     WITHOUT_LIST_ID.replace(
-                        """[{"name": "Sentry", "email": "weekly@sentry.io"}]""",
+                        """[{"name": "Sentry", "email": "weekly@sentry.example"}]""",
                         from,
                     )
                 val list = assertNotNull(newsletters { first }.list(newsletter), from)
@@ -144,7 +144,7 @@ class JmapNewslettersTest {
         runTest {
             val plain =
                 WITHOUT_LIST_ID.replace(
-                    "\"header:List-Unsubscribe:asURLs\": [\"https://sentry.io/u/1\"]",
+                    "\"header:List-Unsubscribe:asURLs\": [\"https://sentry.example/u/1\"]",
                     "\"subject\": \"Hi\"",
                 )
             assertEquals(null, newsletters { plain }.list(newsletter))
@@ -154,10 +154,10 @@ class JmapNewslettersTest {
     @Test
     fun mailtoSendsFromTheAddressTheListReached() =
         runTest {
-            val how = Unsubscribe(mail = "mailto:leave@sentry.io?subject=stop")
+            val how = Unsubscribe(mail = "mailto:leave@sentry.example?subject=stop")
             assertEquals(UnsubscribeResult.Done, newsletters().unsubscribe(newsletter, how))
             val draft = sent.single()
-            assertEquals(listOf("leave@sentry.io"), draft.to.map { it.address })
+            assertEquals(listOf("leave@sentry.example"), draft.to.map { it.address })
             assertEquals("stop", draft.subject)
             assertEquals("ada@work.example.org", draft.from?.address)
         }
@@ -165,8 +165,8 @@ class JmapNewslettersTest {
     @Test
     fun aListThatWroteToABccAddressHearsFromTheAddressItReached() =
         runTest {
-            val bcc = newsletter.copy(to = listOf(MailSender("Digest", "digest@sentry.io")))
-            val how = Unsubscribe(mail = "mailto:leave@sentry.io", deliveredTo = listOf("Ada@Alias.example.org"))
+            val bcc = newsletter.copy(to = listOf(MailSender("Digest", "digest@sentry.example")))
+            val how = Unsubscribe(mail = "mailto:leave@sentry.example", deliveredTo = listOf("Ada@Alias.example.org"))
             assertEquals(UnsubscribeResult.Done, newsletters().unsubscribe(bcc, how))
             assertEquals("ada@alias.example.org", sent.single().from?.address)
         }
@@ -174,20 +174,21 @@ class JmapNewslettersTest {
     @Test
     fun withoutAKnownRecipientNoAddressOfTheUserIsRevealed() =
         runTest {
-            val bcc = newsletter.copy(to = listOf(MailSender("Digest", "digest@sentry.io")))
+            val bcc = newsletter.copy(to = listOf(MailSender("Digest", "digest@sentry.example")))
             val newsletters = newsletters()
-            val mailOnly = Unsubscribe(mail = "mailto:leave@sentry.io")
+            val mailOnly = Unsubscribe(mail = "mailto:leave@sentry.example")
             assertEquals(UnsubscribeResult.Failed, newsletters.unsubscribe(bcc, mailOnly))
-            val both = Unsubscribe(web = "https://sentry.io/u/1", mail = "mailto:leave@sentry.io")
-            assertEquals(UnsubscribeResult.OpenLink("https://sentry.io/u/1"), newsletters.unsubscribe(bcc, both))
+            val both = Unsubscribe(web = "https://sentry.example/u/1", mail = "mailto:leave@sentry.example")
+            assertEquals(UnsubscribeResult.OpenLink("https://sentry.example/u/1"), newsletters.unsubscribe(bcc, both))
             assertTrue(sent.isEmpty(), "Neither the sign-in address nor another alias writes to the list: $sent")
         }
 
     @Test
     fun aCatchAllAliasUnsubscribesFromTheExactAddressTheListReached() =
         runTest {
-            val shop = newsletter.copy(to = listOf(MailSender("Digest", "digest@sentry.io")))
-            val how = Unsubscribe(mail = "mailto:leave@sentry.io", deliveredTo = listOf("Sentry@Catch.example.org"))
+            val shop = newsletter.copy(to = listOf(MailSender("Digest", "digest@sentry.example")))
+            val how =
+                Unsubscribe(mail = "mailto:leave@sentry.example", deliveredTo = listOf("Sentry@Catch.example.org"))
             assertEquals(UnsubscribeResult.Done, newsletters().unsubscribe(shop, how))
             assertEquals("sentry@catch.example.org", sent.single().from?.address)
         }
@@ -197,10 +198,10 @@ class JmapNewslettersTest {
         runTest {
             val newsletters = newsletters()
             assertEquals(
-                UnsubscribeResult.OpenLink("http://sentry.io/u/1"),
+                UnsubscribeResult.OpenLink("http://sentry.example/u/1"),
                 newsletters.unsubscribe(
                     newsletter,
-                    Unsubscribe(web = "http://sentry.io/u/1"),
+                    Unsubscribe(web = "http://sentry.example/u/1"),
                 ),
             )
             assertEquals(UnsubscribeResult.Failed, newsletters.unsubscribe(newsletter, Unsubscribe()))
@@ -226,11 +227,13 @@ class JmapNewslettersTest {
         const val FIRST = """{"methodResponses": [
             ["Mailbox/get", {"state": "m", "list": [{"id": "a", "role": "inbox"}, {"id": "t", "role": "trash"}]}, "c0"],
             ["Email/get", {"state": "e", "list": [{"id": "n5", "receivedAt": "2026-10-15T08:00:00Z",
-              "from": [{"name": "Sentry", "email": "weekly@sentry.io"}],
-              "header:List-Unsubscribe:asURLs": ["https://sentry.io/u/1"], "header:List-Id:asText": "Sentry weekly digest <weekly.sentry.io>"}]}, "c1"]]}"""
+              "from": [{"name": "Sentry", "email": "weekly@sentry.example"}],
+              "header:List-Unsubscribe:asURLs": ["https://sentry.example/u/1"], "header:List-Id:asText": "Sentry weekly digest <weekly.sentry.example>"}]}, "c1"]]}"""
         val WITHOUT_LIST_ID =
-            FIRST.replace(", \"header:List-Id:asText\": \"Sentry weekly digest <weekly.sentry.io>\"", "")
-        const val SENTRY = """"from": [{"email": "weekly@sentry.io"}], "header:List-Id:asText": "<weekly.sentry.io>""""
+            FIRST.replace(", \"header:List-Id:asText\": \"Sentry weekly digest <weekly.sentry.example>\"", "")
+        const val SENTRY =
+            """"from": [{"email": "weekly@sentry.example"}], """ +
+                """"header:List-Id:asText": "<weekly.sentry.example>""""
 
         // The server matched y loosely: its list id holds Sentry's, and its sender's name is Sentry's address.
         const val OLDER = """{"methodResponses": [
@@ -239,8 +242,8 @@ class JmapNewslettersTest {
               {"id": "n4", "receivedAt": "2026-10-08T08:00:00Z", "mailboxIds": {"a": true}, $SENTRY},
               {"id": "x", "receivedAt": "2026-10-05T08:00:00Z", "mailboxIds": {"t": true}, $SENTRY},
               {"id": "y", "receivedAt": "2026-10-03T08:00:00Z", "mailboxIds": {"a": true},
-               "from": [{"name": "weekly@sentry.io", "email": "news@shop.example"}],
-               "header:List-Id:asText": "<news.weekly.sentry.io>"},
+               "from": [{"name": "weekly@sentry.example", "email": "news@shop.example"}],
+               "header:List-Id:asText": "<news.weekly.sentry.example>"},
               {"id": "n3", "receivedAt": "2026-10-01T08:00:00Z", "mailboxIds": {"a": true}, $SENTRY}]}, "c1"]]}"""
         const val ARCHIVE_LOOKUP = """{"methodResponses": [
             ["Mailbox/get", {"state": "m", "list": [{"id": "a", "role": "inbox"}, {"id": "arch", "role": "archive"}]}, "c0"],

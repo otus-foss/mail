@@ -24,7 +24,7 @@ import kotlin.time.Instant
 class EmailConditionsTest {
     private val now = Instant.parse("2026-10-18T10:30:15.250Z")
     private val zurich = TimeZone.of("Europe/Zurich")
-    private val own = mapOf("ada" to setOf("a@x.org", "b@x.org"), "bo" to setOf("c@y.org"))
+    private val own = mapOf("ada" to setOf("a@x.example", "b@x.example"), "bo" to setOf("c@y.example"))
 
     private fun conditions(
         query: MailQuery,
@@ -64,32 +64,32 @@ class EmailConditionsTest {
 
     @Test
     fun mergedSendersMatchAnyOfTheirAddresses() {
-        val openAi = SenderKey("OpenAI", setOf("noreply@openai.com", "news@openai.com"))
-        val grace = SenderKey.of("grace@x.org")
+        val openAi = SenderKey("OpenAI", setOf("noreply@openai.example", "news@openai.example"))
+        val grace = SenderKey.of("grace@x.example")
         assertEquals(
-            """[{"operator":"OR","conditions":[{"from":"grace@x.org"},{"from":"news@openai.com"},""" +
-                """{"from":"noreply@openai.com"}]}]""",
+            """[{"operator":"OR","conditions":[{"from":"grace@x.example"},{"from":"news@openai.example"},""" +
+                """{"from":"noreply@openai.example"}]}]""",
             conditions(InboxFilters(from = setOf(openAi, grace))),
         )
     }
 
     @Test
     fun recipientsMatchInTheChosenFieldsOnly() {
-        val sentTo = setOf(OwnAddress("ada", "b@x.org"), OwnAddress("bo", "c@y.org"))
+        val sentTo = setOf(OwnAddress("ada", "b@x.example"), OwnAddress("bo", "c@y.example"))
         assertEquals(
-            """[{"operator":"OR","conditions":[{"to":"b@x.org"},{"cc":"b@x.org"}]}]""",
+            """[{"operator":"OR","conditions":[{"to":"b@x.example"},{"cc":"b@x.example"}]}]""",
             conditions(InboxFilters(sentTo = sentTo)),
             "To and Cc by default, and only this login's own address",
         )
-        val others = InboxFilters(to = setOf("sam@x.org"), receivedIn = setOf(RecipientField.Bcc))
-        assertEquals("""[{"bcc":"sam@x.org"}]""", conditions(others))
-        val both = InboxFilters(sentTo = sentTo, to = setOf("sam@x.org"), receivedIn = setOf(RecipientField.To))
+        val others = InboxFilters(to = setOf("sam@x.example"), receivedIn = setOf(RecipientField.Bcc))
+        assertEquals("""[{"bcc":"sam@x.example"}]""", conditions(others))
+        val both = InboxFilters(sentTo = sentTo, to = setOf("sam@x.example"), receivedIn = setOf(RecipientField.To))
         assertEquals(
-            """[{"operator":"OR","conditions":[{"to":"b@x.org"},{"to":"sam@x.org"}]}]""",
+            """[{"operator":"OR","conditions":[{"to":"b@x.example"},{"to":"sam@x.example"}]}]""",
             conditions(both),
         )
         assertEquals(
-            """[{"operator":"OR","conditions":[{"to":"c@y.org"},{"to":"sam@x.org"}]}]""",
+            """[{"operator":"OR","conditions":[{"to":"c@y.example"},{"to":"sam@x.example"}]}]""",
             conditions(MailQuery(both, addresses = own), "bo"),
         )
     }
@@ -97,7 +97,7 @@ class EmailConditionsTest {
     @Test
     fun onlyChangedFieldsUseTheLoginsOwnAddresses() {
         assertEquals(
-            """[{"operator":"OR","conditions":[{"cc":"a@x.org"},{"cc":"b@x.org"}]}]""",
+            """[{"operator":"OR","conditions":[{"cc":"a@x.example"},{"cc":"b@x.example"}]}]""",
             conditions(InboxFilters(receivedIn = setOf(RecipientField.Cc))),
         )
         assertEquals(
@@ -135,9 +135,9 @@ class EmailConditionsTest {
                     status = ReadStatus.Read,
                     quick = QuickFacet.entries.toSet(),
                     types = TypeFacet.entries.toSet(),
-                    from = setOf(SenderKey.of("s@x.org")),
-                    sentTo = setOf(OwnAddress("ada", "a@x.org")),
-                    to = setOf("t@x.org"),
+                    from = setOf(SenderKey.of("s@x.example")),
+                    sentTo = setOf(OwnAddress("ada", "a@x.example")),
+                    to = setOf("t@x.example"),
                     receivedIn = RecipientField.entries.toSet(),
                     account = "ada",
                     folders = setOf(FolderRef("ada", "f")),
@@ -158,7 +158,7 @@ class EmailConditionsTest {
 
     @Test
     fun loginsWithoutTheirChoicesAreSkipped() {
-        val sentTo = MailQuery(InboxFilters(sentTo = setOf(OwnAddress("ada", "a@x.org"))))
+        val sentTo = MailQuery(InboxFilters(sentTo = setOf(OwnAddress("ada", "a@x.example"))))
         assertNull(conditions(sentTo, login = "bo"))
         val folders =
             MailQuery(

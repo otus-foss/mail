@@ -15,10 +15,10 @@ class AddressPinsTest {
 
     @Test
     fun togglingPinsAndThenUnpinsAnAddressIgnoringCase() {
-        val pinned = AddressPins().toggled(MailScopeChoice.Address(ada, "hi@design.ch"))
-        assertTrue(MailScopeChoice.Address(ada, "HI@design.ch") in pinned)
-        assertFalse(MailScopeChoice.Address(bob, "hi@design.ch") in pinned)
-        assertEquals(AddressPins(), pinned.toggled(MailScopeChoice.Address(ada, "Hi@Design.ch")))
+        val pinned = AddressPins().toggled(MailScopeChoice.Address(ada, "hi@ruu.by"))
+        assertTrue(MailScopeChoice.Address(ada, "HI@ruu.by") in pinned)
+        assertFalse(MailScopeChoice.Address(bob, "hi@ruu.by") in pinned)
+        assertEquals(AddressPins(), pinned.toggled(MailScopeChoice.Address(ada, "Hi@Ruu.by")))
     }
 
     @Test
@@ -27,9 +27,9 @@ class AddressPinsTest {
         val pins =
             AddressPins(
                 listOf(
-                    MailScopeChoice.Address(ada, "hi@design.ch"),
-                    MailScopeChoice.Address(ada, "test@design.ch"),
-                    MailScopeChoice.Address(bob, "hi@company.com"),
+                    MailScopeChoice.Address(ada, "hi@ruu.by"),
+                    MailScopeChoice.Address(ada, "test@ruu.by"),
+                    MailScopeChoice.Address(bob, "hi@company.example"),
                 ),
             )
         store.write(pins.byLogin())

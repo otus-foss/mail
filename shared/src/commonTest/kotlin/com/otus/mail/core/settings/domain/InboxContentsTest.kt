@@ -36,7 +36,7 @@ class InboxContentsTest {
 
     @Test
     fun addressesSavedByOlderVersionsAreIgnored() {
-        val saved = "spam=false\ntrash=true\naddress=ada\thi@design.ch"
+        val saved = "spam=false\ntrash=true\naddress=ada\thi@ruu.by"
         assertEquals(InboxContents(trash = true), InboxContents.decode(saved))
     }
 }

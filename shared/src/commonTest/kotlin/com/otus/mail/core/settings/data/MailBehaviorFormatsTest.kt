@@ -98,7 +98,7 @@ class MailBehaviorFormatsTest {
                 "read_zen" to true,
                 "read_quick_view_modules" to "counts,thread",
                 "remote_images_setting" to "always",
-                "allowed_senders" to "grace@example.org\n\nnews@sentry.io",
+                "allowed_senders" to "grace@example.org\n\nnews@sentry.example",
             ).read
         assertEquals(
             ReadBehavior(
@@ -108,7 +108,7 @@ class MailBehaviorFormatsTest {
                 // The quick view shows one row now, so a saved pair keeps its first.
                 quickView = listOf(ReadQuickModule.Counts),
                 remoteImages = RemoteImages.Always,
-                allowedSenders = listOf("grace@example.org", "news@sentry.io"),
+                allowedSenders = listOf("grace@example.org", "news@sentry.example"),
             ),
             read,
         )

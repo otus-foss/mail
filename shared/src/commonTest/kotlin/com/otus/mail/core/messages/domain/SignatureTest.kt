@@ -21,7 +21,7 @@ class SignatureTest {
 
     @Test
     fun theStartOfASignatureReadsOnOneLine() {
-        val signature = Signature(text = "Alex Rivera\n\nProduct lead · Company A\ncompanya.com")
+        val signature = Signature(text = "Alex Rivera\n\nProduct lead · Company A\ncompanya.example")
         assertEquals("Alex Rivera · Product lead · Company A", signature.preview)
         assertEquals("", Signature().preview)
     }

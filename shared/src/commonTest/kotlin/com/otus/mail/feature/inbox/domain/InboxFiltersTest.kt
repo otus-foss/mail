@@ -37,7 +37,7 @@ class InboxFiltersTest {
                 status = ReadStatus.Unread,
                 quick = setOf(QuickFacet.Flagged, QuickFacet.AwaitingReply),
                 types = setOf(TypeFacet.Newsletters),
-                sentTo = setOf(OwnAddress("ada", "a@x.org")),
+                sentTo = setOf(OwnAddress("ada", "a@x.example")),
                 folders = setOf(FolderRef("ada", "f")),
                 date = DateFilter.Today,
             )
@@ -50,8 +50,8 @@ class InboxFiltersTest {
     fun everyKindOfChoiceCountsAsActive() {
         val filters =
             InboxFilters(
-                from = setOf(SenderKey("OpenAI", setOf("noreply@openai.com", "news@openai.com"))),
-                to = setOf("sam@x.org"),
+                from = setOf(SenderKey("OpenAI", setOf("noreply@openai.example", "news@openai.example"))),
+                to = setOf("sam@x.example"),
                 account = "ada",
                 receivedIn = setOf(RecipientField.Bcc),
                 size = SizeFilter.Over1Mb,

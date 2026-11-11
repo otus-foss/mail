@@ -39,7 +39,7 @@ import org.robolectric.annotation.GraphicsMode
 class FromSearchScreenshotTest {
     @get:Rule val compose = createAndroidComposeRule<MainActivity>()
 
-    private val addresses = (1..10).map { "alias$it@companya.com" }
+    private val addresses = (1..10).map { "alias$it@companya.example" }
 
     @Test
     fun searchStaysAboveScrolledAddressesLight() = scrolledShot("compose_from_search_scrolled_light", ThemeBase.Light)
@@ -52,7 +52,10 @@ class FromSearchScreenshotTest {
         theme: ThemeBase,
     ) {
         open(theme)
-        compose.onNode(hasContentDescription("Send from this@companya.com. Change") and hasClickAction()).performClick()
+        compose
+            .onNode(
+                hasContentDescription("Send from this@companya.example. Change") and hasClickAction(),
+            ).performClick()
         compose.onNodeWithText("otus@rubylabs.design").performScrollTo()
         compose.onNodeWithText("Search 13 addresses").assertExists()
         compose.screenshot(name)
@@ -72,13 +75,13 @@ class FromSearchScreenshotTest {
                                 ComposeOrigin(
                                     "a1",
                                     listOf(ComposeAccount("a1", "Company A"), ComposeAccount("a2", "Rubylabs")),
-                                    listOf("this@companya.com"),
-                                    recentFrom = listOf("this@companya.com"),
+                                    listOf("this@companya.example"),
+                                    recentFrom = listOf("this@companya.example"),
                                 ),
                                 saveDelayMillis = 60_000,
                             )
                         }
-                    ComposeScreen(state, ActionBehavior(), listOf("this@companya.com"), NoExits)
+                    ComposeScreen(state, ActionBehavior(), listOf("this@companya.example"), NoExits)
                 }
             }
         }

@@ -51,16 +51,16 @@ class JmapAddressBookTest {
                 val slow = async { book.suggestions("ada", "gr") }
                 withTimeout(10.seconds) {
                     stalled.await()
-                    assertEquals(listOf("grace@x.org"), book.suggestions("bo", "gr").map { it.address })
+                    assertEquals(listOf("grace@x.example"), book.suggestions("bo", "gr").map { it.address })
                 }
                 release.complete(Unit)
-                assertEquals(listOf("grace@x.org"), slow.await().map { it.address })
+                assertEquals(listOf("grace@x.example"), slow.await().map { it.address })
             }
         }
 
     private companion object {
         const val MAIL = """{"methodResponses": [["Email/query", {"ids": ["e1"]}, "c0"],
             ["Email/get", {"list": [{"id": "e1", "receivedAt": "2026-10-18T09:00:00Z",
-             "from": [{"name": "Grace", "email": "grace@x.org"}]}]}, "c1"]]}"""
+             "from": [{"name": "Grace", "email": "grace@x.example"}]}]}, "c1"]]}"""
     }
 }

@@ -34,7 +34,7 @@ class HugeQuoteMarkupTest {
         quickly {
             val bordered = "<div style=\"border-top:solid\">"
             assertNull(splitHtmlQuote(reply + bordered.repeat(REPEATS / bordered.length)))
-            val header = "<div id=\"divRplyFwdMsg\"><b>From:</b> Margaret Knuth &lt;m@x.org&gt;</div>"
+            val header = "<div id=\"divRplyFwdMsg\"><b>From:</b> Margaret Knuth &lt;m@x.example&gt;</div>"
             val wrapped = "$reply$header$earlier</div>" + " ".repeat(REPEATS) + "x"
             assertTrue(splitHtmlQuote(wrapped)?.quote.orEmpty().endsWith(" x"))
             val ends = "$reply$header$earlier" + "</div>".repeat(REPEATS / 6)

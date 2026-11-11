@@ -13,7 +13,7 @@ class ContactImportTest {
         ContactCard(
             CardKey("ada", "a", "c1"),
             Card(
-                emails = mapOf("e1" to EmailAddress("grace@example.org"), "i1" to EmailAddress("g@navy.mil")),
+                emails = mapOf("e1" to EmailAddress("grace@example.org"), "i1" to EmailAddress("g@navy.example")),
                 addressBookIds = mapOf("home" to true, "work" to true),
             ),
             listOf(book, work),
@@ -32,7 +32,7 @@ class ContactImportTest {
             )
         val merged = merged(listOf(file))
         assertEquals(
-            setOf("grace@example.org", "g@navy.mil", "new@example.org"),
+            setOf("grace@example.org", "g@navy.example", "new@example.org"),
             merged.emails
                 .orEmpty()
                 .values
@@ -46,7 +46,7 @@ class ContactImportTest {
     fun fileCardsMatchingOneCardMergeIntoOneChange() {
         val first =
             Card(emails = mapOf("x" to EmailAddress("grace@example.org"), "y" to EmailAddress("one@example.org")))
-        val second = Card(emails = mapOf("x" to EmailAddress("g@navy.mil"), "y" to EmailAddress("two@example.org")))
+        val second = Card(emails = mapOf("x" to EmailAddress("g@navy.example"), "y" to EmailAddress("two@example.org")))
         val plan = ImportPlan(listOf(first, second), book, listOf(existing))
         val edits = plan.edits(ImportMode.Merge, id = { "id" }, uid = { "fresh" })
         assertEquals(1, edits.size)

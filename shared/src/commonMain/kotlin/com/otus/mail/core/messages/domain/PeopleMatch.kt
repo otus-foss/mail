@@ -3,7 +3,7 @@ package com.otus.mail.core.messages.domain
 /**
  * The people [query] could mean, best first: those whose name starts with it, then a word of their
  * name, then their address, then any part of their address. Text with an @ matches each half on its
- * side of the address, so "flo@pur" finds florian@purbank.ch. People who score the same keep their
+ * side of the address, so "flo@pur" finds florian@purbank.example. People who score the same keep their
  * order. JMAP servers match search text by whole words, so half-typed text is matched on the device.
  */
 fun List<MailSender>.matching(query: String): List<MailSender> {

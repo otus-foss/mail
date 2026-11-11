@@ -46,7 +46,7 @@ internal object ControlPanelFixtures {
             AccountAddresses(
                 "flo",
                 "florian@rubylabs.design",
-                listOf("florian@rubylabs.design", "florian@purbank.ch", "hi@rubylabs.design"),
+                listOf("florian@rubylabs.design", "florian@purbank.example", "hi@rubylabs.design"),
             ),
         )
 
@@ -66,7 +66,7 @@ internal object ControlPanelFixtures {
         MailScopeSwitch(
             accounts,
             MailScopeChoice.All,
-            AddressPins(listOf(MailScopeChoice.Address("flo", "florian@purbank.ch"))),
+            AddressPins(listOf(MailScopeChoice.Address("flo", "florian@purbank.example"))),
             count = { if (it == MailScopeChoice.All || it.accountId == "flo") "5" else null },
             onChoose = onChoose,
             onTogglePin = {},

@@ -85,9 +85,9 @@ class MessageExtrasTest {
 
     @Test
     fun theListIdNamesTheList() {
-        assertEquals("Sentry weekly digest", listName("\"Sentry weekly digest\" <weekly.sentry.io>"))
-        assertEquals("weekly.sentry.io", listIdentifier("\"Sentry weekly digest\" <weekly.sentry.io>"))
-        assertNull(listName("<weekly.sentry.io>"))
+        assertEquals("Sentry weekly digest", listName("\"Sentry weekly digest\" <weekly.sentry.example>"))
+        assertEquals("weekly.sentry.example", listIdentifier("\"Sentry weekly digest\" <weekly.sentry.example>"))
+        assertNull(listName("<weekly.sentry.example>"))
         assertNull(listIdentifier("no brackets"))
     }
 

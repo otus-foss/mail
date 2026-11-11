@@ -77,7 +77,7 @@ class ReplyThreadScreenTest {
                                 ComposeOrigin(
                                     "a1",
                                     listOf(ComposeAccount("a1", "Company A")),
-                                    listOf("this@companya.com"),
+                                    listOf("this@companya.example"),
                                 ),
                                 saveDelayMillis = 60_000,
                             )
@@ -107,7 +107,7 @@ class ReplyThreadScreenTest {
             emailId = "m0",
             subject = "Q4 launch plan",
             from = people[0].first,
-            to = listOf(MailSender("Alex Rivera", "this@companya.com")) + people.drop(1).map { it.first },
+            to = listOf(MailSender("Alex Rivera", "this@companya.example")) + people.drop(1).map { it.first },
             cc = emptyList(),
             sentLabel = "2026-10-11 09:12",
             body = "Can we move the review to Thursday?\n\nOn 2026-10-10, Ada wrote:\n> Works for me.",
