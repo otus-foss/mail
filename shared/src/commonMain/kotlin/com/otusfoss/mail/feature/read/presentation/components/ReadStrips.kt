@@ -19,6 +19,7 @@ import com.otusfoss.mail.core.messages.presentation.AttachmentKindName
 import com.otusfoss.mail.core.messages.presentation.attachmentSummary
 import com.otusfoss.mail.core.messages.presentation.detail
 import com.otusfoss.mail.core.messages.presentation.kind
+import com.otusfoss.mail.core.messages.presentation.typeLabel
 import com.otusfoss.mail.feature.read.presentation.NewsletterStep
 
 /**
@@ -36,7 +37,7 @@ internal fun ReadAttachmentStrip(
     kept: (MailAttachment) -> Boolean = { false },
 ) {
     AttachmentStrip(
-        files.map { AttachmentFile(it.name, it.detail(kept(it)), it.kind().shown, thumbnail(it)) },
+        files.map { it.shown(kept(it), thumbnail(it)) },
         attachmentSummary(files),
         unfold,
         onToggle,
@@ -83,6 +84,12 @@ internal fun ReadNewsletterStrip(
         }
     }
 }
+
+/** This file as the design system shows it, with its [thumbnail] and whether it is [kept] offline. */
+internal fun MailAttachment.shown(
+    kept: Boolean,
+    thumbnail: ImageBitmap?,
+): AttachmentFile = AttachmentFile(name, detail(kept), kind().shown, thumbnail, typeLabel())
 
 private val AttachmentKindName.shown: AttachmentKind
     get() =

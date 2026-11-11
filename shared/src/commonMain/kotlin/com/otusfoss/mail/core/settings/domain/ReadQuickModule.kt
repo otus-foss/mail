@@ -2,16 +2,13 @@ package com.otusfoss.mail.core.settings.domain
 
 /**
  * What the Read view's quick view shows above its Move to row, when the control panel is pulled
- * down. Each module always has something in it, so the quick view never shows an empty card.
+ * down, on a message without files. A message's files take the module's place.
  */
 enum class ReadQuickModule(
     val storageValue: String,
 ) {
     /** Everyone in the conversation besides the user, with a dot for what they wrote that is unread. */
     Thread("thread"),
-
-    /** The conversation's messages, unread messages, files, and flags, each with its count. */
-    Counts("counts"),
     ;
 
     companion object {

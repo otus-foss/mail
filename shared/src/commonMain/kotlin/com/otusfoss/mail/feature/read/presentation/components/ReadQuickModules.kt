@@ -2,18 +2,10 @@ package com.otusfoss.mail.feature.read.presentation.components
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
-import com.otusfoss.core.designsystem.mail.quickview.components.QuickCount
-import com.otusfoss.core.designsystem.mail.quickview.components.QuickCounts
 import com.otusfoss.core.designsystem.mail.quickview.components.QuickFace
 import com.otusfoss.core.designsystem.mail.quickview.components.QuickFaceLook
 import com.otusfoss.core.designsystem.mail.quickview.components.QuickFaces
-import com.otusfoss.core.designsystem.resources.Res
-import com.otusfoss.core.designsystem.resources.symbol_attach_file
-import com.otusfoss.core.designsystem.resources.symbol_flag
-import com.otusfoss.core.designsystem.resources.symbol_forum
-import com.otusfoss.core.designsystem.resources.symbol_mark_email_unread
 import com.otusfoss.core.designsystem.shared.people.components.ChipAvatar
-import com.otusfoss.mail.core.messages.domain.MailMessage
 import com.otusfoss.mail.core.messages.domain.shownName
 import com.otusfoss.mail.core.messages.presentation.components.chipAvatar
 import com.otusfoss.mail.core.messages.presentation.components.firstName
@@ -59,48 +51,6 @@ internal fun ReadThreadModule(room: ReadRoom) {
             )
         }
     QuickFaces(faces + listOfNotNull(more), slots = THREAD_FACES)
-}
-
-/**
- * The thread in four numbers: its messages, which open the message list, and its unread
- * messages, files, and flags, each turning to the newest message that has one.
- */
-@Composable
-internal fun ReadCountsModule(room: ReadRoom) {
-    val pages = room.state.pages
-    val turnTo = { has: (MailMessage) -> Boolean ->
-        {
-            pages.indexOfFirst(has).takeIf { it >= 0 }?.let(room::turnTo)
-                ?: Unit
-        }
-    }
-    QuickCounts(
-        listOf(
-            QuickCount("Messages", Res.drawable.symbol_forum, pages.size) { room.state.threadOpen = true },
-            QuickCount(
-                "Unread",
-                Res.drawable.symbol_mark_email_unread,
-                pages.count {
-                    it.attributes.unread
-                },
-                turnTo { it.attributes.unread },
-            ),
-            QuickCount(
-                "Files",
-                Res.drawable.symbol_attach_file,
-                pages.sumOf { it.attributes.attachments.size },
-                turnTo { it.attributes.attachments.isNotEmpty() },
-            ),
-            QuickCount(
-                "Flagged",
-                Res.drawable.symbol_flag,
-                pages.count {
-                    it.attributes.flagged
-                },
-                turnTo { it.attributes.flagged },
-            ),
-        ),
-    )
 }
 
 /** Faces the thread module shows; with more people, the last one opens them all. */

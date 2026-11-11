@@ -236,6 +236,7 @@ private fun ReadLayout(
             parts,
             ReadTopText(page, date, notice, layout.menu),
             ReadQuickView(expansion, modules, layout.look, layout.pager, quickHeight),
+            strips,
             headerHeight,
         )
     }

@@ -20,6 +20,10 @@ import androidx.compose.ui.unit.dp
 import androidx.navigationevent.NavigationEventInfo
 import androidx.navigationevent.compose.NavigationBackHandler
 import androidx.navigationevent.compose.rememberNavigationEventState
+import com.otusfoss.core.designsystem.mail.attachments.components.AttachmentActions
+import com.otusfoss.core.designsystem.mail.attachments.components.AttachmentFile
+import com.otusfoss.core.designsystem.mail.attachments.components.AttachmentList
+import com.otusfoss.core.designsystem.mail.quickview.components.QuickFiles
 import com.otusfoss.core.designsystem.mail.quickview.components.QuickJump
 import com.otusfoss.core.designsystem.resources.Res
 import com.otusfoss.core.designsystem.resources.symbol_code
@@ -44,6 +48,7 @@ import com.otusfoss.mail.core.messages.presentation.MoveTarget
 import com.otusfoss.mail.core.messages.presentation.actions.offerFolder
 import com.otusfoss.mail.core.messages.presentation.actions.offerMove
 import com.otusfoss.mail.core.messages.presentation.actions.symbol
+import com.otusfoss.mail.core.messages.presentation.attachmentSummary
 import com.otusfoss.mail.core.messages.presentation.components.rememberSuggestedMove
 import com.otusfoss.mail.core.messages.presentation.ownFolders
 import com.otusfoss.mail.core.messages.presentation.shortcuts
@@ -85,6 +90,7 @@ internal class ReadRoom(
     val expansion: PanelExpansion,
     val parts: ReadParts,
     val look: ReadPageLook,
+    val strips: ReadStripActions,
     private val onPage: (Int) -> Unit,
 ) {
     fun turnTo(index: Int) {
@@ -96,12 +102,30 @@ internal class ReadRoom(
         expansion.collapse()
         state.sheet = sheet
     }
+
+    /** The page's files as the panel shows them; null until its body loads and when it has none. */
+    fun files(): ReadFiles? {
+        val files = parts.content(page)?.attachments?.takeIf { it.isNotEmpty() } ?: return null
+        return ReadFiles(
+            files.map { it.shown(strips.isKept(page, it), state.thumbnails.of(page, it)) },
+            attachmentSummary(files),
+            strips.files(page, files),
+        )
+    }
 }
+
+/** A page's files as [shown] in the panel, their [summary] line, and what a tap on one does. */
+internal class ReadFiles(
+    val shown: List<AttachmentFile>,
+    val summary: String,
+    val actions: AttachmentActions,
+)
 
 /**
  * The Read view's grown room: the message's details at both stops, which stay still between them;
- * under them the quick view's [modules] and the Move to row around the expanded stop, then the
- * message's source toward the full stop, each fading with how far the panel is open.
+ * under them the page's files, or the quick view's [modules] when it has none, and the Move to row
+ * around the expanded stop, then every file and the message's source toward the full stop, each
+ * fading with how far the panel is open.
  */
 @Composable
 internal fun ReadExpandedContent(
@@ -129,10 +153,14 @@ internal fun ReadExpandedContent(
                     .padding(top = QuickViewTokens.moduleGap),
                 verticalArrangement = Arrangement.spacedBy(QuickViewTokens.moduleGap),
             ) {
-                modules.forEach { module ->
-                    when (module) {
-                        ReadQuickModule.Thread -> ReadThreadModule(room)
-                        ReadQuickModule.Counts -> ReadCountsModule(room)
+                val files = room.files()
+                if (files != null) {
+                    QuickFiles(files.shown, files.actions)
+                } else {
+                    modules.forEach { module ->
+                        when (module) {
+                            ReadQuickModule.Thread -> ReadThreadModule(room)
+                        }
                     }
                 }
                 ReadMoveRow(room)
@@ -152,10 +180,21 @@ internal fun ReadExpandedContent(
     )
 }
 
-/** What the full stop adds under the details: the message's original source. */
+/**
+ * What the full stop adds under the details: how the message was delivered, its files as a list,
+ * and its original source.
+ */
 @Composable
 private fun ReadDetails(room: ReadRoom) {
+    val delivered =
+        room.parts
+            .content(room.page)
+            ?.unsubscribe
+            ?.deliveredTo
+            .orEmpty()
     Column(Modifier.fillMaxWidth().sheetInset()) {
+        DetailRows(deliveryLines(room.page, delivered), divided = true)
+        room.files()?.let { AttachmentList(it.shown, it.summary, it.actions) }
         SettingPageRow(
             "Show original",
             { room.open(ReadSheet.Details(room.page)) },

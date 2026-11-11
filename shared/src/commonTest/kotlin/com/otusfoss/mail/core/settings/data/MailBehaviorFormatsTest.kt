@@ -106,7 +106,7 @@ class MailBehaviorFormatsTest {
                 showQuotes = true,
                 zen = true,
                 // The quick view shows one row now, so a saved pair keeps its first.
-                quickView = listOf(ReadQuickModule.Counts),
+                quickView = listOf(ReadQuickModule.Thread),
                 remoteImages = RemoteImages.Always,
                 allowedSenders = listOf("grace@example.org", "news@sentry.example"),
             ),

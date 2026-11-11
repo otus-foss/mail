@@ -61,6 +61,7 @@ internal fun ReadTop(
     parts: ReadParts,
     text: ReadTopText,
     quick: ReadQuickView,
+    strips: ReadStripActions,
     header: MutableState<Dp>,
 ) {
     val density = LocalDensity.current
@@ -69,7 +70,7 @@ internal fun ReadTop(
     val scope = rememberCoroutineScope()
     val turn = motionTween<Float>(MotionSpeed.Normal, MotionCurve.Enter)
     val room =
-        ReadRoom(parts.state, page, parts.read.replies.own, expansion, parts, quick.look) { index ->
+        ReadRoom(parts.state, page, parts.read.replies.own, expansion, parts, quick.look, strips) { index ->
             scope.launch { quick.pager.animateScrollToPage(index, animationSpec = turn) }
         }
     PanelScrim(expansion)

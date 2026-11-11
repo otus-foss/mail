@@ -83,7 +83,7 @@ class MailBehaviorRoundTripTest {
                     markReadOnOpen = false,
                     showQuotes = true,
                     zen = true,
-                    quickView = listOf(ReadQuickModule.Counts),
+                    quickView = listOf(ReadQuickModule.Thread),
                     remoteImages = RemoteImages.Never,
                     allowedSenders = listOf("grace@example.org"),
                 ),

@@ -39,11 +39,17 @@ fun MailAttachment.detail(kept: Boolean = false): String {
     return if (kept) "$kind · ${sizeText(size)} · Offline" else "$kind · ${sizeText(size)}"
 }
 
+/** The short type written on the file's page icon: its extension, as in "PDF", or "FILE" without one. */
+fun MailAttachment.typeLabel(): String = extension.uppercase().take(TYPE_LABEL_LENGTH).ifBlank { "FILE" }
+
 /** The attachment strip's line: how many files and their total size, as in "3 attachments · 4.2 MB". */
 fun attachmentSummary(files: List<MailAttachment>): String {
     val count = if (files.size == 1) "1 attachment" else "${files.size} attachments"
     return "$count · ${sizeText(files.sumOf { it.size })}"
 }
+
+/** The most letters a page icon's label has room for, as in "DOCX". */
+private const val TYPE_LABEL_LENGTH = 4
 
 private val MailAttachment.extension: String
     get() = name.substringAfterLast('.', "").lowercase()

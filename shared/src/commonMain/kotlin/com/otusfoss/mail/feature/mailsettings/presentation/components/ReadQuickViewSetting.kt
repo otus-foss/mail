@@ -44,12 +44,10 @@ private val ReadQuickModule.title: String
     get() =
         when (this) {
             ReadQuickModule.Thread -> "In this thread"
-            ReadQuickModule.Counts -> "Counts"
         }
 
 private val ReadQuickModule.icon: DrawableResource
     get() =
         when (this) {
             ReadQuickModule.Thread -> Res.drawable.symbol_group
-            ReadQuickModule.Counts -> Res.drawable.symbol_grid_on
         }
