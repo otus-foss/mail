@@ -1,8 +1,9 @@
 import io
 import json
+import sqlite3
 import tempfile
 import unittest
-from unittest.mock import Mock
+from unittest.mock import Mock, patch
 
 import httpx
 
@@ -22,6 +23,12 @@ class DeliveryTest(unittest.TestCase):
         self.payload = b"a" * 20 + bytes([65]) + b"b" * 100
 
     def request(self, path, method="GET", body=b"", secret=None, **headers):
+        return self.call(path, method, body, secret, **headers)[::2]
+
+    def request_with_headers(self, path, method="GET", body=b"", **headers):
+        return self.call(path, method, body, None, **headers)[:2]
+
+    def call(self, path, method, body, secret, **headers):
         env = {
             "REQUEST_METHOD": method,
             "PATH_INFO": path,
@@ -31,9 +38,10 @@ class DeliveryTest(unittest.TestCase):
         env.update(headers)
         if secret:
             env["HTTP_AUTHORIZATION"] = f"Bearer {secret}"
-        status = []
-        response = b"".join(self.app(env, lambda value, _: status.append(int(value.split()[0]))))
-        return status[0], response
+        started = []
+        response = b"".join(self.app(env, lambda value, sent: started.append((value, sent))))
+        value, sent = started[0]
+        return int(value.split()[0]), sent, response
 
     def push(self):
         return self.request(
@@ -72,6 +80,22 @@ class DeliveryTest(unittest.TestCase):
         self.assertEqual(self.push()[0], 503)
         self.assertEqual(self.store.messages(self.route["id"]), [])
         self.assertIsNotNone(self.store.route(self.route["id"]))
+
+    def test_a_locked_database_is_retryable_and_logs_no_capability(self):
+        locked = sqlite3.OperationalError("database is locked")
+        with (
+            patch.object(self.store, "save", side_effect=locked),
+            self.assertLogs("push_bridge.application") as logs,
+        ):
+            status, headers = self.request_with_headers(
+                "/v1/push/" + self.route["id"],
+                "POST",
+                self.payload,
+                HTTP_CONTENT_ENCODING="aes128gcm",
+            )
+        self.assertEqual(status, 503)
+        self.assertIn(("Retry-After", "60"), headers)
+        self.assertNotIn(self.route["id"], "\n".join(logs.output))
 
     def test_expired_routes_and_messages_disappear(self):
         self.push()

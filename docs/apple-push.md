@@ -59,7 +59,9 @@ A Dockerfile is included. Build it from the repository root with
 volume at `/data`. The container runs as UID 10001. Publish its port on localhost behind TLS.
 
 The reverse proxy is part of the deployment. It must limit registration requests, cap request
-bodies at 4096 bytes and disable access logs containing capability URLs. Limit per IPv4 address
+bodies at 4096 bytes and keep capability URLs out of its logs: turn off access logs and log
+only critical errors, since rate-limit and upstream errors include the URL. The service logs only
+the class of an unexpected error and answers storage errors with 503. Limit per IPv4 address
 and per IPv6 /64, since one host can usually use every address in its /64. The service limits each
 APNs token to 32 routes, the database to 10,000 routes, each active route to 32 pending messages,
 and each inactive route to 4. An example Nginx configuration is in `push_bridge/nginx.conf`; it
