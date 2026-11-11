@@ -60,6 +60,8 @@ class MessageActionsTest {
 
     private fun chooseFromMenu(label: String) {
         compose.onNodeWithContentDescription("More actions").performClick()
+        // Background syncs can reload the message, so its read state may settle a moment late.
+        compose.waitUntil(TIMEOUT) { compose.onAllNodesWithText(label).fetchSemanticsNodes().size == 1 }
         compose.onNodeWithText(label).performClick()
     }
 
