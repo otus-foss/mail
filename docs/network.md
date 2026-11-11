@@ -159,7 +159,7 @@ Only the Android nightly build checks for updates. Other builds never do
 ([`App.kt`](../shared/src/commonMain/kotlin/com/otusfoss/mail/app/App.kt)).
 
 - **Host:** `api.github.com`, for
-  `/repos/reazndev/otus-mail-nightly/releases?per_page=30`
+  `/repos/otus-foss/otus-mail/releases?per_page=30`
   ([`GitHubNightlyFeed.kt`](../shared/src/commonMain/kotlin/com/otusfoss/mail/feature/updates/data/GitHubNightlyFeed.kt)).
   The APK comes from the release asset's `browser_download_url` on `github.com`, which GitHub
   redirects to its download host

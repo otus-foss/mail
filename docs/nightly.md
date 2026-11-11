@@ -2,9 +2,11 @@
 
 `.github/workflows/nightly.yml` runs at 00:00 UTC, which is 01:00 in Berlin in winter and 02:00 in
 summer. It can also be started by hand. Changes to either Mail main or Meta main trigger a signed
-APK release in [otus-mail-nightly](https://github.com/reazndev/otus-mail-nightly). The source stays
-private. Each release is tagged `nightly-<number>`, with a version code one higher than the previous
-release. The first release starts at Mail's commit count. Draft releases reserve their version codes,
+APK, published as a prerelease of this repository. Each release is tagged `nightly-<number>` on the
+Mail commit it was built from, with a version code one higher than the previous release. That adds
+about one tag a day. A prerelease never becomes the repository's "Latest" release, so a stable
+release can take that place later. The version script stops at any tag that isn't `nightly-<number>`,
+so teach it to skip stable tags before the first stable release. The first release starts at Mail's commit count. Draft releases reserve their version codes,
 so a retry uses a code above every existing release, including unfinished drafts.
 
 The version job resolves both commits. The build checks out those exact revisions and publishes
@@ -15,10 +17,11 @@ recorded revision, the notes list the commits since it was published instead. On
 The version check reads every release page, so unfinished drafts cannot hide the last publication.
 A rerun after a failed build uses the next unpublished version code; a rerun after publication skips an unchanged pair.
 
-Gradle builds the APK unsigned, without the key. A later step signs it with `zipalign` and
-`apksigner` from build-tools 36.0.0, so Meta's build scripts and the Gradle plugins never see the
-key or its password. The workflow stops the Gradle daemon before signing and deletes the key file
-afterwards, even when a step failed.
+The `build` job runs Gradle with a read-only token and uploads the unsigned APK. The `release`
+job, which runs no Gradle, signs it with `zipalign` and `apksigner` from build-tools 36.0.0 and
+publishes it with a token that can write releases. So Meta's build scripts and the Gradle plugins
+never see the key, its password, or a write token. The key file is deleted afterwards, even when a
+step failed. The `version` job also gets a write token, because only that sees draft releases.
 
 Meta source is used because package publishing is paused. The first release after this workflow
 change rebuilds even if Mail is unchanged, since older releases have no Meta provenance. Its code
@@ -52,13 +55,7 @@ declares `REQUEST_INSTALL_PACKAGES`.
 
 ## One-time setup
 
-1. Create the public repository with a README, because a release needs a commit to tag:
-
-   ```sh
-   gh repo create reazndev/otus-mail-nightly --public --add-readme
-   ```
-
-2. Create the signing key and keep the file and password outside the repository, for example in a
+1. Create the signing key and keep the file and password outside the repository, for example in a
    password manager. Losing it means every phone must uninstall the nightly app once.
 
    ```sh
@@ -66,26 +63,16 @@ declares `REQUEST_INSTALL_PACKAGES`.
      -keyalg RSA -keysize 4096 -validity 10000 -dname "CN=Otus Mail Nightly"
    ```
 
-3. Create a fine-grained token with Contents read and write access to `otus-mail-nightly` only.
-
-4. Create a read-only deploy key so the workflow can check out the private otus-meta:
-
-   ```sh
-   ssh-keygen -t ed25519 -N "" -C "otus-mail nightly" -f otus-meta-deploy
-   gh repo deploy-key add otus-meta-deploy.pub -R reazndev/otus-meta --title "otus-mail nightly"
-   gh secret set OTUS_META_DEPLOY_KEY -R reazndev/otus-mail < otus-meta-deploy
-   rm otus-meta-deploy otus-meta-deploy.pub
-   ```
-
-5. Add the other secrets to otus-mail:
+2. Add the key and its password to otus-mail. The workflow publishes with its own token, and
+   otus-meta is public, so it needs no other secret:
 
    ```sh
-   base64 -w0 otus-nightly.p12 | gh secret set OTUS_NIGHTLY_KEYSTORE -R reazndev/otus-mail
-   gh secret set OTUS_NIGHTLY_KEYSTORE_PASSWORD -R reazndev/otus-mail
-   gh secret set OTUS_NIGHTLY_TOKEN -R reazndev/otus-mail
+   base64 -w0 otus-nightly.p12 | gh secret set OTUS_NIGHTLY_KEYSTORE -R otus-foss/otus-mail
+   gh secret set OTUS_NIGHTLY_KEYSTORE_PASSWORD -R otus-foss/otus-mail
    ```
 
-The repository name appears in the workflow and in `GitHubNightlyFeed`. Change both together.
+`GitHubNightlyFeed` names the repository the app reads. Change it when the repository moves.
+Releases from before 2026-11 are in the archived `otus-mail-nightly` repository.
 
 ## Local build
 

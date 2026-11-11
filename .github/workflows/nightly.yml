@@ -1,9 +1,8 @@
 name: nightly
 
-# Builds a signed nightly APK of main and publishes it as a release of the public nightly
-# repository, where the app's update check finds it. Changes in Mail or Meta trigger a build.
-# Both source revisions are resolved together and recorded in the release provenance.
-# See docs/nightly.md for the secrets this needs.
+# Builds a signed nightly APK of main and publishes it as a prerelease of this repository, where
+# the app's update check finds it. Changes in Mail or Meta trigger a build. Both source revisions
+# are resolved together and recorded in the release provenance. See docs/nightly.md.
 on:
   schedule:
     - cron: "0 0 * * *"
@@ -12,12 +11,11 @@ on:
 permissions:
   contents: read
 
-# The release token goes only to the steps that call gh, and the signing key only to the step
-# that signs, never to the Gradle build, which runs otus-meta's build scripts and every plugin.
-# The build reads Meta from its checkout, so it needs no packages token.
+# Gradle runs otus-meta's build scripts and every plugin, so the build job gets a read-only token
+# and never sees the signing key. The release job signs and publishes without running Gradle.
 env:
   # GitHubNightlyFeed reads releases from this repository.
-  NIGHTLY_REPO: reazndev/otus-mail-nightly
+  NIGHTLY_REPO: ${{ github.repository }}
 
 concurrency:
   group: nightly
@@ -25,6 +23,9 @@ concurrency:
 jobs:
   version:
     runs-on: ubuntu-24.04
+    # Only a token that can write sees draft releases, which reserve their version codes.
+    permissions:
+      contents: write
     outputs:
       number: ${{ steps.number.outputs.number }}
       previous_mail: ${{ steps.number.outputs.previous_mail }}
@@ -41,20 +42,56 @@ jobs:
           persist-credentials: false
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          repository: reazndev/otus-meta
+          repository: ${{ github.repository_owner }}/otus-meta
           ref: main
           path: otus-meta
-          ssh-key: ${{ secrets.OTUS_META_DEPLOY_KEY }}
           persist-credentials: false
       - id: number
         env:
-          GH_TOKEN: ${{ secrets.OTUS_NIGHTLY_TOKEN }}
+          GH_TOKEN: ${{ github.token }}
         run: python3 tools/nightly_version.py
 
   build:
     needs: version
     if: needs.version.outputs.number != ''
     runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ needs.version.outputs.sha }}
+          persist-credentials: false
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: ${{ github.repository_owner }}/otus-meta
+          ref: ${{ needs.version.outputs.meta_sha }}
+          path: otus-meta
+          persist-credentials: false
+      - uses: ./otus-meta/.github/actions/setup-build
+        with:
+          python: "false"
+      - name: Build the unsigned APK
+        env:
+          NUMBER: ${{ needs.version.outputs.number }}
+        run: |
+          # The app shows the version name, the build's date as d.m.yy, such as 18.10.26.
+          ./gradlew :androidApp:assembleNightly --console=plain \
+            -Potus.meta.path=otus-meta -Potus.versionCode="$NUMBER" -Potus.versionName="$(date -u +%-d.%-m.%y)"
+          out=androidApp/build/outputs/apk/nightly
+          # The build leaves exactly one unsigned APK; fail rather than sign the wrong file.
+          set -- "$out"/*-unsigned.apk
+          if [ "$#" -ne 1 ] || [ ! -f "$1" ]; then echo "expected one unsigned APK in $out" >&2; exit 1; fi
+          cp "$1" unsigned.apk
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: nightly-unsigned
+          path: unsigned.apk
+          retention-days: 1
+
+  release:
+    needs: [version, build]
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
     env:
       NUMBER: ${{ needs.version.outputs.number }}
       PREVIOUS_MAIL: ${{ needs.version.outputs.previous_mail }}
@@ -63,6 +100,7 @@ jobs:
       MAIL_SHA: ${{ needs.version.outputs.sha }}
       META_SHA: ${{ needs.version.outputs.meta_sha }}
     steps:
+      # Both histories for the notes, and Meta's setup-build for the build tools; no Gradle runs here.
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{ needs.version.outputs.sha }}
@@ -70,49 +108,38 @@ jobs:
           persist-credentials: false
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          repository: reazndev/otus-meta
+          repository: ${{ github.repository_owner }}/otus-meta
           ref: ${{ needs.version.outputs.meta_sha }}
           fetch-depth: 0
           path: otus-meta
-          ssh-key: ${{ secrets.OTUS_META_DEPLOY_KEY }}
           persist-credentials: false
       - id: setup
         uses: ./otus-meta/.github/actions/setup-build
         with:
           python: "false"
-      # Gradle builds the APK unsigned; the next step signs it, so the key never reaches Gradle.
-      - name: Build the unsigned APK
-        run: |
-          # The app shows the version name, the build's date as d.m.yy, such as 18.10.26.
-          ./gradlew :androidApp:assembleNightly --console=plain \
-            -Potus.meta.path=otus-meta -Potus.versionCode="$NUMBER" -Potus.versionName="$(date -u +%-d.%-m.%y)"
-          ./gradlew --stop
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: nightly-unsigned
       - name: Sign the APK
         env:
           KEYSTORE_BASE64: ${{ secrets.OTUS_NIGHTLY_KEYSTORE }}
           OTUS_NIGHTLY_KEYSTORE_PASSWORD: ${{ secrets.OTUS_NIGHTLY_KEYSTORE_PASSWORD }}
           TOOLS: ${{ steps.setup.outputs.build-tools }}
         run: |
-          out=androidApp/build/outputs/apk/nightly
-          # The build leaves exactly one unsigned APK; fail rather than sign the wrong file.
-          set -- "$out"/*-unsigned.apk
-          if [ "$#" -ne 1 ] || [ ! -f "$1" ]; then echo "expected one unsigned APK in $out" >&2; exit 1; fi
           keystore="$RUNNER_TEMP/nightly.p12"
           echo "$KEYSTORE_BASE64" | base64 -d > "$keystore"
-          "$TOOLS/zipalign" -P 16 -f 4 "$1" "$RUNNER_TEMP/aligned.apk"
+          "$TOOLS/zipalign" -P 16 -f 4 unsigned.apk "$RUNNER_TEMP/aligned.apk"
           "$TOOLS/apksigner" sign --ks "$keystore" --ks-type PKCS12 --ks-key-alias otus-nightly \
             --ks-pass env:OTUS_NIGHTLY_KEYSTORE_PASSWORD --key-pass env:OTUS_NIGHTLY_KEYSTORE_PASSWORD \
-            --out "$out/androidApp-nightly.apk" "$RUNNER_TEMP/aligned.apk"
-          "$TOOLS/apksigner" verify "$out/androidApp-nightly.apk"
+            --out "otus-mail-nightly-$NUMBER.apk" "$RUNNER_TEMP/aligned.apk"
+          "$TOOLS/apksigner" verify "otus-mail-nightly-$NUMBER.apk"
       - name: Delete the signing key
         if: always()
         run: rm -f "$RUNNER_TEMP/nightly.p12"
       - name: Publish the release
         env:
-          GH_TOKEN: ${{ secrets.OTUS_NIGHTLY_TOKEN }}
+          GH_TOKEN: ${{ github.token }}
         run: |
-          apk="otus-mail-nightly-$NUMBER.apk"
-          cp androidApp/build/outputs/apk/nightly/androidApp-nightly.apk "$apk"
           jq -n --arg mail "$MAIL_SHA" --arg meta "$META_SHA" --argjson versionCode "$NUMBER" \
             '{mail: $mail, meta: $meta, versionCode: $versionCode}' > provenance.json
           # Without a recorded revision, such as after a release from before provenance, the notes
@@ -131,5 +158,7 @@ jobs:
             history . "$PREVIOUS_MAIL"
             history otus-meta "$PREVIOUS_META"
           } | sed -nE '/^- (feat|fix|perf)(\([^)]*\))?!?: .+/p' > notes.md
-          gh release create "nightly-$NUMBER" "$apk" provenance.json -R "$NIGHTLY_REPO" \
+          # The tag marks the commit that was built, and prerelease keeps stable releases "Latest".
+          gh release create "nightly-$NUMBER" "otus-mail-nightly-$NUMBER.apk" provenance.json -R "$NIGHTLY_REPO" \
+            --target "$MAIL_SHA" --prerelease \
             --title "Otus Mail nightly $(date -u +%-d.%-m.%y)" --notes-file notes.md
