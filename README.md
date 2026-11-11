@@ -1,4 +1,28 @@
-# Otus Mail
+![Otus Mail](.github/banner.png)
+
+[![Latest nightly](https://img.shields.io/github/v/release/otus-foss/mail?include_prereleases&sort=date&display_name=release&label=latest&color=5a7ea4)](https://github.com/otus-foss/mail/releases)
+
+Otus Mail is a mail app for Android and iOS. It uses JMAP with the server you choose, such as a
+self-hosted Stalwart. It is part of the Otus suite with
+[Otus Calendar](https://github.com/otus-foss/calendar), built on [Otus Core](https://github.com/otus-foss/core).
+
+> [!WARNING]
+> Otus Mail is still in development. Expect bugs, missing features, and changes that break your
+> settings between builds.
+
+## Install
+
+On Android, download the APK from the [latest nightly](https://github.com/otus-foss/mail/releases)
+and open it. The first time, Android asks you to allow installs from your browser or file
+manager. After that, the app tells you when a new nightly is out and installs it for you.
+
+There are no iOS builds yet. To run it on an iPhone, build it from source as described under
+[iOS](#ios).
+
+Then open Settings, choose Email accounts, and connect your JMAP server with your username and
+password. Use an app password if your server offers one.
+
+## Development
 
 Development, pull requests, and issues use
 [mail on GitHub](https://github.com/otus-foss/mail). See [hosting and CI](docs/hosting.md).
@@ -13,7 +37,7 @@ be browsed and managed, and Sieve rules (RFC 9661) file arriving mail into them 
 support it; see [Folders and rules](docs/folders.md).
 See [JMAP](docs/jmap.md) for supported behavior and test coverage.
 
-## Structure
+### Structure
 
 - `shared`: common Kotlin code and Compose UI, with platform integrations.
 - `androidApp`: Android application entry point.
@@ -21,7 +45,7 @@ See [JMAP](docs/jmap.md) for supported behavior and test coverage.
 
 Application and bundle ID: `com.otusfoss.mail` (verify ownership before publishing).
 
-## Android
+### Android
 
 Android is the primary platform; iOS remains a secondary target.
 
@@ -43,7 +67,7 @@ is supplied. Debug builds retain debugging support and can scroll much more slow
 without JIT compilation. See [the calendar comparison](docs/selection-sheets.md#pixel-scroll-comparison-2026-10-03)
 for measured results and test limitations.
 
-## iOS
+### iOS
 
 On macOS, install Xcode 26 or newer and JDK 21. Open `iosApp/iosApp.xcodeproj`, select an iPhone simulator and
 run. For a physical device, set `TEAM_ID` in `iosApp/Configuration/Config.xcconfig` and configure
@@ -52,7 +76,7 @@ Apple Silicon simulators, iOS 15.3+.
 
 See [Apple push delivery](docs/apple-push.md) for APNs bridge deployment, signing, and notification tests.
 
-## Toolchain and attribution
+### Toolchain and attribution
 
 Versions are pinned in core's `gradle/libs.versions.toml`, the suite catalog, and in
 `gradle/app.versions.toml` for what only Mail uses. The Gradle wrapper includes a distribution
@@ -60,7 +84,7 @@ checksum. Derived from [Kotlin/KMP-App-Template](https://github.com/Kotlin/KMP-A
 commit `6b6d09e4f3f5e845116422d59b658791ed6149c6`; its Apache 2.0 license is retained in `LICENSES/Apache-2.0-KMP-App-Template.txt`.
 Sample museum code and unrelated platform targets were removed.
 
-## Engineering policy
+### Engineering policy
 
 See [date formatting](docs/date-formatting.md) for device-locale defaults, saved format choices,
 and the reusable API for future settings and screens.
@@ -69,7 +93,7 @@ Read [AGENTS.md](AGENTS.md), [architecture](docs/architecture.md), and
 [quality checks](docs/quality.md). UI follows elements → components → screens. Install the tools in the quality guide and
 run `./gradlew checkAll` before submitting changes. Use `./gradlew formatAll` to format.
 
-## Commit messages
+### Commit messages
 
 Use `type(scope): short action`, a blank line, and 1–8 bullets explaining the changes:
 
@@ -99,7 +123,7 @@ tests the checker; nothing inspects commit history or installs local hooks.
 See [the full commit rules](AGENTS.md#commit-messages) and
 [hook details](https://github.com/otus-foss/core/blob/main/docs/quality.md#commit-messages).
 
-## Inbox and reusable controls
+### Inbox and reusable controls
 
 See [Inbox](docs/inbox.md) for the default screen and search scope, and
 [Action bar](docs/action-bar.md) for the open message page, selection, and configurable actions, and
