@@ -10,6 +10,7 @@ import androidx.annotation.RequiresApi
 import androidx.core.content.FileProvider
 import com.otusfoss.mail.core.files.SavedFiles
 import com.otusfoss.mail.core.files.StoredFile
+import com.otusfoss.mail.core.files.safeFileName
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.File
@@ -46,7 +47,7 @@ class AndroidSavedFiles(
         return withContext(Dispatchers.IO) {
             // MediaStore numbers a name that is taken, "name (1)", but gives up after a few dozen;
             // then the file goes in under the time instead.
-            write(safeName(name), type, copy) ?: write(timedName(safeName(name)), type, copy) ?: false
+            write(safeFileName(name), type, copy) ?: write(timedName(safeFileName(name)), type, copy) ?: false
         }
     }
 
@@ -108,16 +109,6 @@ class AndroidSavedFiles(
             // Work profiles and restricted users can forbid handing the file to another app.
             false
         }
-    }
-
-    private companion object {
-        /** The sender picks the name, so path separators and dot names cannot leave the folder. */
-        fun safeName(name: String): String =
-            name
-                .replace('/', '_')
-                .replace('\\', '_')
-                .trim()
-                .takeUnless { it.isEmpty() || it == "." || it == ".." } ?: "attachment"
     }
 }
 
