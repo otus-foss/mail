@@ -16,7 +16,7 @@ One bullet per change, in the words a user would use. Name code only where a rev
 
 ## Depends on
 
-<!-- The paired Meta PR as reazndev/otus-meta#123, the same-named Meta branch, or the design page. -->
+<!-- The paired Meta PR as otus-foss/otus-meta#123, the same-named Meta branch, or the design page. -->
 
 -
 
@@ -26,7 +26,7 @@ One bullet per change, in the words a user would use. Name code only where a rev
 Add images when the change is visual or a picture explains it faster than words.
 Show each changed state in the themes where it looks different. Put a small change in a
 Before | After table. Link a recorded screenshot at the head commit, which stays put after merge:
-![Inbox](https://github.com/reazndev/otus-mail/blob/<sha>/<path>.png?raw=true)
+![Inbox](https://github.com/otus-foss/otus-mail/blob/<sha>/<path>.png?raw=true)
 Drag phone captures and screen recordings into the description on GitHub.
 -->
 

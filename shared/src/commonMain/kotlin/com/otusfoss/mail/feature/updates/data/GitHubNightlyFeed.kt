@@ -60,8 +60,8 @@ class GitHubNightlyFeed(
     )
 
     private companion object {
-        // The nightly workflow in .github/workflows/nightly.yml publishes here.
-        const val REPOSITORY = "reazndev/otus-mail-nightly"
+        // The nightly workflow in .github/workflows/nightly.yml publishes here, as prereleases.
+        const val REPOSITORY = "otus-foss/otus-mail"
         const val TAG_PREFIX = "nightly-"
 
         /** About a month of nightlies; a phone further behind sees only these builds' notes. */

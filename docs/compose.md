@@ -396,7 +396,7 @@ it saves over that copy like any other draft.
 - The total size is not checked against the server's `maxSizeAttachmentsPerEmail`; the server
   refuses such a message when it is sent.
 - A forward does not carry the original's attachments, and received attachments cannot be
-  opened yet ([Mail #25](https://github.com/reazndev/otus-mail/issues/25)).
+  opened yet ([Mail #25](https://github.com/otus-foss/otus-mail/issues/25)).
 - Crop and rotate, shown on the image options board, is not built.
 - Some keyboards send no Backspace key at the start of a line, so deleting an image that way may
   not work; its chip's ✕ always does.

@@ -1,7 +1,7 @@
 # Otus Mail
 
 Development, pull requests, and issues use
-[otus-mail on GitHub](https://github.com/reazndev/otus-mail). See [hosting and CI](docs/hosting.md).
+[otus-mail on GitHub](https://github.com/otus-foss/otus-mail). See [hosting and CI](docs/hosting.md).
 
 Kotlin Multiplatform + Compose app for Android and iOS, intended as the mail client in the Otus JMAP
 suite. Mail starts with an empty inbox and working local search/filter UI over supplied messages.
@@ -97,7 +97,7 @@ limit. Review wording and the title-length target manually. Git-generated merge 
 temporary autosquash messages are exempt; final squash messages follow the rules. otus-meta's CI
 tests the checker; nothing inspects commit history or installs local hooks.
 See [the full commit rules](AGENTS.md#commit-messages) and
-[hook details](https://github.com/reazndev/otus-meta/blob/main/docs/quality.md#commit-messages).
+[hook details](https://github.com/otus-foss/otus-meta/blob/main/docs/quality.md#commit-messages).
 
 ## Inbox and reusable controls
 

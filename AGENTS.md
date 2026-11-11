@@ -60,7 +60,7 @@ change it, and there are no dynamic device colors. Use colors only through `Otus
 `OtusTheme`, which follow the picked theme, and read them when drawing; never copy a token into a
 stored value. Default text is `text1` at full opacity. `text2`/`text3` require an explicit semantic
 choice. Check new UI in the Light and Black themes too. See Meta's
-[decision 0014](https://github.com/reazndev/otus-meta/blob/main/docs/decisions/0014-user-themes.md).
+[decision 0014](https://github.com/otus-foss/otus-meta/blob/main/docs/decisions/0014-user-themes.md).
 
 ## Motion
 
@@ -217,7 +217,7 @@ title syntax, missing separators, and bodies outside the 1–8 bullet limit. Rev
 imperative verbs, breaking-change explanations, and the
 72-character target manually. Git-generated merge messages and temporary autosquash messages are
 exempt; the final squash message must follow the rules. Meta's CI tests the checker; nothing
-inspects commit history. See [the decision](https://github.com/reazndev/otus-meta/blob/main/docs/decisions/0004-commit-messages.md).
+inspects commit history. See [the decision](https://github.com/otus-foss/otus-meta/blob/main/docs/decisions/0004-commit-messages.md).
 
 ## Pull requests
 
@@ -228,7 +228,7 @@ when you write the body yourself. The title follows the commit title rules above
 screenshots at the head commit, and send phone captures to the user to drag in.
 
 When the pull request finishes an issue, end the body with `Closes #123`, or
-`Closes reazndev/otus-meta#45` for an issue in another repository, so GitHub closes it on merge.
+`Closes otus-foss/otus-meta#45` for an issue in another repository, so GitHub closes it on merge.
 Write `Part of #123` for a step that leaves the issue open. Search the open issues before you open
 the pull request. The `issue link` workflow warns about a pull request that closes no issue.
 
@@ -237,7 +237,7 @@ CI runs once, when the pull request is marked ready. To check later pushes too, 
 
 The user lands pull requests with the `ready to land` label, which also merges the partners from the
 same branch name in the other repositories. Add that label only when the user asks you to land a pull
-request. See [landing](https://github.com/reazndev/otus-meta/blob/main/docs/landing.md).
+request. See [landing](https://github.com/otus-foss/otus-meta/blob/main/docs/landing.md).
 
 ## Agent workflow
 

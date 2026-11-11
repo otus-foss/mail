@@ -37,10 +37,9 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          repository: reazndev/otus-meta
+          repository: ${{ github.repository_owner }}/otus-meta
           path: otus-meta
           fetch-depth: 0
-          ssh-key: ${{ secrets.OTUS_META_DEPLOY_KEY }}
           persist-credentials: false
       # Meta's branch with this branch's name when there is one, else main, so every Meta action
       # and the build come from the Meta that lands with this change.
@@ -93,10 +92,9 @@ jobs:
           persist-credentials: false
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          repository: reazndev/otus-meta
+          repository: ${{ github.repository_owner }}/otus-meta
           path: otus-meta
           fetch-depth: 0
-          ssh-key: ${{ secrets.OTUS_META_DEPLOY_KEY }}
           persist-credentials: false
       # Meta's branch with this branch's name when there is one, else main, so every Meta action
       # and the build come from the Meta that lands with this change.
@@ -127,10 +125,12 @@ jobs:
   # Comments the release APK's size next to the latest nightly's. Only this job can write to the
   # pull request, so no build step gets that token.
   apk-size:
+    # A fork's pull request gets a read-only token, so it skips this job, which writes to the pull request.
     needs: check
-    if: always() && github.event_name == 'pull_request' && needs.check.result != 'skipped'
+    if: always() && github.event_name == 'pull_request' && needs.check.result != 'skipped' && github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-24.04
     permissions:
+      contents: read
       pull-requests: write
     steps:
       # The apk size part may have failed, and then there is nothing to compare.
@@ -145,7 +145,10 @@ jobs:
         run: |
           if [ ! -f apk-size.txt ]; then exit 0; fi
           size=$(cat apk-size.txt)
-          nightly=$(gh release view -R reazndev/otus-mail-nightly --json assets \
+          # Nightlies are prereleases of this repository, so `release view` alone would skip them.
+          tag=$(gh release list -R "$GITHUB_REPOSITORY" --json tagName \
+            --jq '[.[].tagName | select(startswith("nightly-"))][0]')
+          nightly=$(gh release view "$tag" -R "$GITHUB_REPOSITORY" --json assets \
             --jq '.assets[] | select(.name | endswith(".apk")) | .size')
           marker="<!-- otus-apk-size -->"
           {
@@ -180,10 +183,9 @@ jobs:
           persist-credentials: false
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          repository: reazndev/otus-meta
+          repository: ${{ github.repository_owner }}/otus-meta
           path: otus-meta
           fetch-depth: 0
-          ssh-key: ${{ secrets.OTUS_META_DEPLOY_KEY }}
           persist-credentials: false
       # Meta's branch with this branch's name when there is one, else main, so every Meta action
       # and the build come from the Meta that lands with this change.

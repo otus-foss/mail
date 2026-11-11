@@ -3,7 +3,7 @@
 Motion lives in common Kotlin code. Every animation in Mail takes its duration and curve from
 Meta's `Motion` API: `MotionSpeed`, `MotionCurve`, and the global speed multiplier
 `LocalMotionScale`. Meta's
-[design system guide](https://github.com/reazndev/otus-meta/blob/main/docs/designsystem.md#motion)
+[design system guide](https://github.com/otus-foss/otus-meta/blob/main/docs/designsystem.md#motion)
 explains the curves, the speeds, how durations are computed, and how to call it. The rules for
 choosing a speed and a curve are in [AGENTS.md](../AGENTS.md#motion).
 

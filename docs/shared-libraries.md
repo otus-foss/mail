@@ -1,7 +1,7 @@
 # Shared libraries
 
 Code that Mail and Calendar both use lives in
-[otus-meta](https://github.com/reazndev/otus-meta). Mail uses:
+[otus-meta](https://github.com/otus-foss/otus-meta). Mail uses:
 
 | Library | Version catalog entry |
 | --- | --- |
@@ -23,7 +23,7 @@ Mail builds otus-meta from source: the checkout next to it, `../otus-meta`, or t
 project of that checkout, and the build also takes Meta's convention plugins, its version catalog
 as `libs`, its tools, and its detekt configuration from it. Nothing is downloaded from GitHub
 Packages and no Meta version is pinned. See
-[otus-meta's consuming guide](https://github.com/reazndev/otus-meta/blob/main/docs/consuming.md).
+[otus-meta's consuming guide](https://github.com/otus-foss/otus-meta/blob/main/docs/consuming.md).
 
 `gradle/app.versions.toml` holds the versions only Mail uses, SQLDelight, WorkManager, and
 UnifiedPush, as the `appLibs` catalog. Every other version comes from Meta's catalog.

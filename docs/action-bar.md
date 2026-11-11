@@ -317,7 +317,7 @@ at 256. Emptying first pages through the folder with `Email/query` and `Email/ge
 
 - The bar's sizes, other than the height and the collapsed main button, were measured from the
   spec's image and are not verified Figma values; see
-  [mail design foundations](https://github.com/reazndev/otus-meta/blob/main/docs/suite/mail-design.md#action-bar).
+  [mail design foundations](https://github.com/otus-foss/otus-meta/blob/main/docs/suite/mail-design.md#action-bar).
 
 ## Validation
 
