@@ -1,11 +1,16 @@
 package com.otusfoss.mail.feature.compose.data
 
+import com.otusfoss.core.jmap.JmapCall
 import com.otusfoss.core.jmap.JmapException
+import com.otusfoss.core.jmap.JmapResponse
 import com.otusfoss.core.jmap.SetError
 import com.otusfoss.core.jmap.SetMethod
+import com.otusfoss.core.jmap.SetResult
+import com.otusfoss.core.jmap.jmapCallOr
 import com.otusfoss.core.jmap.jmapPatch
 import com.otusfoss.mail.core.mail.EmailAddressKey
 import com.otusfoss.mail.core.mail.EmailSubmissionType
+import com.otusfoss.mail.core.mail.EmailType
 import com.otusfoss.mail.core.mail.Keywords
 import com.otusfoss.mail.core.mail.MailAccount
 import com.otusfoss.mail.core.mail.MailFailure
@@ -52,6 +57,12 @@ internal data class SendRoute(
 
 /** The patch for a held copy: it stays where it was stored and only loses `$draft`. */
 internal fun SendRoute.heldPatch(): JsonObject = jmapPatch { remove("keywords", Keywords.DRAFT) }
+
+/** The patch that files a copy stored in [folder] once it is submitted for [time]. */
+private fun SendRoute.filedPatch(
+    folder: String,
+    time: SendTime,
+): JsonObject = if (time is SendTime.Scheduled) heldPatch() else sentPatch(folder)
 
 /**
  * The envelope that holds a draft until [at] (RFC 4865 HOLDUNTIL), from its From address to every
@@ -135,13 +146,39 @@ internal fun MailAccount.submission(
         mapOf(
             "onSuccessUpdateEmail" to
                 buildJsonObject {
-                    put(
-                        "#$SUBMISSION",
-                        if (time is SendTime.Scheduled) route.heldPatch() else route.sentPatch(folder),
-                    )
+                    put("#$SUBMISSION", route.filedPatch(folder, time))
                 },
         ),
 )
+
+/**
+ * Submits the stored [copy] and returns the submission's result. When the server's own update of
+ * the copy (RFC 8621, section 7.5) fails, the copy would stay in Drafts as a draft, so the same
+ * patch is sent once more. The message went either way, so a failed repair does not fail the send.
+ */
+internal suspend fun MailAccount.submitCopy(
+    route: SendRoute,
+    folder: String,
+    copy: String,
+    draft: Draft,
+    time: SendTime,
+): SetResult {
+    lateinit var submitting: JmapCall<SetResult>
+    val response = connection.send { submitting = call(submission(route, folder, copy, draft, time)) }
+    val submitted = response[submitting]
+    if (submitted.createdId(SUBMISSION) != null && response.copyUpdateFailed(submitting)) {
+        jmapCallOr(Unit) {
+            connection.call(SetMethod(EmailType, id, update = mapOf(copy to route.filedPatch(folder, time))))
+        }
+    }
+    return submitted
+}
+
+/** Whether the `Email/set` the server ran after [submitting] refused the copy or failed whole. */
+private fun JmapResponse.copyUpdateFailed(submitting: JmapCall<*>): Boolean {
+    val update = responses(submitting).drop(1).firstOrNull() ?: return false
+    return update.name == "error" || (update.arguments["notUpdated"] as? JsonObject)?.isNotEmpty() == true
+}
 
 /**
  * This email dated [at], when a scheduled send goes: its arrival in the account and its Date

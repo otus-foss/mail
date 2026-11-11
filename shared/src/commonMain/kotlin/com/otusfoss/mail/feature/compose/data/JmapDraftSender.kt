@@ -126,7 +126,7 @@ class JmapDraftSender internal constructor(
         stored(copy)
         val submitted =
             try {
-                connection.call(submission(route, folder, copy, draft, time))
+                submitCopy(route, folder, copy, draft, time)
             } catch (error: JmapException.MethodError) {
                 // The copy may still go, or have gone in part (RFC 8620, section 3.6.2), so it stays
                 // for the outbox to look up by its id before anything is destroyed.

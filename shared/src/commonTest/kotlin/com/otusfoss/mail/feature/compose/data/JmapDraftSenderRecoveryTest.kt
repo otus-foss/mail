@@ -106,7 +106,25 @@ class JmapDraftSenderRecoveryTest {
             assertEquals(listOf(Json.parseToJsonElement("""["e9"]""")), destroyed())
         }
 
+    @Test
+    fun aCopyTheServerLeftInDraftsIsFiledAgain() =
+        runTest {
+            val left = """["Email/set", {"newState": "e3", "notUpdated": {"e9": {"type": "serverFail"}}}"""
+            sender { """$SUBMITTED, $it], $left, $it]""" }.send(draft, answered = null, SendTime.Now).getOrThrow()
+            val filed = """{"e9": {"mailboxIds/dr": null, "mailboxIds/se": true, "keywords/${'$'}draft": null}}"""
+            assertEquals(Json.parseToJsonElement(filed), sets.last()["update"])
+        }
+
+    @Test
+    fun aCopyTheServerFiledNeedsNoRepair() =
+        runTest {
+            val filed = """["Email/set", {"newState": "e3", "updated": {"e9": null}}"""
+            sender { """$SUBMITTED, $it], $filed, $it]""" }.send(draft, answered = null, SendTime.Now).getOrThrow()
+            assertTrue(sets.none { "update" in it })
+        }
+
     private companion object {
+        const val SUBMITTED = """["EmailSubmission/set", {"newState": "s2", "created": {"send": {"id": "s1"}}}"""
         const val FOLDERS = """[{"id": "dr", "role": "drafts"}, {"id": "se", "role": "sent"}]"""
     }
 }
