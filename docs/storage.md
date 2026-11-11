@@ -30,6 +30,13 @@ strings. It knows nothing of JMAP; the callers encode and decode the objects.
   backups and may empty it when the device runs low on space; Mail then loads from the server again.
 - Tests, previews, and any platform without a driver use `InMemoryMailCache`.
 
+The device stores beside the cache, such as the outbox, waiting mail and contact changes, and
+folder settings, use the same split. Android keeps them in shared preferences, which the backup
+rules leave out. iOS keeps each in a JSON file, `FileMapStore`, in `Application Support/stores`.
+That folder is marked to stay out of backups and its files take the protection class
+`NSFileProtectionCompleteUntilFirstUserAuthentication`. User defaults would be backed up, so the
+first launch with the files moves each store's values out of user defaults and empties them there.
+
 The file is not encrypted. Only the app-private storage of each platform protects it. Login
 secrets never go in it; they stay in the platform's protected login store.
 
@@ -105,7 +112,8 @@ more.
 - Every login's changes share one stored value, so one lock covers each read and rewrite of it,
   and changes made on two accounts at once both stay.
 - Android keeps the queue in the `otus_mail_pending_changes` shared preferences file, written at
-  once, and `OutboxWorker` sends it once the network is back. iOS keeps it in user defaults.
+  once, and `OutboxWorker` sends it once the network is back. iOS keeps it in a file, described
+  below.
 - Removing an account drops its changes, before its login is deleted and again after, so a change
   made in between does not wait for the same account to be added again. Deleting, muting, and
   newsletter cleanup still need the server at once.
