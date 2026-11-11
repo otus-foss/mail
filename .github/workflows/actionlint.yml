@@ -11,7 +11,7 @@ permissions:
   contents: read
 
 jobs:
-  # Decides whether this run checks anything; see otus-core's .github/actions/ready-gate.
+  # Decides whether this run checks anything; see core's .github/actions/ready-gate.
   gate:
     runs-on: ubuntu-24.04
     outputs:
@@ -19,14 +19,14 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          repository: ${{ github.repository_owner }}/otus-core
-          path: otus-core
+          repository: ${{ github.repository_owner }}/core
+          path: core
           fetch-depth: 0
           persist-credentials: false
       # Core's branch with this branch's name when there is one, else main, so every Core action
       # and the build come from the Core that lands with this change.
       - name: Use the Core partner branch
-        working-directory: otus-core
+        working-directory: core
         env:
           BRANCH: ${{ github.head_ref || github.ref_name }}
         run: |
@@ -35,7 +35,7 @@ jobs:
           fi
           git log --oneline -1
       - id: gate
-        uses: ./otus-core/.github/actions/ready-gate
+        uses: ./core/.github/actions/ready-gate
 
   actionlint:
     needs: gate

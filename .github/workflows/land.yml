@@ -1,7 +1,7 @@
 name: land
 
 # Merges approved pull requests and their partners in the other Otus repositories. The work happens
-# in otus-core's lander workflow; see its docs/landing.md. GitHub runs these triggers from main.
+# in core's lander workflow; see its docs/landing.md. GitHub runs these triggers from main.
 on:
   pull_request_target:
     types: [labeled, unlabeled, synchronize]
@@ -13,6 +13,6 @@ permissions: {}
 
 jobs:
   lander:
-    uses: otus-foss/otus-core/.github/workflows/lander.yml@main
+    uses: otus-foss/core/.github/workflows/lander.yml@main
     secrets:
       app-private-key: ${{ secrets.LANDER_APP_PRIVATE_KEY }}

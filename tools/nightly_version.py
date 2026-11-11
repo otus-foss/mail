@@ -46,7 +46,7 @@ def previous_sources(repository, release):
 
 def version_outputs(repository):
     mail_sha = command("git", "rev-parse", "HEAD")
-    meta_sha = command("git", "-C", "otus-core", "rev-parse", "HEAD")
+    meta_sha = command("git", "-C", "core", "rev-parse", "HEAD")
     pages = json.loads(
         command("gh", "api", "--paginate", "--slurp", f"repos/{repository}/releases?per_page=100")
     )

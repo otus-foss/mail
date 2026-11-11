@@ -63,12 +63,12 @@ declares `REQUEST_INSTALL_PACKAGES`.
      -keyalg RSA -keysize 4096 -validity 10000 -dname "CN=Otus Mail Nightly"
    ```
 
-2. Add the key and its password to otus-mail. The workflow publishes with its own token, and
-   otus-core is public, so it needs no other secret:
+2. Add the key and its password to mail. The workflow publishes with its own token, and
+   core is public, so it needs no other secret:
 
    ```sh
-   base64 -w0 otus-nightly.p12 | gh secret set OTUS_NIGHTLY_KEYSTORE -R otus-foss/otus-mail
-   gh secret set OTUS_NIGHTLY_KEYSTORE_PASSWORD -R otus-foss/otus-mail
+   base64 -w0 otus-nightly.p12 | gh secret set OTUS_NIGHTLY_KEYSTORE -R otus-foss/mail
+   gh secret set OTUS_NIGHTLY_KEYSTORE_PASSWORD -R otus-foss/mail
    ```
 
 `GitHubNightlyFeed` names the repository the app reads. Change it when the repository moves.

@@ -30,7 +30,7 @@ class NightlyVersionTests(unittest.TestCase):
         def command(*args):
             if args == ("git", "rev-parse", "HEAD"):
                 return MAIL
-            if args == ("git", "-C", "otus-core", "rev-parse", "HEAD"):
+            if args == ("git", "-C", "core", "rev-parse", "HEAD"):
                 return META
             if args == ("git", "rev-list", "--count", "HEAD"):
                 return "200"

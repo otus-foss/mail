@@ -1,7 +1,7 @@
 # Shared libraries
 
 Code that Mail and Calendar both use lives in
-[otus-core](https://github.com/otus-foss/otus-core). Mail uses:
+[core](https://github.com/otus-foss/core). Mail uses:
 
 | Library | Version catalog entry |
 | --- | --- |
@@ -17,20 +17,20 @@ Code that Mail and Calendar both use lives in
 
 ## Building against Core
 
-Mail builds otus-core from source: the checkout next to it, `../otus-core`, or the one the
+Mail builds core from source: the checkout next to it, `../core`, or the one the
 `otus.core.path` Gradle property names, for example in `~/.gradle/gradle.properties` or with
 `-Potus.core.path=../core-worktree`. Gradle replaces each `com.otusfoss.core:<module>` with the matching
 project of that checkout, and the build also takes Core's convention plugins, its version catalog
 as `libs`, its tools, and its detekt configuration from it. Nothing is downloaded from GitHub
 Packages and no Core version is pinned. See
-[otus-core's consuming guide](https://github.com/otus-foss/otus-core/blob/main/docs/consuming.md).
+[core's consuming guide](https://github.com/otus-foss/core/blob/main/docs/consuming.md).
 
 `gradle/app.versions.toml` holds the versions only Mail uses, SQLDelight, WorkManager, and
 UnifiedPush, as the `appLibs` catalog. Every other version comes from Core's catalog.
 
 ## Changing shared code
 
-1. Change the library in otus-core on a branch, and make the matching Mail change on a branch
+1. Change the library in core on a branch, and make the matching Mail change on a branch
    with the same name.
 2. Build Mail against that Core branch locally. CI does the same: it checks out the Core branch
    with this branch's name when there is one, else Core's `main`, and the `pull request`

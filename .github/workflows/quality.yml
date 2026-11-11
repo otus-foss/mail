@@ -24,7 +24,7 @@ concurrency:
   cancel-in-progress: ${{ github.event_name != 'push' }}
 
 jobs:
-  # Decides which jobs this change needs; see otus-core's .github/actions/quality-changes.
+  # Decides which jobs this change needs; see core's .github/actions/quality-changes.
   # A run the ready gate stops sets no outputs, so every later job skips.
   changes:
     runs-on: ubuntu-24.04
@@ -37,14 +37,14 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          repository: ${{ github.repository_owner }}/otus-core
-          path: otus-core
+          repository: ${{ github.repository_owner }}/core
+          path: core
           fetch-depth: 0
           persist-credentials: false
       # Core's branch with this branch's name when there is one, else main, so every Core action
       # and the build come from the Core that lands with this change.
       - name: Use the Core partner branch
-        working-directory: otus-core
+        working-directory: core
         env:
           BRANCH: ${{ github.head_ref || github.ref_name }}
         run: |
@@ -53,10 +53,10 @@ jobs:
           fi
           git log --oneline -1
       - id: gate
-        uses: ./otus-core/.github/actions/ready-gate
+        uses: ./core/.github/actions/ready-gate
       - id: files
         if: steps.gate.outputs.ready == 'true'
-        uses: ./otus-core/.github/actions/quality-changes
+        uses: ./core/.github/actions/quality-changes
 
   # Each job runs one part of checkAll, so the parts run at the same time. The tests run in two
   # shards; each test class runs in exactly one of them.
@@ -80,26 +80,26 @@ jobs:
           # Not part of checkAll: builds the release APK so the apk-size job can compare it.
           - part: apk size
             tasks: :androidApp:assembleNightly
-    # Mail and otus-core sit side by side, as on a development machine, so Gradle finds Core at
-    # ../otus-core and Spotless never sees Core's files.
+    # Mail and core sit side by side, as on a development machine, so Gradle finds Core at
+    # ../core and Spotless never sees Core's files.
     defaults:
       run:
-        working-directory: otus-mail
+        working-directory: mail
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          path: otus-mail
+          path: mail
           persist-credentials: false
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          repository: ${{ github.repository_owner }}/otus-core
-          path: otus-core
+          repository: ${{ github.repository_owner }}/core
+          path: core
           fetch-depth: 0
           persist-credentials: false
       # Core's branch with this branch's name when there is one, else main, so every Core action
       # and the build come from the Core that lands with this change.
       - name: Use the Core partner branch
-        working-directory: otus-core
+        working-directory: core
         env:
           BRANCH: ${{ github.head_ref || github.ref_name }}
         run: |
@@ -107,9 +107,9 @@ jobs:
             git checkout --quiet --detach "origin/$BRANCH"
           fi
           git log --oneline -1
-      - uses: ./otus-core/.github/actions/setup-build
+      - uses: ./core/.github/actions/setup-build
         with:
-          directory: otus-mail
+          directory: mail
       - run: ./gradlew ${{ matrix.tasks }} --console=plain
       - name: Record the APK size
         if: matrix.part == 'apk size'
@@ -120,7 +120,7 @@ jobs:
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: apk-size
-          path: otus-mail/apk-size.txt
+          path: mail/apk-size.txt
 
   # Comments the release APK's size next to the latest nightly's. Only this job can write to the
   # pull request, so no build step gets that token.
@@ -175,22 +175,22 @@ jobs:
     runs-on: macos-15
     defaults:
       run:
-        working-directory: otus-mail
+        working-directory: mail
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          path: otus-mail
+          path: mail
           persist-credentials: false
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          repository: ${{ github.repository_owner }}/otus-core
-          path: otus-core
+          repository: ${{ github.repository_owner }}/core
+          path: core
           fetch-depth: 0
           persist-credentials: false
       # Core's branch with this branch's name when there is one, else main, so every Core action
       # and the build come from the Core that lands with this change.
       - name: Use the Core partner branch
-        working-directory: otus-core
+        working-directory: core
         env:
           BRANCH: ${{ github.head_ref || github.ref_name }}
         run: |
@@ -200,9 +200,9 @@ jobs:
           git log --oneline -1
       # Compose Multiplatform links iOS 26 SDK symbols, so the app needs Xcode 26.
       - run: sudo xcode-select -s /Applications/Xcode_26.3.app && xcodebuild -version
-      - uses: ./otus-core/.github/actions/setup-build
+      - uses: ./core/.github/actions/setup-build
         with:
-          directory: otus-mail
+          directory: mail
           android: "false"
           python: "false"
       - run: brew install mint

@@ -1,6 +1,6 @@
 #!/bin/sh
-# Checks the message with otus-core's checker, from the checkout that the otus.core.path Gradle
-# property names, else from the sibling ../otus-core, as Gradle finds it.
+# Checks the message with core's checker, from the checkout that the otus.core.path Gradle
+# property names, else from the sibling ../core, as Gradle finds it.
 set -eu
 
 repo_root=$(git rev-parse --show-toplevel)
@@ -11,4 +11,4 @@ for properties in "${GRADLE_USER_HOME:-$HOME/.gradle}/gradle.properties" gradle.
     core=$(tr -d '\r' < "$properties" | sed -n 's/^[[:space:]]*otus\.core\.path[[:space:]]*[=:][[:space:]]*//p' | tail -n 1)
   fi
 done
-exec python3 "${core:-../otus-core}/tools/check_commit_message.py" "$1"
+exec python3 "${core:-../core}/tools/check_commit_message.py" "$1"

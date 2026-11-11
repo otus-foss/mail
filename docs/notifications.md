@@ -3,7 +3,7 @@
 On Android, Mail receives new-mail pushes through Google Play services built into the app, or a
 separate UnifiedPush app such as ntfy. It also checks about every 15 minutes. Android needs no
 Otus push server; see Core
-[decision 0015](https://github.com/otus-foss/otus-core/blob/main/docs/decisions/0015-push-notifications.md).
+[decision 0015](https://github.com/otus-foss/core/blob/main/docs/decisions/0015-push-notifications.md).
 
 Apple delivery uses an APNs bridge and an embedded iOS notification extension. See
 [Apple push delivery](apple-push.md) for configuration, limits and validation. The sections below

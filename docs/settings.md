@@ -1,6 +1,6 @@
 # Settings
 
-Implemented through the shared `settings` and `accounts` libraries from otus-core, with
+Implemented through the shared `settings` and `accounts` libraries from core, with
 Mail-specific destination entries in `app/MailSettings.kt`. Settings is a sidebar destination
 with subpages.
 
