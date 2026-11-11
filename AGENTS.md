@@ -221,16 +221,24 @@ inspects commit history. See [the decision](https://github.com/otus-foss/core/bl
 
 ## Pull requests
 
-Write every pull request from `.github/pull_request_template.md` and keep its headings in the same
-order. GitHub fills it in on the website, but `gh pr create --body` skips it, so copy the headings
-when you write the body yourself. The title follows the commit title rules above. Leave out
-"Generated with" footers and session links. `gh` cannot upload images, so link recorded
-screenshots at the head commit, and send phone captures to the user to drag in.
+Write every pull request from `.github/pull_request_template.md`. It has three headings, in this
+order:
 
-When the pull request finishes an issue, end the body with `Closes #123`, or
-`Closes otus-foss/core#45` for an issue in another repository, so GitHub closes it on merge.
-Write `Part of #123` for a step that leaves the issue open. Search the open issues before you open
-the pull request. The `issue link` workflow warns about a pull request that closes no issue.
+- `# Summary`: a few plain sentences on what changes and why.
+- `# Paired PRs`: a link to each pull request in another repository that this one needs or that
+  needs it, one per line, or "No paired PR" when there is none.
+- `# Closes`: at the bottom, every issue on one line with the keyword before each, such as
+  `Closes #123, closes #124`. GitHub links only the first issue of `Closes #123, #124`.
+
+GitHub fills the template in on the website, but `gh pr create --body` skips it, so write that
+shape yourself. The title follows the commit title rules above. Leave out "Generated with" footers
+and session links. `gh` cannot upload images, so link recorded screenshots at the head commit, and
+send phone captures to the user to drag in.
+
+When the pull request finishes an issue, list `Closes #123` under `# Closes`, or
+`Closes otus-foss/core#45` for an issue in another repository, so GitHub closes it on merge. Write
+`Part of #123` for a step that leaves the issue open. Search the open issues before you open the
+pull request. The `issue link` workflow warns about a pull request that closes no issue.
 
 CI runs once, when the pull request is marked ready. To check later pushes too, add the
 `ci on every push` label; each push then runs CI again.
