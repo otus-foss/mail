@@ -12,7 +12,7 @@ permissions:
 jobs:
   issue-link:
     if: "!github.event.pull_request.draft"
-    runs-on: ubicloud-standard-2
+    runs-on: ubuntu-24.04
     steps:
       - name: Look for a closing keyword
         env:

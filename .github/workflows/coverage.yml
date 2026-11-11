@@ -30,7 +30,7 @@ concurrency:
 jobs:
   # Decides whether this run checks anything; see otus-meta's .github/actions/ready-gate.
   gate:
-    runs-on: ubicloud-standard-2
+    runs-on: ubuntu-24.04
     outputs:
       ready: ${{ steps.gate.outputs.ready }}
     steps:
@@ -60,7 +60,7 @@ jobs:
   report:
     needs: gate
     if: needs.gate.outputs.ready == 'true'
-    runs-on: ubicloud-standard-2
+    runs-on: ubuntu-24.04
     permissions:
       contents: read
       pull-requests: read
@@ -145,7 +145,7 @@ jobs:
   comment:
     needs: report
     if: needs.report.outputs.pr != ''
-    runs-on: ubicloud-standard-2
+    runs-on: ubuntu-24.04
     permissions:
       pull-requests: write
     steps:

@@ -27,7 +27,7 @@ jobs:
   # Decides which jobs this change needs; see otus-meta's .github/actions/quality-changes.
   # A run the ready gate stops sets no outputs, so every later job skips.
   changes:
-    runs-on: ubicloud-standard-2
+    runs-on: ubuntu-24.04
     permissions:
       contents: read
       pull-requests: read
@@ -65,7 +65,7 @@ jobs:
     needs: changes
     if: needs.changes.outputs.build == 'true'
     name: check (${{ matrix.part }})
-    runs-on: ubicloud-standard-2
+    runs-on: ubuntu-24.04
     strategy:
       fail-fast: false
       matrix:
@@ -129,7 +129,7 @@ jobs:
   apk-size:
     needs: check
     if: always() && github.event_name == 'pull_request' && needs.check.result != 'skipped'
-    runs-on: ubicloud-standard-2
+    runs-on: ubuntu-24.04
     permissions:
       pull-requests: write
     steps:
@@ -169,7 +169,6 @@ jobs:
   ios:
     needs: changes
     if: needs.changes.outputs.ios == 'true' && vars.IOS_CI == 'on'
-    # Ubicloud has no macOS runners, so this job runs on GitHub's.
     runs-on: macos-15
     defaults:
       run:
