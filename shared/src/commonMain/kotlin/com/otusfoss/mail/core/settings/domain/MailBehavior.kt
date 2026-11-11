@@ -7,7 +7,8 @@ import com.otusfoss.mail.core.messages.domain.MailAction
  * folder to each account, an action that saves mail there, and its pill, so it reaches the list,
  * the actions, and the sidebar alike. [updateToasts] shows a toast when a newer build is out, at
  * most once per launch; only the updates feature reads it. [lettersAtEnd] puts the Contacts letter
- * index on the end edge, for the other thumb.
+ * index on the end edge, for the other thumb. [onboarded] is false until the first run has finished;
+ * a behavior that was never saved counts as finished, so only an install with saved settings asks.
  */
 data class MailBehavior(
     val readLater: Boolean = false,
@@ -20,6 +21,7 @@ data class MailBehavior(
     val sidebar: SidebarBehavior = SidebarBehavior(),
     val updateToasts: Boolean = true,
     val lettersAtEnd: Boolean = false,
+    val onboarded: Boolean = true,
 ) {
     /**
      * Turning Read later on adds its pill to the end of the row. Turning it off removes the pill,

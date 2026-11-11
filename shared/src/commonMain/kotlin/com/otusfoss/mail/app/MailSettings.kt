@@ -73,7 +73,9 @@ internal fun mailSettingsIndex(
             summary = "Remote images, avatars, and this device",
         ) {
             keywords("Security")
-            sections(privacySettings(states.behavior, states.devicePrivacy, open(MailPage.AllowedSenders)))
+            sections(
+                privacySettings(states.behavior, states.devicePrivacy, openAllowed = open(MailPage.AllowedSenders)),
+            )
         }
         page(
             FOLDERS_TITLE,

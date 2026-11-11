@@ -17,13 +17,14 @@ import com.otusfoss.core.designsystem.shared.settings.components.SettingRow
 import com.otusfoss.core.designsystem.shared.settings.components.SettingsSection
 import com.otusfoss.core.designsystem.shared.settings.elements.ValueButton
 import com.otusfoss.mail.feature.notifications.domain.NotificationPreviews
-import com.otusfoss.mail.feature.notifications.domain.PERIODIC_CHECK
 import com.otusfoss.mail.feature.notifications.domain.PreviewChoices
 import com.otusfoss.mail.feature.notifications.domain.PushDeliveryStatus
 import com.otusfoss.mail.feature.notifications.domain.PushDistributor
 import com.otusfoss.mail.feature.notifications.presentation.ButtonsInfo
+import com.otusfoss.mail.feature.notifications.presentation.CHECKS
 import com.otusfoss.mail.feature.notifications.presentation.NotificationSettingsState
 import com.otusfoss.mail.feature.notifications.presentation.PreviewsInfo
+import com.otusfoss.mail.feature.notifications.presentation.choiceRow
 import com.otusfoss.mail.feature.notifications.presentation.description
 import com.otusfoss.mail.feature.notifications.presentation.overrideSummary
 import com.otusfoss.mail.feature.notifications.presentation.short
@@ -141,10 +142,6 @@ private fun notInstantInfo(periodicChecks: Boolean) =
         },
     )
 
-private fun PushDistributor?.choiceRow(periodicChecks: Boolean): ChoiceRow =
-    this?.let { ChoiceRow(it.name, if (it.isGoogle || it.isApple) "Built into Otus" else "Through a separate app") }
-        ?: ChoiceRow("Off", if (periodicChecks) "Checks $CHECKS" else "No new-mail alerts")
-
 private fun PushDeliveryStatus?.label(periodicChecks: Boolean): String {
     // With periodic checks mail still arrives, which the section's info explains; without them the
     // user has to act, so the row says so.
@@ -214,8 +211,6 @@ internal val NotificationSettingsState.deliverySummary: String
     get() =
         current?.let { "Through ${it.name}" }
             ?: if (periodicChecks) "Off, checks $CHECKS" else "New-mail alerts off"
-
-private val CHECKS = "about every ${PERIODIC_CHECK.inWholeMinutes} minutes"
 
 /** The Instant delivery row's value: the distributor that delivers new mail, or Off. */
 internal val NotificationSettingsState.deliveryLabel: String

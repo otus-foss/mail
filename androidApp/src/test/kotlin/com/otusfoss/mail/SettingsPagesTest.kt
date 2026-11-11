@@ -113,11 +113,10 @@ class SettingsPagesTest {
         compose.onNodeWithText("Email accounts").performClick()
         compose.onNodeWithText("Connect an account").performClick()
         val server = compose.onNodeWithContentDescription("Server")
+        // The field shows no text under it; an address without TLS only keeps Connect off.
         server.performTextInput("http://mail.example.com")
-        compose.onNodeWithText("JMAP requires a secure connection. Use https://.").assertIsDisplayed()
         compose.onNodeWithText("Connect").assertIsNotEnabled()
         server.performTextReplacement("Mail.Example.com")
-        compose.onNodeWithText("Connects to https://mail.example.com/.well-known/jmap").assertIsDisplayed()
         compose.onNodeWithContentDescription("Username").performTextInput("me@example.com")
         compose.onNodeWithContentDescription("Password").performTextInput("app-password")
         compose

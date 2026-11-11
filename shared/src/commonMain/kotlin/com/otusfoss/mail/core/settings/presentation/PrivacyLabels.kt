@@ -2,6 +2,7 @@ package com.otusfoss.mail.core.settings.presentation
 
 import com.otusfoss.mail.core.messages.domain.RemoteImages
 import com.otusfoss.mail.core.settings.domain.PhotoCleaning
+import com.otusfoss.mail.core.settings.domain.PrivacyPreset
 
 internal val RemoteImages.title: String
     get() =
@@ -52,3 +53,18 @@ fun allowedSummary(
 
 /** Why Icons from is disabled while Website icons is off; search shows it too. */
 const val ICONS_UNAVAILABLE = "Turn on Website icons to choose"
+
+internal val PrivacyPreset.title: String
+    get() =
+        when (this) {
+            PrivacyPreset.Private -> "Full privacy"
+            PrivacyPreset.Convenient -> "Convenient"
+        }
+
+/** What the preset does, in one line. */
+internal val PrivacyPreset.summary: String
+    get() =
+        when (this) {
+            PrivacyPreset.Private -> "No images or icons load. Alerts hide the sender."
+            PrivacyPreset.Convenient -> "Images from people you know, sender icons, full alerts."
+        }

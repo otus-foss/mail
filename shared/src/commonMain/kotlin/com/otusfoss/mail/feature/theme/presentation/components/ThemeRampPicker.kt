@@ -89,6 +89,34 @@ fun ThemeRampPicker(
     }
 }
 
+/**
+ * The hue slider alone, for a page with no room for the rest, such as a first run. It starts at
+ * [choice]'s accent and keeps [choice]'s dark or light mode; each hue the user picks goes to
+ * [onTry] as a set of colors made from it, which the page previews and applies itself.
+ */
+@Composable
+fun ThemeHueSlider(
+    choice: ThemeChoice,
+    onTry: (ThemeChoice) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    var hue by rememberSaveable { mutableFloatStateOf(choice.accent.toHsl().hue) }
+    val light = choice.palette.isLight
+    val generated = remember(choice, hue, light) { choice.withRamp(themeRamp(hue, light, seed = 0)) }
+    val (_, saturation, lightness) = generated.accent.toHsl()
+    HueSlider(
+        hue,
+        {
+            hue = it
+            onTry(choice.withRamp(themeRamp(it, light, seed = 0)))
+        },
+        "Base hue",
+        modifier,
+        saturation = saturation,
+        lightness = lightness,
+    )
+}
+
 /** The surfaces, text levels, and accent of a generated set, from raised surfaces to the accent. */
 private val OtusPalette.swatches: List<Color>
     get() = listOf(bgDark, bgRegular, bgLight, text3, text2, text1, accentRegular)

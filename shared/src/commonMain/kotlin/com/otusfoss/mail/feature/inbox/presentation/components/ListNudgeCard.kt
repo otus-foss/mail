@@ -15,7 +15,7 @@ internal fun ListNudgeCard(
 ) {
     FolderColorNudge(
         title = "${nudge.folderName} has no colour yet.",
-        body = " Coloured folders are easier to spot next to each mail.",
+        body = "Coloured folders are easier to spot next to each mail.",
         colors = nudge.colors,
         onPick = nudge.onPick,
         onDismiss = nudge.onDismiss,

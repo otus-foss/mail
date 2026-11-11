@@ -82,36 +82,47 @@ fun App(
     val settings = rememberSharedSettings(dateFormatState, themeState, animationState, appIconState)
     val navigation = rememberMailNavigation({ page = it }) { scope.launch { sidebar.open() } }
     AppEffects(services, states, behaviorState, start, navigation, current = { page }) { page = it }
+    val onboarding = rememberOnboarding(states, behaviorState)
+    // A launch that may open on the first run plays no launch animation over it.
+    val firstRun = remember(behaviorState) { !behaviorState.behavior.onboarded }
     AppTheme(themeState, animationState, dateFormatter) {
         Box(Modifier.fillMaxSize()) {
-            BackToInbox(page) { page = MailPage.Inbox }
-            // Subpages lead back to their parent, so only top-level pages swipe the sidebar open.
-            SidebarSwipeArea(sidebar, enabled = page.parent == null) {
-                SlidingPages(page, depth = MailPage::depth) { shown ->
-                    pages.SaveableStateProvider(shown.toString()) {
-                        MailPageContent(shown, states, dateFormatter, settings, navigation)
+            if (onboarding) {
+                // Another account is added where accounts live, not by running the setup again.
+                OnboardingPage(states, settings) { page = MailPage.EmailAccounts }
+            } else if (behaviorState.behavior.onboarded) {
+                // Until the saved accounts say whether the first run shows, nothing does.
+                BackToInbox(page) { page = MailPage.Inbox }
+                // Subpages lead back to their parent, so only top-level pages swipe the sidebar open.
+                SidebarSwipeArea(sidebar, enabled = page.parent == null) {
+                    SlidingPages(page, depth = MailPage::depth) { shown ->
+                        pages.SaveableStateProvider(shown.toString()) {
+                            MailPageContent(shown, states, dateFormatter, settings, navigation)
+                        }
                     }
                 }
+                BottomToasts(states.moveToasts.toasts)
+                UpdateToastEffect(nightly, behaviorState.behavior.updateToasts, states.moveToasts.toasts) {
+                    updateOpen = true
+                }
+                AppSidebar(
+                    sidebar,
+                    current = page.root,
+                    states,
+                    footer = { build?.let { BuildFooter(it, nightly) { updateOpen = true } } },
+                    onSelect = {
+                        navigation.go(it)
+                        scope.launch { sidebar.close() }
+                    },
+                )
             }
-            BottomToasts(states.moveToasts.toasts)
-            UpdateToastEffect(nightly, behaviorState.behavior.updateToasts, states.moveToasts.toasts) {
-                updateOpen = true
+            if (!firstRun) {
+                LaunchCover(
+                    states.list.feed,
+                    appIconState?.style ?: AppIconStyle.Accent,
+                    inbox = start == SidebarPin.Inbox,
+                )
             }
-            AppSidebar(
-                sidebar,
-                current = page.root,
-                states,
-                footer = { build?.let { BuildFooter(it, nightly) { updateOpen = true } } },
-                onSelect = {
-                    navigation.go(it)
-                    scope.launch { sidebar.close() }
-                },
-            )
-            LaunchCover(
-                states.list.feed,
-                appIconState?.style ?: AppIconStyle.Accent,
-                inbox = start == SidebarPin.Inbox,
-            )
         }
         AppSheets(states, nightly.takeIf { updateOpen }, scope) { updateOpen = false }
     }

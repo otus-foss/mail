@@ -10,6 +10,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.SideEffect
 import androidx.compose.ui.graphics.toArgb
 import androidx.core.graphics.drawable.toDrawable
@@ -22,6 +23,7 @@ import com.otusfoss.core.settings.presentation.DateFormatSettingsState
 import com.otusfoss.core.settings.presentation.ThemeSettingsState
 import com.otusfoss.mail.app.App
 import com.otusfoss.mail.app.IncognitoKeyboard
+import com.otusfoss.mail.app.LocalAllowNotifications
 import com.otusfoss.mail.app.MailServices
 import com.otusfoss.mail.feature.updates.domain.InstalledBuild
 import com.otusfoss.mail.feature.updates.domain.ReleaseChannel
@@ -78,7 +80,9 @@ class MainActivity : ComponentActivity() {
             val secure = behaviorState.behavior.privacy.screenSecurity
             SideEffect { keepScreenPrivate(secure) }
             IncognitoKeyboard(behaviorState.behavior.privacy.incognitoKeyboard) {
-                App(dateFormatState, services, behaviorState, themeState, animationState, appIconState, build)
+                CompositionLocalProvider(LocalAllowNotifications provides notificationRequest()) {
+                    App(dateFormatState, services, behaviorState, themeState, animationState, appIconState, build)
+                }
             }
         }
     }
@@ -115,6 +119,14 @@ class MainActivity : ComponentActivity() {
         super.onStop()
         (application as OtusMailApplication).services.visibility.hide()
         showLauncherIcon(appIconState.style, themeState.choice.accent)
+    }
+
+    /** Asks for permission to show alerts, for the first run; null where Android grants it without asking. */
+    private fun notificationRequest(): (() -> Unit)? {
+        val needed =
+            Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+                checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED
+        return if (needed) ({ notificationPermission.launch(Manifest.permission.POST_NOTIFICATIONS) }) else null
     }
 
     /** Asks once per launch, and only when there is mail to notify about. */
