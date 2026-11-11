@@ -3,6 +3,7 @@ package com.otusfoss.mail
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
+import android.net.Uri
 import com.otusfoss.mail.app.MailRequests
 import com.otusfoss.mail.core.messages.domain.ComposeRequest
 import com.otusfoss.mail.core.messages.domain.MailSender
@@ -86,31 +87,47 @@ internal fun Context.openMessage(
 ): PendingIntent =
     PendingIntent.getActivity(
         this,
-        // Each alert needs its own request code, or the newest alert's ids would replace the others'.
-        "$loginId/$emailId".hashCode(),
+        0,
         Intent(this, MainActivity::class.java)
+            .setData(alertUri(loginId, emailId))
             .putExtra(EXTRA_LOGIN_ID, loginId)
             .putExtra(EXTRA_EMAIL_ID, emailId)
             .addFlags(IN_PLACE),
         PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
     )
 
-/** Opens Mail on a reply to the message [emailId] of [loginId], for the alert button with request [code]. */
+/** Opens Mail on a reply to the message [emailId] of [loginId], for its alert's Reply button. */
 internal fun Context.replyTo(
     loginId: String,
     emailId: String,
-    code: Int,
 ): PendingIntent =
     PendingIntent.getActivity(
         this,
-        code,
+        0,
         Intent(this, MainActivity::class.java)
+            .setData(alertUri(loginId, emailId, "reply"))
             .putExtra(EXTRA_LOGIN_ID, loginId)
             .putExtra(EXTRA_EMAIL_ID, emailId)
             .putExtra(EXTRA_REPLY, true)
             .addFlags(IN_PLACE),
         PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
     )
+
+/**
+ * Names an alert's message, and its [button] if any, in the intent's data. Android matches
+ * PendingIntents by data but not by extras, so each alert's intents need their own, or one alert's
+ * button could act on another's message.
+ */
+internal fun alertUri(
+    loginId: String,
+    emailId: String,
+    button: String? = null,
+): Uri =
+    listOfNotNull(loginId, emailId, button)
+        .fold(Uri.Builder().scheme(ALERT_SCHEME)) { uri, part -> uri.appendPath(part) }
+        .build()
+
+private const val ALERT_SCHEME = "otusfoss-alert"
 
 /** Reuses the running activity, so its pages and state stay, and starts one when there is none. */
 private const val IN_PLACE =

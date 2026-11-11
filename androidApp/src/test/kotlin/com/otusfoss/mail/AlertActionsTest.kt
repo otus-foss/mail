@@ -103,6 +103,20 @@ class AlertActionsTest {
     }
 
     @Test
+    fun eachAlertsButtonsActOnItsOwnMessage() {
+        val chosen = listOf(MailAction.Trash, MailAction.Reply)
+        MailNotifications(app, { chosen }) { PreviewChoices() }.show(listOf(mail("m1"), mail("m2")))
+        val named =
+            listOf("m1", "m2").map { id ->
+                posted()
+                    .getValue("ada/$id")
+                    .actions
+                    .map { shadowOf(it.actionIntent).savedIntent.getStringExtra(EXTRA_EMAIL_ID) }
+            }
+        assertEquals(listOf(listOf("m1", "m1"), listOf("m2", "m2")), named)
+    }
+
+    @Test
     fun aFailedChangeBringsTheAlertBackAndSaysSo() {
         MailNotifications(app) { PreviewChoices() }.showFailed(mail("m1"), MailAction.Archive)
         val back = posted().getValue("ada/m1")
