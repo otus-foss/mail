@@ -59,7 +59,7 @@ private fun PageRequest.changesMethod(
     maxChanges = MAX_LIST_CHANGES,
     extra =
         mapOf(
-            "collapseThreads" to JsonPrimitive(true),
+            query.collapse,
             "calculateTotal" to JsonPrimitive(true),
             "upToId" to JsonPrimitive(listing.ids.last()),
         ),

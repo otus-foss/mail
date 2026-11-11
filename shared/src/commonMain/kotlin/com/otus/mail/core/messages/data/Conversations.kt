@@ -80,11 +80,14 @@ internal fun MailMessage.inConversation(
  * One row per thread, newest conversation first. Each mailbox of a list lists its own row of a
  * thread, so rows of one thread merge: the newest row email stays, with every listed member and the
  * marks and mailboxes of all of them. Rows of the same age keep their order, so a message in two
- * mailboxes stays under the first.
+ * mailboxes stays under the first. A row of a folder that lists each email apart stays apart.
  */
 internal fun List<MailMessage>.mergedByThread(): List<MailMessage> =
-    groupBy { it.conversation?.threadId ?: "email:${it.id}" }
-        .values
+    groupBy { row ->
+        row.conversation
+            ?.threadId
+            ?.takeIf { row.location.mailboxRole?.listsConversations != false } ?: "email:${row.id}"
+    }.values
         .map { rows -> rows.reduce(::merge) }
         .sortedByDescending { it.lastReceived.sortKey }
 

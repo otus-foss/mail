@@ -31,6 +31,7 @@ import com.otus.mail.core.messages.domain.SendTime
 import com.otus.mail.core.messages.domain.SentMessage
 import com.otus.mail.core.messages.domain.sendingAs
 import kotlinx.serialization.SerializationException
+import kotlin.time.Clock
 
 /**
  * Sends a draft with `EmailSubmission/set` (RFC 8621, section 7.5). One request stores the draft
@@ -44,6 +45,8 @@ class JmapDraftSender internal constructor(
     private val changes: EmailChangeQueue,
 ) : DraftSender,
     ScheduledSends {
+    private val filing = ScheduledFiling()
+
     override suspend fun send(
         draft: Draft,
         answered: AnsweredMessage?,
@@ -90,6 +93,7 @@ class JmapDraftSender internal constructor(
             drafts = folders.firstOrNull { it.role == MailboxRole.Drafts }?.id,
             sent = folders.firstOrNull { it.role == MailboxRole.Sent }?.id,
             scheduled = folders.scheduledFolder()?.id,
+            adoptable = folders.adoptableScheduled(),
         )
     }
 
@@ -106,7 +110,7 @@ class JmapDraftSender internal constructor(
         stored: suspend (emailId: String) -> Unit,
     ): SentMessage {
         val folder =
-            (if (time is SendTime.Scheduled) route.scheduled ?: createScheduledFolder() else null)
+            (if (time is SendTime.Scheduled) scheduledFolderFor(route) else null)
                 ?: route.drafts
                 ?: route.sent
                 ?: failSend(SendFailure.Mail(MailFailure.ServerProblem))
@@ -149,7 +153,9 @@ class JmapDraftSender internal constructor(
 
     override suspend fun fileSent(accountId: String) {
         jmapCallOr(Unit) {
-            connections.mailAccount(accountId)?.let { it.fileScheduled(copies.mailboxes.sendFresh(it) {}.first) }
+            connections.mailAccount(accountId)?.let {
+                filing.file(it, copies.mailboxes.sendFresh(it) {}.first, Clock.System.now())
+            }
         }
     }
 

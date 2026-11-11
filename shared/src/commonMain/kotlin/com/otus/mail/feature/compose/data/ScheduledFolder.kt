@@ -1,18 +1,12 @@
 package com.otus.mail.feature.compose.data
 
-import com.otus.jmap.GetMethod
-import com.otus.jmap.GetResult
-import com.otus.jmap.JmapCall
 import com.otus.jmap.JmapCapability
-import com.otus.jmap.JmapIds
 import com.otus.jmap.QueryMethod
-import com.otus.jmap.QueryResult
 import com.otus.jmap.SetMethod
 import com.otus.jmap.allOf
 import com.otus.jmap.filterCondition
 import com.otus.jmap.jmapCallOr
 import com.otus.jmap.jmapPatch
-import com.otus.mail.core.mail.EmailSubmissionType
 import com.otus.mail.core.mail.EmailType
 import com.otus.mail.core.mail.Keywords
 import com.otus.mail.core.mail.MailAccount
@@ -21,12 +15,9 @@ import com.otus.mail.core.mailbox.MailFolder
 import com.otus.mail.core.mailbox.MailboxRole
 import com.otus.mail.core.messages.domain.HeldSend
 import com.otus.mail.core.messages.domain.SentMessage
-import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.buildJsonObject
-import kotlinx.serialization.json.contentOrNull
-import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.put
 import kotlin.time.Instant
 
@@ -36,21 +27,33 @@ import kotlin.time.Instant
  */
 internal fun List<MailFolder>.scheduledFolder(): MailFolder? = firstOrNull { it.role == MailboxRole.Scheduled }
 
-/** Creates the Scheduled folder with its role; null when the server refused it or could not be reached. */
-internal suspend fun MailAccount.createScheduledFolder(): String? =
-    jmapCallOr(null) {
-        val folder =
-            buildJsonObject {
-                put("name", SCHEDULED_NAME)
-                put("role", MailboxRole.Scheduled.wire)
-            }
-        connection.call(SetMethod(MailboxType, id, create = mapOf(FOLDER to folder))).createdId(FOLDER)
-    }
+/**
+ * An empty top-level folder of the user's own named Scheduled, without a role, which Mail gives
+ * the role rather than make a second folder of that name, which servers refuse. A folder that
+ * holds mail stays the user's, so filing never moves mail Mail did not schedule.
+ */
+internal fun List<MailFolder>.adoptableScheduled(): String? =
+    firstOrNull {
+        it.role == null &&
+            it.otherRole == null &&
+            it.parentId == null &&
+            it.sharedIn == null &&
+            it.total == 0L &&
+            it.name.equals(SCHEDULED_NAME, ignoreCase = true)
+    }?.id
 
-/** [fileScheduled] with the account's Drafts, Scheduled, and Sent among [folders]; nothing without Sent. */
-internal suspend fun MailAccount.fileScheduled(folders: List<MailFolder>) {
-    val sent = folders.firstOrNull { it.role == MailboxRole.Sent }?.id ?: return
-    fileScheduled(folders.firstOrNull { it.role == MailboxRole.Drafts }?.id, folders.scheduledFolder()?.id, sent)
+/**
+ * Gives [adoptable] the `scheduled` role, or makes a Scheduled folder when there is none to
+ * adopt; its id, or null when the server refused. It throws when the server cannot be reached.
+ */
+internal suspend fun MailAccount.makeScheduledFolder(adoptable: String?): String? {
+    val role = buildJsonObject { put("role", MailboxRole.Scheduled.wire) }
+    if (adoptable != null) {
+        val adopted = connection.call(SetMethod(MailboxType, id, update = mapOf(adoptable to role)))
+        return adoptable.takeIf { it in adopted.updated }
+    }
+    val folder = buildJsonObject { put("name", SCHEDULED_NAME) } + role
+    return connection.call(SetMethod(MailboxType, id, create = mapOf(FOLDER to JsonObject(folder)))).createdId(FOLDER)
 }
 
 /** The send still waiting for [emailId], whose cancel makes it a draft in the Drafts among [folders]. */
@@ -64,142 +67,123 @@ internal suspend fun MailAccount.heldSend(
 }
 
 /**
- * Files scheduled mail by its submission (RFC 8621, section 7): a copy whose send finished
- * (`undoStatus` `final`) moves from [scheduled] to [sent], since some servers send held mail but
- * leave its copy where it was. A copy still waiting that an older Mail left in [drafts] without
- * `$draft` moves to [scheduled], once the account has it: only a scheduled send makes the folder.
- * A copy in [scheduled] whose every send was canceled, as when making it a draft again failed,
- * goes back to [drafts] as a draft, since nothing would send or file it.
+ * Files scheduled mail by its submissions (RFC 8621, section 7), whichever client scheduled it.
+ *
+ * A copy whose send still waits for a time later than Undo holds mail, in [drafts] or [sent],
+ * moves to [scheduled]: other clients often file it in Sent at once, and an older Mail left it in
+ * Drafts. [makeFolder] gives the account a Scheduled folder for such a copy when it has none.
+ *
+ * A copy in [scheduled] without `$draft` leaves once its send is over: to [sent] when it went or
+ * its submission is gone, and back to [drafts] as a draft when every send was canceled, as when
+ * another client canceled it or making it a draft again failed. A copy with
+ * `$draft` may be one Mail stored but has not submitted yet, so it stays. Keywords are read before
+ * submissions, so a send that completes in between is not taken for one that is gone. A copy an
+ * older Mail left in [drafts] without `$draft` goes to [sent] once sent, or becomes a draft again
+ * once canceled.
  */
 internal suspend fun MailAccount.fileScheduled(
     drafts: String?,
     scheduled: String?,
     sent: String,
+    now: Instant,
+    makeFolder: suspend () -> String?,
 ) {
     if (!mayUse(JmapCapability.SUBMISSION)) return
-    val inScheduled = scheduled?.let { emailsIn(it, notKeyword = Keywords.DRAFT) }.orEmpty()
-    val inDrafts = drafts?.let { emailsIn(it, notKeyword = Keywords.DRAFT) }.orEmpty()
-    val status = submissionStatus((inScheduled + inDrafts).toList())
-    val moves =
-        buildMap {
-            status.filterValues { FINAL in it }.keys.forEach { email ->
-                val from = if (email in inDrafts) drafts else scheduled
-                if (from != null) put(email, move(from, sent))
-            }
-            if (drafts != null && scheduled != null) {
-                inDrafts.filter { status[it]?.contains(PENDING) == true }.forEach { put(it, move(drafts, scheduled)) }
-            }
-            if (scheduled != null) {
-                val draftAgain =
-                    jmapPatch {
-                        set(JsonPrimitive(true), "keywords", Keywords.DRAFT)
-                        if (drafts != null) include(move(scheduled, drafts))
-                    }
-                inScheduled.filter { status[it] == ONLY_CANCELED }.forEach { put(it, draftAgain) }
-            }
-        }
+    val folders = SweptFolders(drafts, scheduled, sent)
+    val inScheduled = scheduled?.let { unsentIn(it) }.orEmpty()
+    val inDrafts = drafts?.let { unsentIn(it) }.orEmpty()
+    val states = sendStates((inScheduled + inDrafts).toList())
+    val misfiled = folders.misfiled(scheduledCopies(now))
+    val target = scheduled ?: misfiled.takeIf { it.isNotEmpty() }?.let { makeFolder() }
+    val filed = target?.let { to -> misfiled.mapValues { (_, from) -> move(from, to) } }.orEmpty()
+    val moves = folders.ended(states, inScheduled, inDrafts) + filed
     if (moves.isNotEmpty()) connection.call(SetMethod(EmailType, id, update = moves))
 }
 
-/** The emails in [folder], without those that have [notKeyword]. */
-private suspend fun MailAccount.emailsIn(
-    folder: String,
-    notKeyword: String? = null,
-): Set<String> {
-    val inFolder = filterCondition("inMailbox", JsonPrimitive(folder))
-    val filter = notKeyword?.let { allOf(inFolder, filterCondition("notKeyword", JsonPrimitive(it))) } ?: inFolder
+/** [route]'s Scheduled folder, made or adopted when it has none; null when that failed. */
+internal suspend fun MailAccount.scheduledFolderFor(route: SendRoute): String? =
+    route.scheduled ?: jmapCallOr(null) { makeScheduledFolder(route.adoptable) }
+
+/** The folders [fileScheduled] moves copies between. */
+private class SweptFolders(
+    val drafts: String?,
+    val scheduled: String?,
+    val sent: String,
+) {
+    /** The folders among Drafts and Sent that each of [copies] should leave for Scheduled. */
+    fun misfiled(copies: Map<String, Set<String>>): Map<String, List<String>> =
+        copies
+            .filterValues { scheduled == null || scheduled !in it }
+            .mapValues { (_, boxes) -> boxes.filter { it == drafts || it == sent } }
+            .filterValues { it.isNotEmpty() }
+
+    /**
+     * The changes to copies [inScheduled] and [inDrafts] whose send is over, by their [states];
+     * none in Scheduled when [states] is null, since the server's answer may lack submissions.
+     */
+    fun ended(
+        states: Map<String, SendState>?,
+        inScheduled: Set<String>,
+        inDrafts: Set<String>,
+    ): Map<String, JsonObject> =
+        buildMap {
+            if (scheduled != null && states != null) {
+                inScheduled.forEach { email ->
+                    leaving(states[email] ?: SendState.Gone, scheduled)?.let { put(email, it) }
+                }
+            }
+            if (drafts != null) {
+                inDrafts.forEach { email -> leavingDrafts(states?.get(email), drafts)?.let { put(email, it) } }
+            }
+        }
+
+    /** Where a copy in [scheduled] goes once its send is over; null while it waits. */
+    private fun leaving(
+        state: SendState,
+        scheduled: String,
+    ): JsonObject? =
+        when (state) {
+            SendState.Sent, SendState.Gone -> move(listOf(scheduled), sent)
+            SendState.Canceled -> drafts?.let { move(listOf(scheduled), it, draft = true) } ?: DRAFT_AGAIN
+            SendState.Pending -> null
+        }
+
+    /** What happens to a copy an older Mail left in [drafts] without `$draft`, by its [state]. */
+    private fun leavingDrafts(
+        state: SendState?,
+        drafts: String,
+    ): JsonObject? =
+        when (state) {
+            SendState.Sent -> move(listOf(drafts), sent)
+            SendState.Canceled -> DRAFT_AGAIN
+            else -> null
+        }
+}
+
+/** The emails in [folder] without `$draft`. */
+private suspend fun MailAccount.unsentIn(folder: String): Set<String> {
+    val filter =
+        allOf(
+            filterCondition("inMailbox", JsonPrimitive(folder)),
+            filterCondition("notKeyword", JsonPrimitive(Keywords.DRAFT)),
+        )
     return connection.call(QueryMethod(EmailType, id, filter)).ids.toSet()
 }
 
-/** The `undoStatus` of every submission of each of [emailIds] that has one. */
-private suspend fun MailAccount.submissionStatus(emailIds: List<String>): Map<String, Set<String>> {
-    if (emailIds.isEmpty()) return emptyMap()
-    lateinit var all: JmapCall<QueryResult>
-    lateinit var submissions: JmapCall<GetResult<JsonObject>>
-    val response =
-        connection.send {
-            all =
-                call(
-                    QueryMethod(
-                        EmailSubmissionType,
-                        id,
-                        filterCondition("emailIds", JsonArray(emailIds.map(::JsonPrimitive))),
-                    ),
-                )
-            submissions =
-                call(
-                    GetMethod(
-                        EmailSubmissionType,
-                        id,
-                        JmapIds.Result(all.resultOf("/ids")),
-                        listOf("emailId", "undoStatus"),
-                    ),
-                )
-        }
-    return response[submissions]
-        .list
-        .mapNotNull { submission ->
-            val email = submission.text("emailId")
-            val undo = submission.text("undoStatus")
-            if (email != null && undo != null && email in emailIds) email to undo else null
-        }.groupBy({ it.first }, { it.second })
-        .mapValues { it.value.toSet() }
-}
-
-/** The submission of [emailId] the server still holds, with its identity and when it goes; null when none waits. */
-internal suspend fun MailAccount.pendingSubmission(emailId: String): PendingSubmission? {
-    lateinit var waiting: JmapCall<QueryResult>
-    lateinit var submissions: JmapCall<GetResult<JsonObject>>
-    val response =
-        connection.send {
-            waiting =
-                call(
-                    QueryMethod(
-                        EmailSubmissionType,
-                        id,
-                        allOf(
-                            filterCondition("emailIds", JsonArray(listOf(JsonPrimitive(emailId)))),
-                            filterCondition("undoStatus", JsonPrimitive(PENDING)),
-                        ),
-                        limit = 1,
-                    ),
-                )
-            submissions =
-                call(
-                    GetMethod(
-                        EmailSubmissionType,
-                        id,
-                        JmapIds.Result(waiting.resultOf("/ids")),
-                        listOf("id", "identityId", "sendAt"),
-                    ),
-                )
-        }
-    val submission = response[submissions].list.firstOrNull()
-    val id = submission?.text("id")
-    val at = submission?.text("sendAt")?.let { runCatching { Instant.parse(it) }.getOrNull() }
-    return if (id != null && at != null) PendingSubmission(id, submission.text("identityId").orEmpty(), at) else null
-}
-
-private fun JsonObject.text(name: String): String? = this[name]?.jsonPrimitive?.contentOrNull
-
-/** A held submission [id], sent as [identityId] at [at]. */
-internal data class PendingSubmission(
-    val id: String,
-    val identityId: String,
-    val at: Instant,
-)
-
+/** Moves an email from [from] to [to], and makes it a draft again when [draft] is true. */
 private fun move(
-    from: String,
+    from: List<String>,
     to: String,
+    draft: Boolean = false,
 ): JsonObject =
     jmapPatch {
-        remove("mailboxIds", from)
+        from.forEach { remove("mailboxIds", it) }
         set(JsonPrimitive(true), "mailboxIds", to)
+        if (draft) set(JsonPrimitive(true), "keywords", Keywords.DRAFT)
     }
 
-/** The submissions of a copy whose every send was canceled. */
-private val ONLY_CANCELED = setOf(CANCELED)
+/** Makes a copy whose send was canceled a draft where it is, without a Drafts folder to go to. */
+private val DRAFT_AGAIN = jmapPatch { set(JsonPrimitive(true), "keywords", Keywords.DRAFT) }
 
 private const val SCHEDULED_NAME = "Scheduled"
 

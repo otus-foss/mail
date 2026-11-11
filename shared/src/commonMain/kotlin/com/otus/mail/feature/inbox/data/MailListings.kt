@@ -20,15 +20,24 @@ import kotlinx.serialization.builtins.MapSerializer
 import kotlinx.serialization.builtins.serializer
 import kotlinx.serialization.json.JsonPrimitive
 
-/** One mailbox's list: the mail in [mailboxId] that [filter] finds, in [sort] order. */
+/**
+ * One mailbox's list: the mail in [mailboxId] that [filter] finds, in [sort] order, with one row per
+ * conversation, or per email when [conversations] is false (`collapseThreads`, RFC 8621, section
+ * 4.4.3).
+ */
 internal class ListingQuery(
     val mailboxId: String,
     val filter: JmapFilter,
     val sort: FilterSort,
+    val conversations: Boolean = true,
 ) {
     /** The saved-value key of this list's [Listing]; the filter names the mailbox. */
     val key: String
-        get() = "$LISTING_PREFIX${sort.name}:${filter.toJson()}"
+        get() = "$LISTING_PREFIX${sort.name}:${if (conversations) "" else EMAILS}${filter.toJson()}"
+
+    /** The `Email/query` arguments that make rows conversations or emails. */
+    val collapse: Pair<String, JsonPrimitive>
+        get() = "collapseThreads" to JsonPrimitive(conversations)
 }
 
 /**
@@ -90,8 +99,8 @@ internal class PageRequest(
 )
 
 /**
- * The row ids of each page in [pages], one `Email/query` per page with `collapseThreads`, so each
- * conversation has one row (RFC 8621, section 4.4.3). The pages share as few requests as the
+ * The row ids of each page in [pages], one `Email/query` per page, with a row per conversation or
+ * per email as its [ListingQuery] says. The pages share as few requests as the
  * server allows.
  */
 internal suspend fun JmapConnection.queryPages(
@@ -125,7 +134,7 @@ private fun PageRequest.queryMethod(accountId: String) =
         receivedOrder(query.sort),
         limit,
         mapOf(
-            "collapseThreads" to JsonPrimitive(true),
+            query.collapse,
             "calculateTotal" to JsonPrimitive(true),
         ) + start(),
     )
@@ -155,6 +164,7 @@ private fun <T> String.decodedOrNull(serializer: KSerializer<T>): T? =
     }
 
 private const val LISTING_PREFIX = "listing:"
+private const val EMAILS = "emails:"
 private const val LISTING_USE = "listings:used"
 private val USE_SERIALIZER = MapSerializer(String.serializer(), Long.serializer())
 

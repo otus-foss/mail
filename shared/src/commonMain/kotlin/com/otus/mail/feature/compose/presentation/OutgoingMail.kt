@@ -6,6 +6,7 @@ import com.otus.designsystem.shared.feedback.components.ToastMessage
 import com.otus.designsystem.shared.feedback.components.ToastState
 import com.otus.mail.core.mail.MailFailure
 import com.otus.mail.core.messages.domain.ComposeRequest
+import com.otus.mail.core.messages.domain.SERVER_SPARE
 import com.otus.mail.core.messages.domain.ScheduledSends
 import com.otus.mail.core.messages.domain.SendCancel
 import com.otus.mail.core.messages.domain.SendException
@@ -285,9 +286,6 @@ private const val WILL_SEND = "Will send when online"
 private const val UNCONFIRMED = "Couldn't confirm sending"
 
 private fun OutboxProblem?.offerText() = if (this == OutboxProblem.Unconfirmed) UNCONFIRMED else "Couldn't send"
-
-/** Time for the request to reach the server and for its clock to differ from the device's. */
-private val SERVER_SPARE = 2.seconds
 
 /** The first and the longest wait before sending early again while offline. */
 private val RETRY_FIRST = 5.seconds
