@@ -31,6 +31,7 @@ import com.otusfoss.core.designsystem.shared.controls.elements.Chip
 import com.otusfoss.core.designsystem.shared.controls.elements.IconButton
 import com.otusfoss.core.designsystem.shared.controls.elements.Symbol
 import com.otusfoss.core.designsystem.shared.overlays.elements.sheetInset
+import com.otusfoss.core.designsystem.shared.overlays.elements.sheetRowInset
 import com.otusfoss.core.designsystem.shared.panels.components.GrownPanelLayers
 import com.otusfoss.core.designsystem.shared.panels.components.PanelExpansion
 import com.otusfoss.core.designsystem.shared.panels.components.grownStopHeight
@@ -172,13 +173,17 @@ private fun ReadDetails(room: ReadRoom) {
             ?.unsubscribe
             ?.deliveredTo
             .orEmpty()
-    Column(Modifier.fillMaxWidth().sheetInset()) {
-        DetailRows(deliveryLines(room.page, delivered), divided = true)
-        room.files()?.let { AttachmentList(it.shown, it.summary, it.actions) }
-        ReadMoreMail(room)
+    Column(Modifier.fillMaxWidth()) {
+        Column(Modifier.fillMaxWidth().sheetInset()) {
+            DetailRows(deliveryLines(room.page, delivered), divided = true)
+            room.files()?.let { AttachmentList(it.shown, it.summary, it.actions) }
+            ReadMoreMail(room)
+        }
+        // The row insets its own text, so it takes the smaller inset to line up with the rows above.
         SettingPageRow(
             "Show original",
             { room.open(ReadSheet.Details(room.page)) },
+            Modifier.sheetRowInset(),
             icon = Res.drawable.symbol_code,
         )
     }
