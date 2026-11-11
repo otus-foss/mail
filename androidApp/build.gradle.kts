@@ -62,6 +62,8 @@ android {
             buildConfigField("String", "CHANNEL", "\"Nightly\"")
         }
     }
+    // The dev build is the debug app for daily use, so it shows debug's name, "Otus Mail Dev".
+    sourceSets.getByName("dev").res.srcDir("src/debug/res")
 }
 
 tasks.withType<Test>().configureEach {
