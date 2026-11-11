@@ -53,6 +53,7 @@ import com.otusfoss.mail.feature.updates.presentation.components.UpdateSheets
 import com.otusfoss.mail.feature.updates.presentation.components.UpdateToastEffect
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.drop
+import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.launch
 
 @Composable
@@ -189,14 +190,22 @@ private fun BackToInbox(
     )
 }
 
-/** Only nightly builds on a platform that can install one look for a newer nightly, once per launch. */
+/**
+ * Only nightly builds on a platform that can install one look for a newer nightly, each time Mail
+ * comes on screen, because Android keeps the activity when the user leaves and returns to it.
+ */
 @Composable
 private fun rememberNightlyUpdate(
     services: MailServices,
     build: InstalledBuild?,
 ): NightlyUpdateState? {
     val nightly = remember(services, build) { services.nightlyState(build) }
-    LaunchedEffect(nightly) { nightly?.check() }
+    LaunchedEffect(nightly) {
+        nightly ?: return@LaunchedEffect
+        services.visibility.shown
+            .filter { it }
+            .collect { nightly.check() }
+    }
     return nightly
 }
 
