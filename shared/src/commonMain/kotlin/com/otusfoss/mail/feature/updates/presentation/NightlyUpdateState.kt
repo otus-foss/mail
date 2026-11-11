@@ -12,8 +12,8 @@ import kotlinx.coroutines.CancellationException
 
 /**
  * Offers the newest nightly build past the [installed] one, with the changes of every build in
- * between, and installs it through [installer]. A failed check stays silent, because the user did
- * not ask for it, and the next launch checks again.
+ * between, and installs it through [installer]. A failed check stays silent and keeps what the last
+ * one found, because the user did not ask for it, and the next check tries again.
  */
 class NightlyUpdateState(
     private val feed: NightlyFeed,
@@ -36,7 +36,7 @@ class NightlyUpdateState(
         private set
 
     suspend fun check() {
-        val builds = attempt { feed.releases() }.orEmpty().sortedByDescending { it.number }
+        val builds = attempt { feed.releases() }?.sortedByDescending { it.number } ?: return
         val newer = builds.filter { it.number > installed }
         available = newer.firstOrNull()
         changes = changesIn(newer)

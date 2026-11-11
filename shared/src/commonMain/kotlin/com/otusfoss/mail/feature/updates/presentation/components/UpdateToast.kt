@@ -11,8 +11,8 @@ import com.otusfoss.mail.feature.updates.presentation.NightlyUpdateState
 
 /**
  * Says in [toasts] that a newer build is out once [update] finds one, while [enabled]. Its action
- * runs [onView], which opens what changed. Each launch checks once, so the toast shows at most once
- * per launch.
+ * runs [onView], which opens what changed. Mail checks each time it comes on screen, and the toast
+ * shows once for each newer build it finds.
  */
 @Composable
 fun UpdateToastEffect(
