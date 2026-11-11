@@ -2,6 +2,7 @@ package com.otus.mail.app
 
 import com.otus.mail.core.messages.domain.DevicePrivacy
 import com.otus.mail.feature.notifications.domain.InstantPush
+import com.otus.mail.feature.notifications.domain.MailAlerts
 import kotlin.time.Instant
 
 /**
@@ -10,7 +11,8 @@ import kotlin.time.Instant
  * [MailServices.resumeOutbox] at a time, even with the app closed, where the platform can.
  * [instantPush] delivers pushes through the selected service; null where the platform has none.
  * [categoriesOn] reads whether the user has Inbox categories on, from the settings the process
- * keeps, so lists sort before any screen shows; see docs/categories.md.
+ * keeps, so lists sort before any screen shows; see docs/categories.md. [alerts] are the device's
+ * new-mail alerts, which go with their account; null where the platform posts none.
  */
 class MailPlatform(
     internal val nightly: NightlyUpdates = NightlyUpdates(),
@@ -18,4 +20,5 @@ class MailPlatform(
     internal val wakeOutbox: (Instant) -> Unit = {},
     internal val instantPush: InstantPush? = null,
     internal val categoriesOn: () -> Boolean = { false },
+    internal val alerts: MailAlerts? = null,
 )

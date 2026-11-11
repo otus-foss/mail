@@ -136,8 +136,10 @@ so a toast says so and the Inbox stays.
 
 An alert that shows its message offers up to three buttons. A "New mail only" alert and the
 locked version of an alert offer none, because the user cannot see which message they would
-change. Settings › Notifications › **Buttons** › **Alert buttons** picks them and their order in the
-same `OrderedChoiceSheet` the Quick views use; see [settings](settings.md#kinds-of-setting). The
+change. A device set to show full alerts on its lock screen shows the buttons there too, so every
+button that changes mail asks the user to unlock first (`setAuthenticationRequired`, Android 12
+and later). Settings › Notifications › **Buttons** › **Alert buttons** picks them and their order
+in the same `OrderedChoiceSheet` the Quick views use; see [settings](settings.md#kinds-of-setting). The
 choice is `MailBehavior.notificationActions`, saved with the other behavior settings under
 `notification_actions`. The default is **Delete**, **Archive**, **Mark read**, in that order.
 Taking every button out leaves alerts without buttons.
@@ -172,9 +174,9 @@ label is its action's own label, the one the bar shows; Android keeps only the i
 and the semantic actions. Delete, Archive, and Spam first read the account's mailbox roles with
 `Mailbox/get`. Like the list's own marks and moves, each change goes into the device's copy at
 once and waits in the change queue when the server cannot be reached. A refused change tries again,
-up to five runs in all. When the last run fails too, the alert comes back with the same buttons,
-alerting again, and says which button failed, such as "Archive didn't work", in place of the
-account name. Each button carries its alert's contents for that. Delete and Spam only move the
+up to five runs in all, unless the account was removed, which ends the change at once and leaves
+no alert. When the last run fails too, the alert comes back with the same buttons, alerting again,
+and says which button failed, such as "Archive didn't work", in place of the account name. Each button carries its alert's contents for that. Delete and Spam only move the
 email, never destroy it, so it can be restored from Trash or Spam; alerts have no Undo button.
 
 Reply opens Mail as tapping the alert does, with `MailRequests.reply` instead of `openMessage`.
@@ -185,6 +187,9 @@ opens an app.
 The buttons also name their meaning to Android, for watches and cars: `SEMANTIC_ACTION_DELETE`,
 `SEMANTIC_ACTION_ARCHIVE`, and `SEMANTIC_ACTION_MARK_AS_READ`. Reply names none, because
 `SEMANTIC_ACTION_REPLY` promises an inline reply and this one opens the composer.
+
+Removing an account clears its alerts once its credentials are gone, and stops its pushes while
+they still exist; see `DeviceAccountData`.
 
 On Android 13 and later, the app asks for the notification permission at launch when an account
 is saved. Without it, the check still runs and saves state but posts nothing.
@@ -213,12 +218,15 @@ is saved. Without it, the check still runs and saves state but posts nothing.
 cannot run are dropped and the rest keep their order, that no choice gives no buttons, and saving
 the choice. `AlertActionsTest` checks that tapping an alert names its message and a summary names
 none, that only alerts that show the message have buttons, that they are the chosen ones the
-account can run, that Reply opens Mail on a reply, that a button clears its alert and queues the
-change, and that a failed change brings the alert back saying so. `EmailShortcutsTest` checks
+account can run, that Reply opens Mail on a reply, that every button but Reply asks to unlock,
+that a button clears its alert and queues the change, that a failed change brings the alert back
+saying so, and that a change for a removed account stops without one. `EmailShortcutsTest` checks
 the `Email/set` patches against a mock server, an account without an Archive, Trash, or Spam
 folder, and a removed login. `MessageListingTest` checks finding the row of a
-message inside a conversation. Opening the message in the running app, on a cold start, and after
-the message was deleted needs a device check.
+message inside a conversation. `AlertRemovalTest` checks that removing an account clears only its
+alerts and forgets its push registration before its credentials go. Opening the message in the
+running app, on a cold start, and after the message was deleted needs a device check, and so does
+unlocking before a button runs.
 
 `GooglePushRegistrationTest` checks device discovery, VAPID registration, unsupported servers,
 key rotation, persisted failures, retry behavior, cancellation, and external push apps.

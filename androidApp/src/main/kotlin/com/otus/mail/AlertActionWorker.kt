@@ -10,6 +10,8 @@ import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.OutOfQuotaPolicy
 import androidx.work.WorkManager
 import androidx.work.WorkerParameters
+import com.otus.jmap.login.LoginStoreException
+import com.otus.mail.app.MailServices
 import com.otus.mail.core.messages.domain.MailAction
 import com.otus.mail.feature.notifications.domain.NewMail
 import com.otus.mail.feature.notifications.presentation.runAlertButton
@@ -27,9 +29,10 @@ class AlertActionWorker(
         val action = alertButton(inputData.getString(ACTION))
         val mail = inputData.mail()
         if (action == null || mail == null) return Result.failure()
-        val writer = (applicationContext as OtusMailApplication).services.byIdWriter
+        val services = (applicationContext as OtusMailApplication).services
         return when {
-            writer.runAlertButton(action, mail.loginId, mail.emailId) -> Result.success()
+            services.byIdWriter.runAlertButton(action, mail.loginId, mail.emailId) -> Result.success()
+            services.removed(mail.loginId) -> Result.failure()
             runAttemptCount + 1 < MAX_ATTEMPTS -> Result.retry()
             else -> failed(action, mail)
         }
@@ -73,3 +76,14 @@ class AlertActionWorker(
         }
     }
 }
+
+/**
+ * Whether the login [loginId] is gone, so its change stops and its alert does not come back; false
+ * while storage cannot say, so the change tries again.
+ */
+private fun MailServices.removed(loginId: String): Boolean =
+    try {
+        notificationLogins().none { it.id == loginId }
+    } catch (_: LoginStoreException) {
+        false
+    }
