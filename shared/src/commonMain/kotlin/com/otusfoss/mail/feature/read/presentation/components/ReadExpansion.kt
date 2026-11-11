@@ -20,6 +20,10 @@ import androidx.compose.ui.unit.dp
 import androidx.navigationevent.NavigationEventInfo
 import androidx.navigationevent.compose.NavigationBackHandler
 import androidx.navigationevent.compose.rememberNavigationEventState
+import com.otusfoss.core.designsystem.mail.attachments.components.AttachmentActions
+import com.otusfoss.core.designsystem.mail.attachments.components.AttachmentFile
+import com.otusfoss.core.designsystem.mail.attachments.components.AttachmentList
+import com.otusfoss.core.designsystem.mail.quickview.components.QuickFiles
 import com.otusfoss.core.designsystem.mail.quickview.components.QuickJump
 import com.otusfoss.core.designsystem.resources.Res
 import com.otusfoss.core.designsystem.resources.symbol_code
@@ -27,6 +31,7 @@ import com.otusfoss.core.designsystem.shared.controls.elements.Chip
 import com.otusfoss.core.designsystem.shared.controls.elements.IconButton
 import com.otusfoss.core.designsystem.shared.controls.elements.Symbol
 import com.otusfoss.core.designsystem.shared.overlays.elements.sheetInset
+import com.otusfoss.core.designsystem.shared.overlays.elements.sheetRowInset
 import com.otusfoss.core.designsystem.shared.panels.components.GrownPanelLayers
 import com.otusfoss.core.designsystem.shared.panels.components.PanelExpansion
 import com.otusfoss.core.designsystem.shared.panels.components.grownStopHeight
@@ -39,32 +44,30 @@ import com.otusfoss.core.designsystem.theme.tokens.layout.QuickViewTokens
 import com.otusfoss.mail.core.mailbox.presentation.symbol
 import com.otusfoss.mail.core.messages.domain.MailAction
 import com.otusfoss.mail.core.messages.domain.MailMessage
-import com.otusfoss.mail.core.messages.domain.OwnAddresses
 import com.otusfoss.mail.core.messages.presentation.MoveTarget
 import com.otusfoss.mail.core.messages.presentation.actions.offerFolder
 import com.otusfoss.mail.core.messages.presentation.actions.offerMove
 import com.otusfoss.mail.core.messages.presentation.actions.symbol
+import com.otusfoss.mail.core.messages.presentation.attachmentSummary
 import com.otusfoss.mail.core.messages.presentation.components.rememberSuggestedMove
 import com.otusfoss.mail.core.messages.presentation.ownFolders
 import com.otusfoss.mail.core.messages.presentation.shortcuts
-import com.otusfoss.mail.core.settings.domain.ReadQuickModule
 import com.otusfoss.mail.feature.read.presentation.ReadSheet
 import com.otusfoss.mail.feature.read.presentation.ReadState
 
 /**
  * How far the Read view's control panel is dragged open: regular, its usual height; expanded, the
- * quick view, [quick] tall once measured and else as tall as [modules] modules; and full, every
- * detail of the message, [details] tall. Back steps down to regular.
+ * quick view, [quick] tall once measured and else as tall as its Move to row; and full, every detail of
+ * the message, [details] tall. Back steps down to regular.
  */
 @Composable
 internal fun rememberReadExpansion(
-    modules: Int,
     quick: Dp?,
     details: Dp,
 ): PanelExpansion {
     // The expanded stop stays a row shorter than the full one, so long details never swap them.
     val expanded = quick?.let(::grownStopHeight)?.coerceAtMost(details - QuickViewTokens.jumpHeight)
-    val expansion = rememberPanelExpansion(listOf(expanded ?: quickViewHeight(modules), details))
+    val expansion = rememberPanelExpansion(listOf(expanded ?: quickViewHeight(modules = 0), details))
     NavigationBackHandler(
         rememberNavigationEventState(NavigationEventInfo.None),
         isBackEnabled = expansion.expanded,
@@ -74,39 +77,50 @@ internal fun rememberReadExpansion(
 }
 
 /**
- * What the Read view's grown panel reads and does: the conversation in [state], the [page] on
- * screen, and the user's [own] addresses. [turnTo] shows a page of the conversation and [open] one
- * of its sheets, each bringing the panel back first.
+ * What the Read view's grown panel reads and does: the conversation in [state] and the [page] on
+ * screen, whose files [strips] opens and saves. [open] shows one of the view's sheets, bringing the
+ * panel back first.
  */
 internal class ReadRoom(
     val state: ReadState,
     val page: MailMessage,
-    val own: OwnAddresses,
     val expansion: PanelExpansion,
     val parts: ReadParts,
     val look: ReadPageLook,
-    private val onPage: (Int) -> Unit,
+    val strips: ReadStripActions,
 ) {
-    fun turnTo(index: Int) {
-        expansion.collapse()
-        onPage(index)
-    }
-
     fun open(sheet: ReadSheet) {
         expansion.collapse()
         state.sheet = sheet
     }
+
+    /** The page's files as the panel shows them; null until its body loads and when it has none. */
+    fun files(): PanelFiles? {
+        val files = parts.content(page)?.attachments?.takeIf { it.isNotEmpty() } ?: return null
+        return PanelFiles(
+            files.map { it.shown(strips.isKept(page, it), state.thumbnails.of(page, it)) },
+            attachmentSummary(files),
+            strips.files(page, files),
+        )
+    }
 }
+
+/** A page's files as [shown] in the panel, their [summary] line, and what a tap on one does. */
+internal class PanelFiles(
+    val shown: List<AttachmentFile>,
+    val summary: String,
+    val actions: AttachmentActions,
+)
 
 /**
  * The Read view's grown room: the message's details at both stops, which stay still between them;
- * under them the quick view's [modules] and the Move to row around the expanded stop, then the
- * message's source toward the full stop, each fading with how far the panel is open.
+ * under them the page's files, when it has any, and the Move to row
+ * around the expanded stop, then every file and the message's source toward the full stop, each
+ * fading with how far the panel is open.
  */
 @Composable
 internal fun ReadExpandedContent(
     room: ReadRoom,
-    modules: List<ReadQuickModule>,
     onQuickHeight: (Dp) -> Unit,
 ) {
     val density = LocalDensity.current
@@ -129,12 +143,7 @@ internal fun ReadExpandedContent(
                     .padding(top = QuickViewTokens.moduleGap),
                 verticalArrangement = Arrangement.spacedBy(QuickViewTokens.moduleGap),
             ) {
-                modules.forEach { module ->
-                    when (module) {
-                        ReadQuickModule.Thread -> ReadThreadModule(room)
-                        ReadQuickModule.Counts -> ReadCountsModule(room)
-                    }
-                }
+                room.files()?.let { QuickFiles(it.shown, it.actions) }
                 ReadMoveRow(room)
             }
         },
@@ -152,13 +161,29 @@ internal fun ReadExpandedContent(
     )
 }
 
-/** What the full stop adds under the details: the message's original source. */
+/**
+ * What the full stop adds under the details: how the message was delivered, its files as a list,
+ * more mail from its sender, and its original source.
+ */
 @Composable
 private fun ReadDetails(room: ReadRoom) {
-    Column(Modifier.fillMaxWidth().sheetInset()) {
+    val delivered =
+        room.parts
+            .content(room.page)
+            ?.unsubscribe
+            ?.deliveredTo
+            .orEmpty()
+    Column(Modifier.fillMaxWidth()) {
+        Column(Modifier.fillMaxWidth().sheetInset()) {
+            DetailRows(deliveryLines(room.page, delivered), divided = true)
+            room.files()?.let { AttachmentList(it.shown, it.summary, it.actions) }
+            ReadMoreMail(room)
+        }
+        // The row insets its own text, so it takes the smaller inset to line up with the rows above.
         SettingPageRow(
             "Show original",
             { room.open(ReadSheet.Details(room.page)) },
+            Modifier.sheetRowInset(),
             icon = Res.drawable.symbol_code,
         )
     }

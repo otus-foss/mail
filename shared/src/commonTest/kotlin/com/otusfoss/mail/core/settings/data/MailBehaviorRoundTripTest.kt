@@ -27,7 +27,6 @@ import com.otusfoss.mail.core.settings.domain.PreviewLines
 import com.otusfoss.mail.core.settings.domain.PrivacyBehavior
 import com.otusfoss.mail.core.settings.domain.QuickViewModule
 import com.otusfoss.mail.core.settings.domain.ReadBehavior
-import com.otusfoss.mail.core.settings.domain.ReadQuickModule
 import com.otusfoss.mail.core.settings.domain.SidebarBehavior
 import com.otusfoss.mail.core.settings.domain.SidebarCount
 import com.otusfoss.mail.core.settings.domain.SidebarLayout
@@ -84,7 +83,6 @@ class MailBehaviorRoundTripTest {
                     markReadOnOpen = false,
                     showQuotes = true,
                     zen = true,
-                    quickView = listOf(ReadQuickModule.Counts),
                     remoteImages = RemoteImages.Never,
                     allowedSenders = listOf("grace@example.org"),
                 ),

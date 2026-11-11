@@ -4,10 +4,8 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.pager.PagerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.MutableState
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
@@ -19,26 +17,19 @@ import com.otusfoss.core.designsystem.shared.panels.components.PanelMotion
 import com.otusfoss.core.designsystem.shared.panels.components.PanelScrim
 import com.otusfoss.core.designsystem.shared.panels.components.grownPanelHeight
 import com.otusfoss.core.designsystem.shared.rows.elements.Caption
-import com.otusfoss.core.designsystem.theme.motion.MotionCurve
-import com.otusfoss.core.designsystem.theme.motion.MotionSpeed
-import com.otusfoss.core.designsystem.theme.motion.motionTween
 import com.otusfoss.core.designsystem.theme.tokens.layout.PageTokens
 import com.otusfoss.core.settings.presentation.components.LocalDateFormatter
 import com.otusfoss.mail.core.messages.domain.MailMessage
 import com.otusfoss.mail.core.messages.presentation.ReadLaterChange
 import com.otusfoss.mail.core.messages.presentation.fullLabel
-import com.otusfoss.mail.core.settings.domain.ReadQuickModule
-import kotlinx.coroutines.launch
 
 /**
- * The panel's [expansion], the quick view [modules] it shows in the user's order, how pages
- * [look], the [pager] its modules turn, and its measured [height], which sets the expanded stop.
+ * The panel's [expansion], how pages [look], and its measured [height], which sets the expanded
+ * stop.
  */
 internal class ReadQuickView(
     val expansion: PanelExpansion,
-    val modules: List<ReadQuickModule>,
     val look: ReadPageLook,
-    val pager: PagerState,
     val height: MutableState<Dp?>,
 )
 
@@ -61,17 +52,13 @@ internal fun ReadTop(
     parts: ReadParts,
     text: ReadTopText,
     quick: ReadQuickView,
+    strips: ReadStripActions,
     header: MutableState<Dp>,
 ) {
     val density = LocalDensity.current
     val page = text.page
     val expansion = quick.expansion
-    val scope = rememberCoroutineScope()
-    val turn = motionTween<Float>(MotionSpeed.Normal, MotionCurve.Enter)
-    val room =
-        ReadRoom(parts.state, page, parts.read.replies.own, expansion, parts, quick.look) { index ->
-            scope.launch { quick.pager.animateScrollToPage(index, animationSpec = turn) }
-        }
+    val room = ReadRoom(parts.state, page, expansion, parts, quick.look, strips)
     PanelScrim(expansion)
     Column(
         Modifier.onSizeChanged { size ->
@@ -87,7 +74,7 @@ internal fun ReadTop(
             text.date,
             LocalDateFormatter.current.fullLabel(page.received),
             headerActions(parts, expansion, text.menu),
-            PanelMotion(expansion = expansion) { ReadExpandedContent(room, quick.modules) { quick.height.value = it } },
+            PanelMotion(expansion = expansion) { ReadExpandedContent(room) { quick.height.value = it } },
         )
         text.notice?.let {
             Box(Modifier.padding(PageTokens.pageInset)) {

@@ -24,7 +24,6 @@ import com.otusfoss.mail.core.settings.domain.PhotoCleaning
 import com.otusfoss.mail.core.settings.domain.PrivacyBehavior
 import com.otusfoss.mail.core.settings.domain.QuickViewModule
 import com.otusfoss.mail.core.settings.domain.ReadBehavior
-import com.otusfoss.mail.core.settings.domain.ReadQuickModule
 import com.otusfoss.mail.core.settings.domain.SidebarBehavior
 import com.otusfoss.mail.core.settings.domain.SidebarLayout
 import com.otusfoss.mail.core.settings.domain.SidebarPin

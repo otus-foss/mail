@@ -16,6 +16,7 @@ import com.otusfoss.core.designsystem.resources.symbol_event
 import com.otusfoss.core.designsystem.resources.symbol_flag
 import com.otusfoss.core.designsystem.resources.symbol_forward
 import com.otusfoss.core.designsystem.resources.symbol_reply
+import com.otusfoss.core.designsystem.resources.symbol_verified_user
 import com.otusfoss.core.designsystem.shared.controls.elements.Symbol
 import com.otusfoss.core.designsystem.shared.people.components.PersonChip
 import com.otusfoss.core.designsystem.shared.people.components.Recipient
@@ -54,11 +55,35 @@ internal fun messageDetailLines(
         people("Cc", message.cc)
         people("Bcc", message.bcc)
         people("Reply-to", message.replyTo.filterNot { it.address.equals(message.sender.address, ignoreCase = true) })
-        add(DetailLine("Date") { Text(fullDate, style = panelTextStyle(), fontSize = ReadTokens.previewSize) })
+        add(DetailLine("Date") { DetailText(fullDate) })
         if (folders.isNotEmpty()) add(DetailLine("Folders") { FolderLines(folders, onFolders) })
         val marks = message.marks()
         if (marks.isNotEmpty()) add(DetailLine("Marks") { Marks(marks) })
     }
+
+/**
+ * What the full stop adds to the record: the address the mail was [deliveredTo] when the message
+ * names it nowhere, such as an alias a mailing list wrote to, and the sender's domain when the
+ * message passed its check.
+ */
+internal fun deliveryLines(
+    message: MailMessage,
+    deliveredTo: List<String>,
+): List<DetailLine> =
+    buildList {
+        val named = (message.to + message.cc).map { it.address.lowercase() }.toSet()
+        deliveredTo
+            .firstOrNull { it.lowercase() !in named }
+            ?.let { address -> add(DetailLine("Sent to") { DetailText(address) }) }
+        message.sender.brandDomain?.let { domain ->
+            add(DetailLine("Verified") { Marks(listOf(Res.drawable.symbol_verified_user to domain)) })
+        }
+    }
+
+@Composable
+private fun DetailText(text: String) {
+    Text(text, style = panelTextStyle(), fontSize = ReadTokens.previewSize)
+}
 
 @Composable
 private fun People(

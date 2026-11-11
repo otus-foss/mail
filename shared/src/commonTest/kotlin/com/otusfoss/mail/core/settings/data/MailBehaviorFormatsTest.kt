@@ -26,7 +26,6 @@ import com.otusfoss.mail.core.settings.domain.PreviewLines
 import com.otusfoss.mail.core.settings.domain.PrivacyBehavior
 import com.otusfoss.mail.core.settings.domain.QuickViewModule
 import com.otusfoss.mail.core.settings.domain.ReadBehavior
-import com.otusfoss.mail.core.settings.domain.ReadQuickModule
 import com.otusfoss.mail.core.settings.domain.SidebarBehavior
 import com.otusfoss.mail.core.settings.domain.SidebarCount
 import com.otusfoss.mail.core.settings.domain.SidebarLayout
@@ -96,7 +95,6 @@ class MailBehaviorFormatsTest {
                 "mark_read_on_open" to false,
                 "show_quotes" to true,
                 "read_zen" to true,
-                "read_quick_view_modules" to "counts,thread",
                 "remote_images_setting" to "always",
                 "allowed_senders" to "grace@example.org\n\nnews@sentry.example",
             ).read
@@ -105,8 +103,6 @@ class MailBehaviorFormatsTest {
                 markReadOnOpen = false,
                 showQuotes = true,
                 zen = true,
-                // The quick view shows one row now, so a saved pair keeps its first.
-                quickView = listOf(ReadQuickModule.Counts),
                 remoteImages = RemoteImages.Always,
                 allowedSenders = listOf("grace@example.org", "news@sentry.example"),
             ),

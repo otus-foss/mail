@@ -96,13 +96,14 @@ internal class ReadWiring(
                     person,
                     files,
                     categories.takeIf { sorted },
+                    services.senderMails,
+                    services.requests::openMessage,
                 ),
             effects = effects,
             display =
                 ReadDisplay(
                     showQuotes = { behavior.behavior.read.showQuotes },
                     zen = { behavior.behavior.read.zen },
-                    quickView = { behavior.behavior.read.quickView },
                     setZen = { on -> behavior.updateRead { it.copy(zen = on) } },
                 ),
             replies = ReadReplies(own, onCompose, scheduled),

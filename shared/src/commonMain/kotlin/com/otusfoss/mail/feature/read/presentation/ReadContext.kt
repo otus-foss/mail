@@ -14,13 +14,13 @@ import com.otusfoss.mail.core.messages.domain.RemoteImages
 import com.otusfoss.mail.core.messages.domain.SenderBlocks
 import com.otusfoss.mail.core.messages.presentation.actions.ScheduledActions
 import com.otusfoss.mail.core.messages.presentation.empty
-import com.otusfoss.mail.core.settings.domain.ReadQuickModule
 import com.otusfoss.mail.feature.read.domain.ConversationMessages
 import com.otusfoss.mail.feature.read.domain.KnownPeople
 import com.otusfoss.mail.feature.read.domain.MessageHeaders
 import com.otusfoss.mail.feature.read.domain.MessagePrinter
 import com.otusfoss.mail.feature.read.domain.Newsletters
 import com.otusfoss.mail.feature.read.domain.OfflineAttachments
+import com.otusfoss.mail.feature.read.domain.SenderMails
 import com.otusfoss.mail.feature.read.presentation.components.NewFolderSheet
 import com.otusfoss.mail.feature.read.presentation.components.PersonSheet
 import kotlinx.coroutines.flow.Flow
@@ -64,13 +64,11 @@ class ReadReplies(
 /**
  * How the Read view shows its pages: [showQuotes] tells whether replies show text quoted from
  * earlier messages of the conversation, [zen] whether the view keeps to the message, its control
- * panel, and its bar, which [setZen] saves, [quickView] the modules its control panel shows when
- * pulled down, and [today] is the day dates are shown against.
+ * panel, and its bar, which [setZen] saves, and [today] is the day dates are shown against.
  */
 class ReadDisplay(
     val showQuotes: () -> Boolean,
     val zen: () -> Boolean,
-    val quickView: () -> List<ReadQuickModule>,
     val setZen: (Boolean) -> Unit,
     val today: () -> LocalDate = {
         Clock.System
@@ -117,7 +115,8 @@ class ReadFiles(
  * The services behind the newsletter strip and the ⋯ menu, including the [edits] the view makes,
  * [person], what tapping a person or the menu's contact entries open, and the Inbox's
  * [categories]; each is null where none is wired, and without [person] the pills stay plain.
- * [files] handles attachments and printing.
+ * [files] handles attachments and printing. [senderMails] finds a sender's other mail, and
+ * [openMail] opens one of them by its login and email id.
  */
 class ReadServices(
     val newsletters: Newsletters?,
@@ -127,6 +126,8 @@ class ReadServices(
     val person: PersonSheet?,
     val files: ReadFiles,
     val categories: ReadCategories?,
+    val senderMails: SenderMails? = null,
+    val openMail: ((loginId: String, emailId: String) -> Unit)? = null,
 )
 
 /**

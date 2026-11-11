@@ -189,10 +189,9 @@ private fun ReadLayout(
     // Zen hides the strips but keeps their room, so the text does not move and reload.
     val bottomInset = padding.calculateBottomPadding() + PageTokens.pageInset * 2 + stripsHeight
     val headerHeight = remember { mutableStateOf(0.dp) }
-    val modules = read.display.quickView()
     val quickHeight = remember { mutableStateOf<Dp?>(null) }
     val expansion =
-        rememberReadExpansion(modules.size, quickHeight.value, readDetailsHeight(headerHeight.value, padding))
+        rememberReadExpansion(quickHeight.value, readDetailsHeight(headerHeight.value, padding))
     // A screen reader finds only the grown panel, not the page and strips it covers.
     val covered = expansion.expanded
     Box(Modifier.fillMaxSize()) {
@@ -235,7 +234,8 @@ private fun ReadLayout(
         ReadTop(
             parts,
             ReadTopText(page, date, notice, layout.menu),
-            ReadQuickView(expansion, modules, layout.look, layout.pager, quickHeight),
+            ReadQuickView(expansion, layout.look, quickHeight),
+            strips,
             headerHeight,
         )
     }
