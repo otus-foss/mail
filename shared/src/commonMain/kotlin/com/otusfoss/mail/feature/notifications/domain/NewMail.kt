@@ -53,8 +53,11 @@ data class NewMail(
     }
 }
 
-/** Each login's Email state from the last check, keyed by login id. */
-object MailStateStore : StoreSpec<String, String>("states", TextCodec.Text, TextCodec.Text)
+/**
+ * Each login's Email state from the last check, keyed by login id. It is written at once, since a
+ * process killed after the alerts post would otherwise post them again, dismissed ones included.
+ */
+object MailStateStore : StoreSpec<String, String>("states", TextCodec.Text, TextCodec.Text, commit = true)
 
 /** A message the device has an alert for. */
 data class AlertedMail(
