@@ -43,7 +43,6 @@ import com.otusfoss.core.designsystem.theme.tokens.layout.QuickViewTokens
 import com.otusfoss.mail.core.mailbox.presentation.symbol
 import com.otusfoss.mail.core.messages.domain.MailAction
 import com.otusfoss.mail.core.messages.domain.MailMessage
-import com.otusfoss.mail.core.messages.domain.OwnAddresses
 import com.otusfoss.mail.core.messages.presentation.MoveTarget
 import com.otusfoss.mail.core.messages.presentation.actions.offerFolder
 import com.otusfoss.mail.core.messages.presentation.actions.offerMove
@@ -52,24 +51,22 @@ import com.otusfoss.mail.core.messages.presentation.attachmentSummary
 import com.otusfoss.mail.core.messages.presentation.components.rememberSuggestedMove
 import com.otusfoss.mail.core.messages.presentation.ownFolders
 import com.otusfoss.mail.core.messages.presentation.shortcuts
-import com.otusfoss.mail.core.settings.domain.ReadQuickModule
 import com.otusfoss.mail.feature.read.presentation.ReadSheet
 import com.otusfoss.mail.feature.read.presentation.ReadState
 
 /**
  * How far the Read view's control panel is dragged open: regular, its usual height; expanded, the
- * quick view, [quick] tall once measured and else as tall as [modules] modules; and full, every
- * detail of the message, [details] tall. Back steps down to regular.
+ * quick view, [quick] tall once measured and else as tall as its Move to row; and full, every detail of
+ * the message, [details] tall. Back steps down to regular.
  */
 @Composable
 internal fun rememberReadExpansion(
-    modules: Int,
     quick: Dp?,
     details: Dp,
 ): PanelExpansion {
     // The expanded stop stays a row shorter than the full one, so long details never swap them.
     val expanded = quick?.let(::grownStopHeight)?.coerceAtMost(details - QuickViewTokens.jumpHeight)
-    val expansion = rememberPanelExpansion(listOf(expanded ?: quickViewHeight(modules), details))
+    val expansion = rememberPanelExpansion(listOf(expanded ?: quickViewHeight(modules = 0), details))
     NavigationBackHandler(
         rememberNavigationEventState(NavigationEventInfo.None),
         isBackEnabled = expansion.expanded,
@@ -79,25 +76,18 @@ internal fun rememberReadExpansion(
 }
 
 /**
- * What the Read view's grown panel reads and does: the conversation in [state], the [page] on
- * screen, and the user's [own] addresses. [turnTo] shows a page of the conversation and [open] one
- * of its sheets, each bringing the panel back first.
+ * What the Read view's grown panel reads and does: the conversation in [state] and the [page] on
+ * screen, whose files [strips] opens and saves. [open] shows one of the view's sheets, bringing the
+ * panel back first.
  */
 internal class ReadRoom(
     val state: ReadState,
     val page: MailMessage,
-    val own: OwnAddresses,
     val expansion: PanelExpansion,
     val parts: ReadParts,
     val look: ReadPageLook,
     val strips: ReadStripActions,
-    private val onPage: (Int) -> Unit,
 ) {
-    fun turnTo(index: Int) {
-        expansion.collapse()
-        onPage(index)
-    }
-
     fun open(sheet: ReadSheet) {
         expansion.collapse()
         state.sheet = sheet
@@ -123,14 +113,13 @@ internal class ReadFiles(
 
 /**
  * The Read view's grown room: the message's details at both stops, which stay still between them;
- * under them the page's files, or the quick view's [modules] when it has none, and the Move to row
+ * under them the page's files, when it has any, and the Move to row
  * around the expanded stop, then every file and the message's source toward the full stop, each
  * fading with how far the panel is open.
  */
 @Composable
 internal fun ReadExpandedContent(
     room: ReadRoom,
-    modules: List<ReadQuickModule>,
     onQuickHeight: (Dp) -> Unit,
 ) {
     val density = LocalDensity.current
@@ -153,16 +142,7 @@ internal fun ReadExpandedContent(
                     .padding(top = QuickViewTokens.moduleGap),
                 verticalArrangement = Arrangement.spacedBy(QuickViewTokens.moduleGap),
             ) {
-                val files = room.files()
-                if (files != null) {
-                    QuickFiles(files.shown, files.actions)
-                } else {
-                    modules.forEach { module ->
-                        when (module) {
-                            ReadQuickModule.Thread -> ReadThreadModule(room)
-                        }
-                    }
-                }
+                room.files()?.let { QuickFiles(it.shown, it.actions) }
                 ReadMoveRow(room)
             }
         },

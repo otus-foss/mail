@@ -39,7 +39,6 @@ class ReadZenTest {
                     ReadDisplay(
                         showQuotes = { false },
                         zen = { zen.value },
-                        quickView = display.quickView,
                         setZen = { zen.value = it },
                         today = display.today,
                     )

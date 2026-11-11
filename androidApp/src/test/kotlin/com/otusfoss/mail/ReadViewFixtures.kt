@@ -200,7 +200,7 @@ internal object ReadViewFixtures {
             )
         effects = ReadEffects(toasts, launch, NewsletterSteps())
         display =
-            ReadDisplay(display.showQuotes, display.zen, display.quickView, display.setZen) { LocalDate(2026, 10, 19) }
+            ReadDisplay(display.showQuotes, display.zen, display.setZen) { LocalDate(2026, 10, 19) }
         this.own = own
         loadContent = { content(it) }
         block()

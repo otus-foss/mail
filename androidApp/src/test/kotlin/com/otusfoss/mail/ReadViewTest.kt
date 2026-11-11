@@ -74,8 +74,7 @@ class ReadViewTest {
     }
 
     /** [display] with replies showing their quotes, as the "Show quotes" setting does. */
-    private fun quotesShown(display: ReadDisplay) =
-        ReadDisplay({ true }, display.zen, display.quickView, display.setZen, display.today)
+    private fun quotesShown(display: ReadDisplay) = ReadDisplay({ true }, display.zen, display.setZen, display.today)
 
     private fun strip(description: String): SemanticsNodeInteraction {
         val strip = hasContentDescription(description, substring = true)

@@ -24,7 +24,6 @@ import com.otusfoss.mail.core.settings.domain.PhotoCleaning
 import com.otusfoss.mail.core.settings.domain.PrivacyBehavior
 import com.otusfoss.mail.core.settings.domain.QuickViewModule
 import com.otusfoss.mail.core.settings.domain.ReadBehavior
-import com.otusfoss.mail.core.settings.domain.ReadQuickModule
 import com.otusfoss.mail.core.settings.domain.SidebarBehavior
 import com.otusfoss.mail.core.settings.domain.SidebarLayout
 import com.otusfoss.mail.core.settings.domain.SidebarPin
@@ -97,7 +96,6 @@ private fun KeyValueStore.readBehavior(): ReadBehavior {
         markReadOnOpen = flag(MARK_READ_ON_OPEN, defaults.markReadOnOpen),
         showQuotes = flag(SHOW_QUOTES, defaults.showQuotes),
         zen = flag(ZEN_READ, defaults.zen),
-        quickView = decoded(READ_QUICK_VIEW, defaults.quickView, ReadQuickModule::decode),
         remoteImages =
             decodeRemoteImages(string(REMOTE_IMAGES), string(ALWAYS_REMOTE_IMAGES), string(EARLIER_REMOTE_IMAGES))
                 ?: defaults.remoteImages,
@@ -109,7 +107,6 @@ private fun KeyValueEditor.put(read: ReadBehavior) {
     put(MARK_READ_ON_OPEN, read.markReadOnOpen)
     put(SHOW_QUOTES, read.showQuotes)
     put(ZEN_READ, read.zen)
-    put(READ_QUICK_VIEW, ReadQuickModule.encode(read.quickView))
     put(REMOTE_IMAGES, read.remoteImages.storageValue)
     put(ALLOWED_SENDERS, TextCodec.Lines.encode(read.allowedSenders))
 }
@@ -150,7 +147,6 @@ internal fun decodeRemoteImages(
 private const val MARK_READ_ON_OPEN = "mark_read_on_open"
 private const val READ_LATER = "read_later"
 private const val QUICK_VIEW = "quick_view_modules"
-private const val READ_QUICK_VIEW = "read_quick_view_modules"
 private const val PILLS = "inbox_pills"
 
 private const val SHOW_QUOTES = "show_quotes"

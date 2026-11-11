@@ -10,7 +10,6 @@ import com.otusfoss.mail.core.messages.domain.RemoteImages
 import com.otusfoss.mail.core.messages.presentation.ListNudge
 import com.otusfoss.mail.core.messages.presentation.components.MailScopeSwitch
 import com.otusfoss.mail.core.settings.domain.QuickViewModule
-import com.otusfoss.mail.core.settings.domain.ReadQuickModule
 import com.otusfoss.mail.core.settings.presentation.InboxPills
 import com.otusfoss.mail.feature.inbox.domain.InboxSearch
 import com.otusfoss.mail.feature.inbox.presentation.FilterOptions
@@ -117,7 +116,7 @@ internal class ReadContextBuilder {
         )
     var effects = ReadEffects(ToastState(), launch = {}, NewsletterSteps())
     var display =
-        ReadDisplay(showQuotes = { false }, zen = { false }, quickView = { ReadQuickModule.Defaults }, setZen = {})
+        ReadDisplay(showQuotes = { false }, zen = { false }, setZen = {})
     var own = OwnAddresses(emptyMap())
     var loadContent: suspend (MailMessage) -> MessageContent? = { null }
     var onCompose: (ComposeRequest) -> Unit = {}

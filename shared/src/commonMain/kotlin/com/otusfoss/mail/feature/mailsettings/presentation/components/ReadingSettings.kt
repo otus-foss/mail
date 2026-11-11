@@ -25,6 +25,5 @@ internal fun readingRows(state: MailBehaviorState): List<SettingRowSpec> {
             Res.drawable.symbol_forum,
             info = InfoText("Show quoted text", "Swipe through the conversation to read earlier messages."),
         ),
-        readQuickViewRow(state),
     )
 }
