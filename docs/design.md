@@ -5,10 +5,10 @@ color on Settings › Appearance › Theme. System light/dark settings do not ch
 app theme. `OtusColors` holds named tokens that follow the picked theme, and `OtusTheme` supplies
 Material colors and default content styling. Ordinary text inherits `text1` at full opacity; muted
 text requires an explicit `text2` or `text3` choice. The default, Otus with Otus blue, uses the
-supplied palette in Meta's
-[mail design foundations](https://github.com/otus-foss/otus-meta/blob/main/docs/suite/mail-design.md).
-Meta's `accentShades` derives the other themes' accent shades; see Meta's
-[decision 0014](https://github.com/otus-foss/otus-meta/blob/main/docs/decisions/0014-user-themes.md).
+supplied palette in Core's
+[mail design foundations](https://github.com/otus-foss/otus-core/blob/main/docs/suite/mail-design.md).
+Core's `accentShades` derives the other themes' accent shades; see Core's
+[decision 0014](https://github.com/otus-foss/otus-core/blob/main/docs/decisions/0014-user-themes.md).
 
 The application background and default Material surface use `bgRegular`. Alternate surfaces and
 borders use their named tokens when explicitly designed. Accent roles use the supplied blues; the
@@ -16,7 +16,7 @@ Material error slot currently reuses `accentLight` because no separate error col
 Error UI must communicate meaning through text, not color alone.
 
 Android's starting window uses the default theme's background, text, and accent tokens from
-`androidApp/src/main/res/values/colors.xml`, which Meta's `tools/launch_colors.py` writes; the
+`androidApp/src/main/res/values/colors.xml`, which Core's `tools/launch_colors.py` writes; the
 architecture check fails when it drifts. `MainActivity` switches the system bar icons to their dark
 appearance in the Light theme. The iOS host still requests a dark appearance, so its status bar
 keeps light icons in the Light theme.
@@ -32,7 +32,7 @@ Borders are not checked. A pair counts only when the user picked one of its colo
 custom theme or an accent that is no preset, so built-in themes with a preset accent never warn.
 The warning names the worst pair and counts the rest, rounding ratios down so a pair just below
 its minimum never reads as passing. `feature/theme/presentation/LowContrast` finds the pairs and
-`LowContrastWarning` shows them with Meta's `InfoStrip`.
+`LowContrastWarning` shows them with Core's `InfoStrip`.
 
 ## Colors from one hue
 
@@ -54,5 +54,5 @@ colors become the surfaces and borders and the last three the text levels; the a
 picked hue, saturated. A seed draws the drift, the tint, and the lightness at either end, so the
 same hue and seed always give the same set. Before a set is shown, `withRamp` checks it with
 `lowContrast` and moves each text or accent that fails a step further from the surfaces until
-every pair reaches the ratios above. `ThemeRampPicker` lays it out with Meta's `SwatchStack`,
+every pair reaches the ratios above. `ThemeRampPicker` lays it out with Core's `SwatchStack`,
 `HueSlider`, `SegmentedToggle`, and `ButtonPair`.

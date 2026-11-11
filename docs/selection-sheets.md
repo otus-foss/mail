@@ -120,7 +120,7 @@ conversion remains part of the future data adapter.
 
 ## Date chooser
 
-Meta 0.4.0 provides two modal wheel pickers with centered, snapping day/month/year wheels,
+Core 0.4.0 provides two modal wheel pickers with centered, snapping day/month/year wheels,
 fading adjacent choices, a close control, and a full-width Go button. Both take an initial
 `YearMonth` and an inclusive `allowedDates` range; callers may include future dates.
 `SpecificDatePicker` disables Go until a day is selected and confirms with a `LocalDate`.

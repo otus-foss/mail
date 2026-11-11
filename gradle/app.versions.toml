@@ -1,4 +1,4 @@
-# Versions only Mail uses. Everything else comes from otus-meta's gradle/libs.versions.toml, which
+# Versions only Mail uses. Everything else comes from otus-core's gradle/libs.versions.toml, which
 # settings.gradle.kts loads as `libs`.
 [versions]
 androidx-work = "2.11.0"

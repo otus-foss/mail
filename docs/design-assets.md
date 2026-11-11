@@ -19,5 +19,5 @@ explicit for the multiplatform XML parser; the `Icon` composable applies the nam
 at the user's request. Theme colors remain the supplied Otus palette.
 
 Website-domain avatar lookup uses the Public Suffix List that `com.otusfoss.core:avatar` bundles with its
-MPL 2.0 license. This is protocol data, not artwork; see Meta's
-[avatar guide](https://github.com/otus-foss/otus-meta/blob/main/docs/avatar.md) for its source and updates.
+MPL 2.0 license. This is protocol data, not artwork; see Core's
+[avatar guide](https://github.com/otus-foss/otus-core/blob/main/docs/avatar.md) for its source and updates.

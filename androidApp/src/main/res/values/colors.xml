@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8" ?>
-<!-- Written by otus-meta's tools/launch_colors.py from the Otus theme; do not edit. -->
+<!-- Written by otus-core's tools/launch_colors.py from the Otus theme; do not edit. -->
 <resources>
   <color name="otus_bg_regular">#161617</color>
   <color name="otus_text_1">#EBECED</color>

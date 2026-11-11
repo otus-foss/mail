@@ -1,6 +1,6 @@
 # Settings
 
-Implemented through the shared `settings` and `accounts` libraries from otus-meta, with
+Implemented through the shared `settings` and `accounts` libraries from otus-core, with
 Mail-specific destination entries in `app/MailSettings.kt`. Settings is a sidebar destination
 with subpages.
 
@@ -117,7 +117,7 @@ Every setting is one of a few kinds, so each kind reads and behaves the same on 
   the page itself. Only **Icons from** uses `ChoiceSheet(saveOnDone)`, which saves on Done, because its
   Bulwark choice needs an address that has to be valid first.
 - **Ordered list**: a `SettingRow` that shows how many are chosen, such as "4 shown", and opens
-  Meta's `OrderedChoiceSheet`, a `ListSheet` where chosen items are dragged by their handles or
+  Core's `OrderedChoiceSheet`, a `ListSheet` where chosen items are dragged by their handles or
   tapped out and others are added; Done saves. Pills, the filter panel's Sections and Quick
   filters, both Quick views, and the alert buttons use it. A list with a limit, such as the three
   alert buttons, says "Take one out to add another." once it is full.
@@ -128,7 +128,7 @@ Every setting is one of a few kinds, so each kind reads and behaves the same on 
   is the page's content: the sidebar's sections (switches with drag handles) and the Pinned
   editors.
 
-A setting that only applies while another one is set stays where it is inside Meta's
+A setting that only applies while another one is set stays where it is inside Core's
 `DependentSettings`: dimmed, ignoring taps, with a description that says what it waits on, such
 as "Turn on Show sender to change this". It is not hidden, so the page keeps its shape and search
 still finds it. The same reason is passed to the index through `unavailable(reason) { ... }`, so
@@ -152,7 +152,7 @@ load also cancels the fallback. `StartPageTest` covers the resolution and fallba
 ## Search
 
 The settings home searches `mailSettingsIndex` in `app/MailSettings.kt`. Each Mail page declares
-its rows once in `feature/mailsettings/presentation/components`, as Meta's `SettingsSectionSpec`
+its rows once in `feature/mailsettings/presentation/components`, as Core's `SettingsSectionSpec`
 values built from the current state: `mailListSettings`, `mailBehaviorSettings`,
 `sidebarSettings`, `pinnedSettings`, `filterPanelSettings`, `actionBarSettings`, and
 `privacySettings`, with `mailListRow` for Appearance and `alertButtonsRow` for Notifications. The

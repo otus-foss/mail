@@ -1,12 +1,12 @@
 rootProject.name = "otus-mail"
 enableFeaturePreview("TYPESAFE_PROJECT_ACCESSORS")
 
-// Mail builds otus-meta from source: the sibling checkout ../otus-meta, or the checkout that the
-// otus.meta.path Gradle property names. See docs/shared-libraries.md.
+// Mail builds otus-core from source: the sibling checkout ../otus-core, or the checkout that the
+// otus.core.path Gradle property names. See docs/shared-libraries.md.
 pluginManagement {
-    val otusMeta = file(providers.gradleProperty("otus.meta.path").getOrElse("../otus-meta"))
-    require(otusMeta.resolve("build-logic").isDirectory) {
-        "Mail builds otus-meta from source. Clone it to $otusMeta or set otus.meta.path."
+    val otusCore = file(providers.gradleProperty("otus.core.path").getOrElse("../otus-core"))
+    require(otusCore.resolve("build-logic").isDirectory) {
+        "Mail builds otus-core from source. Clone it to $otusCore or set otus.core.path."
     }
     // Gradle resolves the convention plugins' own dependencies from these repositories.
     repositories {
@@ -20,7 +20,7 @@ pluginManagement {
         mavenCentral()
         gradlePluginPortal()
     }
-    includeBuild(otusMeta.resolve("build-logic").path)
+    includeBuild(otusCore.resolve("build-logic").path)
 }
 
 plugins {

@@ -7,8 +7,8 @@ GitHub. See [hosting and CI](docs/hosting.md).
 
 ## Required reading and commands
 
-Read `docs/architecture.md` and `docs/quality.md` before changing code. Mail builds otus-meta from
-source, so keep a checkout at `../otus-meta` or set `otus.meta.path`; see `docs/shared-libraries.md`.
+Read `docs/architecture.md` and `docs/quality.md` before changing code. Mail builds otus-core from
+source, so keep a checkout at `../otus-core` or set `otus.core.path`; see `docs/shared-libraries.md`.
 Install the Python tools as described in the quality guide, then run `./gradlew checkAll` before
 handing work back. Use `./gradlew formatAll` for formatting. On macOS also run the pinned Swift
 tools described in the quality guide. Never report an unrun check as passing.
@@ -22,11 +22,11 @@ readiness. Preserve portable Kotlin boundaries and the iOS target; iOS remains a
 
 All UI follows **elements → components → screens**.
 
-- Meta's `designsystem/<shared|mail>/<group>/elements`: small branded controls, fields, and avatars.
-- Meta's `designsystem/<shared|mail>/<group>/components`: value-driven visual compositions.
-- Shared elements, components, and tokens come from otus-meta's `com.otusfoss.core.designsystem`. Add new
+- Core's `designsystem/<shared|mail>/<group>/elements`: small branded controls, fields, and avatars.
+- Core's `designsystem/<shared|mail>/<group>/components`: value-driven visual compositions.
+- Shared elements, components, and tokens come from otus-core's `com.otusfoss.core.designsystem`. Add new
   elements, reusable components, visual tokens, and symbol resources there, even if only Mail
-  currently uses them. Mail keeps feature adapters and screens. See decision 0008 in Meta.
+  currently uses them. Mail keeps feature adapters and screens. See decision 0008 in Core.
 - `feature/<name>/presentation/components`: feature-specific compositions.
 - `feature/<name>/presentation/screens`: complete views, named `*Screen.kt`.
 - `app`: root composition, dependency wiring, and navigation only.
@@ -59,12 +59,12 @@ The user picks the theme and accent on the Theme page; the device's light or dar
 change it, and there are no dynamic device colors. Use colors only through `OtusColors` and
 `OtusTheme`, which follow the picked theme, and read them when drawing; never copy a token into a
 stored value. Default text is `text1` at full opacity. `text2`/`text3` require an explicit semantic
-choice. Check new UI in the Light and Black themes too. See Meta's
-[decision 0014](https://github.com/otus-foss/otus-meta/blob/main/docs/decisions/0014-user-themes.md).
+choice. Check new UI in the Light and Black themes too. See Core's
+[decision 0014](https://github.com/otus-foss/otus-core/blob/main/docs/decisions/0014-user-themes.md).
 
 ## Motion
 
-Animate only through Meta's `Motion`. Use `motionTween(speed, curve)` in composables,
+Animate only through Core's `Motion`. Use `motionTween(speed, curve)` in composables,
 `Motion.tween(speed, curve, scale)` outside composition, or `Motion.millis(speed, scale)` for a
 spec that is not a tween, and respect `LocalMotionScale` everywhere. Never add a raw duration
 constant, a `tween` with a literal, a new `CubicBezierEasing`, or an animation with a Compose
@@ -98,12 +98,12 @@ intermediate value only when the code reads it more than once or the name says s
 cannot.
 
 Call the three stops of a page's control panel regular, expanded, and full, in code, docs, and
-chat. Regular is its usual height (stop 0). Expanded shows the quick view (Meta's
+chat. Regular is its usual height (stop 0). Expanded shows the quick view (Core's
 `GROWN_EXPANDED_STOP`). Full shows every filter in the inbox and every detail in the Read view
 (`GROWN_LAST_STOP`). Use the constants instead of stop numbers.
 
-Keep colors and all visual tokens in Meta's `designsystem/theme` and refer to named tokens.
-Feature UI belongs with its feature; reusable rendering belongs in Meta. Create folders with real code rather than placeholder files. Keep
+Keep colors and all visual tokens in Core's `designsystem/theme` and refer to named tokens.
+Feature UI belongs with its feature; reusable rendering belongs in Core. Create folders with real code rather than placeholder files. Keep
 handwritten Kotlin files at most 300 lines and Swift files at most 200 lines, including tests,
 comments, and blank lines. Aim for 100–200 lines for typical UI files. Split by responsibility
 first. The only permitted file-size exception is a first-line
@@ -112,8 +112,8 @@ rules. It changes only the size limit, never other checks.
 
 Do not add blanket suppressions, formatter-off markers, lint baselines, skipped checks, or
 failure-tolerant CI to make a change pass. Fix violations. A rule change needs an explicit rationale
-in Meta's `docs/decisions/` and a corresponding update of Meta's checks and tests; do not silently
-weaken policy. Tool versions must be pinned, in Meta's version catalog.
+in Core's `docs/decisions/` and a corresponding update of Core's checks and tests; do not silently
+weaken policy. Tool versions must be pinned, in Core's version catalog.
 
 ## Readable code
 
@@ -204,7 +204,7 @@ feat(inbox): add avatars
 ```
 
 Enable the versioned Git hooks once per checkout, including new clones. `pre-commit` checks
-formatting, and `commit-msg` checks the message with Meta's checker. No hook runs
+formatting, and `commit-msg` checks the message with Core's checker. No hook runs
 `checkAll`, and CI checks only pull requests, so run `./gradlew checkAll` yourself before a push
 that needs it, such as a direct push to `main`.
 
@@ -216,8 +216,8 @@ Run the command from this repository's root. The `commit-msg` hook needs Python 
 title syntax, missing separators, and bodies outside the 1–8 bullet limit. Review wording,
 imperative verbs, breaking-change explanations, and the
 72-character target manually. Git-generated merge messages and temporary autosquash messages are
-exempt; the final squash message must follow the rules. Meta's CI tests the checker; nothing
-inspects commit history. See [the decision](https://github.com/otus-foss/otus-meta/blob/main/docs/decisions/0004-commit-messages.md).
+exempt; the final squash message must follow the rules. Core's CI tests the checker; nothing
+inspects commit history. See [the decision](https://github.com/otus-foss/otus-core/blob/main/docs/decisions/0004-commit-messages.md).
 
 ## Pull requests
 
@@ -228,7 +228,7 @@ when you write the body yourself. The title follows the commit title rules above
 screenshots at the head commit, and send phone captures to the user to drag in.
 
 When the pull request finishes an issue, end the body with `Closes #123`, or
-`Closes otus-foss/otus-meta#45` for an issue in another repository, so GitHub closes it on merge.
+`Closes otus-foss/otus-core#45` for an issue in another repository, so GitHub closes it on merge.
 Write `Part of #123` for a step that leaves the issue open. Search the open issues before you open
 the pull request. The `issue link` workflow warns about a pull request that closes no issue.
 
@@ -237,7 +237,7 @@ CI runs once, when the pull request is marked ready. To check later pushes too, 
 
 The user lands pull requests with the `ready to land` label, which also merges the partners from the
 same branch name in the other repositories. Add that label only when the user asks you to land a pull
-request. See [landing](https://github.com/otus-foss/otus-meta/blob/main/docs/landing.md).
+request. See [landing](https://github.com/otus-foss/otus-core/blob/main/docs/landing.md).
 
 ## Agent workflow
 
@@ -254,8 +254,8 @@ not add tests that merely repeat constants or implementation details. Update arc
 boundaries change.
 
 Each app is a separate Git repository. Never assume the unversioned parent docs are available.
-Code shared with Calendar lives in otus-meta, which Mail builds from source; CI checks it out beside
-Mail. Change shared code there on a branch with the same name as Mail's, and merge Meta's pull
+Code shared with Calendar lives in otus-core, which Mail builds from source; CI checks it out beside
+Mail. Change shared code there on a branch with the same name as Mail's, and merge Core's pull
 request first; see `docs/shared-libraries.md`. Suite docs, decisions, and review prompts live only
-in otus-meta. Check JMAP specifications and advertised server capabilities before implementing
+in otus-core. Check JMAP specifications and advertised server capabilities before implementing
 protocol behavior.

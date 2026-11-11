@@ -1,9 +1,9 @@
 # JMAP
 
-Mail uses the `com.otusfoss.core:jmap` library from otus-meta: a provider-independent client for RFC 8620
+Mail uses the `com.otusfoss.core:jmap` library from otus-core: a provider-independent client for RFC 8620
 (core) plus protected login storage. Its API, security rules, protocol coverage, and tests are
 documented in
-[otus-meta's JMAP guide](https://github.com/otus-foss/otus-meta/blob/main/docs/jmap.md). This
+[otus-core's JMAP guide](https://github.com/otus-foss/otus-core/blob/main/docs/jmap.md). This
 guide covers what Mail builds on top of it.
 
 ## Mail on top of it
@@ -14,13 +14,13 @@ the mail account with a `Mailbox/get`, and saves the login; reconnecting the sam
 storage names, so earlier accounts keep working.
 
 `core/mail` also holds what the features' data layers share. `JmapConnections.mailAccount` resolves
-a saved login to the JMAP account that holds its mail, through otus-meta's account lookup.
+a saved login to the JMAP account that holds its mail, through otus-core's account lookup.
 `NEWEST_FIRST` and `inMailbox` are the `Email/query` sort and mailbox filter; every other filter is
 a `JmapFilter`. `MailFailure` and `toMailFailure` read a JMAP failure once for every feature; the
 folder, rule, send, and draft failures start from it. Batches use the session's `getBatch`,
 `setBatch`, and `callBatch`, and optional calls `jmapCallOr`.
 
-Account removal follows otus-meta's `LoginLifecycle`: the cache, the waiting changes, downloaded
+Account removal follows otus-core's `LoginLifecycle`: the cache, the waiting changes, downloaded
 attachments, device settings and push (`DeviceAccountData`), and avatars each delete their part
 while the login's credentials still exist, and the cache opens again if removal stops.
 
@@ -179,4 +179,4 @@ takes the destroyed emails out of the cache.
 Mail's tests use Ktor's mock engine for the inbox, draft, folder, rule, and account flows, including
 storage-error recovery and same-named accounts. List tests answer through `FakeMailServer`, an
 in-memory mail account that resolves result references and reports changes. The library's server integration test lives in
-otus-meta.
+otus-core.

@@ -1,14 +1,14 @@
 # Quality gate
 
-Meta's [quality guide](https://github.com/otus-foss/otus-meta/blob/main/docs/quality.md) describes the commands, the convention plugins, the
+Core's [quality guide](https://github.com/otus-foss/otus-core/blob/main/docs/quality.md) describes the commands, the convention plugins, the
 shared tools and rules, file-length exceptions, commit messages, and coverage for every Otus
-repository. Mail runs them from its otus-meta checkout; see [shared libraries](shared-libraries.md).
+repository. Mail runs them from its otus-core checkout; see [shared libraries](shared-libraries.md).
 This guide covers what only Mail adds.
 
 ## Commands
 
-Requires JDK 21, Python 3.11+, the Android SDK, and an otus-meta checkout at `../otus-meta` or at
-`otus.meta.path`. One-time setup:
+Requires JDK 21, Python 3.11+, the Android SDK, and an otus-core checkout at `../otus-core` or at
+`otus.core.path`. One-time setup:
 
 ```sh
 python3 -m venv .venv
@@ -50,7 +50,7 @@ mint run swiftlint lint --strict
 ```
 
 SwiftFormat uses `--commas inline` to match SwiftLint's trailing-comma rule. SwiftLint's
-`file_length` rule is off, because Meta's architecture check enforces the Swift limit.
+`file_length` rule is off, because Core's architecture check enforces the Swift limit.
 
 Shared Kotlin iOS source compilation can also run on Linux with
 `./gradlew :shared:compileKotlinIosSimulatorArm64 :shared:compileKotlinIosArm64`.
@@ -64,7 +64,7 @@ job builds the release APK, and the `apk-size` job comments its size against the
 The `ios` job runs Swift formatting and lint plus a simulator build on macOS 15 with Xcode 26.3;
 Compose Multiplatform links symbols from the iOS 26 SDK, so Xcode 16 cannot link the app. The
 simulator build verifies compilation without device signing and targets `arm64`, matching the
-configured Apple Silicon simulator framework. JMAP iOS storage tests live in otus-meta as
+configured Apple Silicon simulator framework. JMAP iOS storage tests live in otus-core as
 `:jmap:iosSimulatorArm64Test`. See [hosting and CI](hosting.md).
 
 ## Test timings
@@ -80,7 +80,7 @@ task.
 
 ```sh
 ./gradlew koverXmlReportCoverage koverHtmlReportCoverage
-python3 ../otus-meta/tools/coverage_report.py build/reports/kover/reportCoverage.xml --base origin/main
+python3 ../otus-core/tools/coverage_report.py build/reports/kover/reportCoverage.xml --base origin/main
 ```
 
 The `coverage` variant runs Shared's host tests and the app's debug unit tests once each. The app's

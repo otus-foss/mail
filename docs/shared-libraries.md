@@ -1,7 +1,7 @@
 # Shared libraries
 
 Code that Mail and Calendar both use lives in
-[otus-meta](https://github.com/otus-foss/otus-meta). Mail uses:
+[otus-core](https://github.com/otus-foss/otus-core). Mail uses:
 
 | Library | Version catalog entry |
 | --- | --- |
@@ -15,32 +15,32 @@ Code that Mail and Calendar both use lives in
 | `com.otusfoss.core:jscontact` | `libs.otus.jscontact` |
 | `com.otusfoss.core:jmap-contacts` | `libs.otus.jmap.contacts` |
 
-## Building against Meta
+## Building against Core
 
-Mail builds otus-meta from source: the checkout next to it, `../otus-meta`, or the one the
-`otus.meta.path` Gradle property names, for example in `~/.gradle/gradle.properties` or with
-`-Potus.meta.path=../meta-worktree`. Gradle replaces each `com.otusfoss.core:<module>` with the matching
-project of that checkout, and the build also takes Meta's convention plugins, its version catalog
+Mail builds otus-core from source: the checkout next to it, `../otus-core`, or the one the
+`otus.core.path` Gradle property names, for example in `~/.gradle/gradle.properties` or with
+`-Potus.core.path=../core-worktree`. Gradle replaces each `com.otusfoss.core:<module>` with the matching
+project of that checkout, and the build also takes Core's convention plugins, its version catalog
 as `libs`, its tools, and its detekt configuration from it. Nothing is downloaded from GitHub
-Packages and no Meta version is pinned. See
-[otus-meta's consuming guide](https://github.com/otus-foss/otus-meta/blob/main/docs/consuming.md).
+Packages and no Core version is pinned. See
+[otus-core's consuming guide](https://github.com/otus-foss/otus-core/blob/main/docs/consuming.md).
 
 `gradle/app.versions.toml` holds the versions only Mail uses, SQLDelight, WorkManager, and
-UnifiedPush, as the `appLibs` catalog. Every other version comes from Meta's catalog.
+UnifiedPush, as the `appLibs` catalog. Every other version comes from Core's catalog.
 
 ## Changing shared code
 
-1. Change the library in otus-meta on a branch, and make the matching Mail change on a branch
+1. Change the library in otus-core on a branch, and make the matching Mail change on a branch
    with the same name.
-2. Build Mail against that Meta branch locally. CI does the same: it checks out the Meta branch
-   with this branch's name when there is one, else Meta's `main`, and the `pull request`
-   workflow labels the pull request `needs meta`.
-3. Merge the Meta pull request first, then Mail's, so Mail's `main` always builds against
-   Meta's `main`.
+2. Build Mail against that Core branch locally. CI does the same: it checks out the Core branch
+   with this branch's name when there is one, else Core's `main`, and the `pull request`
+   workflow labels the pull request `needs core`.
+3. Merge the Core pull request first, then Mail's, so Mail's `main` always builds against
+   Core's `main`.
 
-The nightly builds Mail's `main` against Meta's `main`, so merge such a pair one after the other,
+The nightly builds Mail's `main` against Core's `main`, so merge such a pair one after the other,
 away from the nightly's 00:00 UTC run.
 
-Meta is the central owner of visual elements, reusable components, tokens, and symbols. Add new
+Core is the central owner of visual elements, reusable components, tokens, and symbols. Add new
 ones there, even when Mail is their only consumer. Mail keeps feature screens and the adapters
 that map mail data into shared renderers.

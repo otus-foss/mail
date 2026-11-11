@@ -1,7 +1,7 @@
 # Action bar
 
 The message list, an open message, a selection of messages, and the compose page each show an
-action bar at the bottom of the screen. The bar is Meta's `ActionBar`: up to three icon-only
+action bar at the bottom of the screen. The bar is Core's `ActionBar`: up to three icon-only
 buttons in a group, and a main button in a wider shell beside them. The user chooses the buttons
 in Settings, either one bar per screen or one bar for every screen. Swipes keep their own
 choices; see [swipe actions](inbox.md#swipe-actions).
@@ -148,7 +148,7 @@ current messages cannot take stays in its slot, disabled with a `text3` icon, so
 move. A swipe can be any action except Spam, Move, Rule for sender, and the folder actions.
 
 **All actions**, under **Anywhere** in the picker, fits every bar. It shows a ⋯ icon, and tapping it
-opens a Meta `ContextMenu` above the button with every action the screen offers, including those
+opens a Core `ContextMenu` above the button with every action the screen offers, including those
 already on the bar; actions the current messages cannot take are left out. It suits a bar kept to
 a few buttons. A minimized bar hides it like any secondary button and keeps its own ⋯ button.
 
@@ -162,11 +162,11 @@ other buttons then move into the page's menu, such as an open message's **More a
 The action bar page starts with a **Layout** row that shows the mode and opens a `ChoiceSheet`
 with **Per screen** and **Same everywhere**. **Per screen** shows a card for **Message list**,
 **Selected messages**, **Open message**, and **Writing**. **Same everywhere** shows one **Every
-screen** card instead. Each card is a Meta `PreviewCard`: a title, where the bar shows, a sketch of
+screen** card instead. Each card is a Core `PreviewCard`: a title, where the bar shows, a sketch of
 the page, and the saved bar. Tapping the card or its bar opens the bar's editor.
 
 The editor (`ActionBarEditSheet`) is a `SheetFrame` titled with the place. It shows the bar in a
-`PreviewCard`. While the bar has room, its group ends in an empty slot, Meta's `BarAddButton`: a
+`PreviewCard`. While the bar has room, its group ends in an empty slot, Core's `BarAddButton`: a
 dashed circle with a plus, so it reads as room for another button rather than as an action. Its
 screen reader label is **Add action**. Tapping a button, or the empty slot, opens the picker for that slot (`ActionPickerSheet`), titled
 **Main button** or **Button 1** to **Button 3**.
@@ -185,7 +185,7 @@ screen reader label is **Add action**. Tapping a button, or the empty slot, open
   button in the slot. Each slot can hold a Move to button for a different folder. An empty slot
   lists only folders without a button; a filled slot lists all of them, and a folder in another
   slot says it will swap.
-- While the slot holds a Move to button, that row is **Move to** with the folder in Meta's
+- While the slot holds a Move to button, that row is **Move to** with the folder in Core's
   `ValuePicker`, with the folder symbol and the folder's path as the value. Screen readers hear,
   for example, "Travel, change". Tapping it opens the same folder sheet, so the folder changes
   without removing the button. When no account has the folder any more, the row says "Folder not
@@ -299,9 +299,9 @@ at 256. Emptying first pages through the folder with `Email/query` and `Email/ge
 
 ## Deferred
 
-- The reply, reply all, forward, share, and today symbols the spec lists. Meta does not bundle
+- The reply, reply all, forward, share, and today symbols the spec lists. Core does not bundle
   them yet, so Reply, Reply all, Forward, and Follow up show the send symbol. Not spam and
-  Restore show the inbox symbol, and Delete forever and emptying the delete symbol, until Meta
+  Restore show the inbox symbol, and Delete forever and emptying the delete symbol, until Core
   bundles `report_off`, `restore_from_trash`, and `delete_forever`.
 - **Block sender** in Spam. The rule editor only files mail into folders, so blocking would need a
   new rule action; **Rule for sender** remains the way to sort a sender's mail.
@@ -309,15 +309,15 @@ at 256. Emptying first pages through the folder with `Email/query` and `Email/ge
 - Calendar's use of the bar, such as a `BarToken.Date` context.
 - Hiding the bar while the page scrolls.
 - A split main button.
-- "Move to" in the main Move to button's accessibility label. Meta's `BarAction` has one label,
+- "Move to" in the main Move to button's accessibility label. Core's `BarAction` has one label,
   which the shell both shows and reads, so the main button reads only the folder's name. It needs
-  a separate description in Meta.
+  a separate description in Core.
 
 ## Open decisions
 
 - The bar's sizes, other than the height and the collapsed main button, were measured from the
   spec's image and are not verified Figma values; see
-  [mail design foundations](https://github.com/otus-foss/otus-meta/blob/main/docs/suite/mail-design.md#action-bar).
+  [mail design foundations](https://github.com/otus-foss/otus-core/blob/main/docs/suite/mail-design.md#action-bar).
 
 ## Validation
 

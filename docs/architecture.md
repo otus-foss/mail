@@ -81,9 +81,9 @@ ViewModels and navigation are connected at screen entry points. Networking, pers
 synchronization do not belong inside UI components.
 
 The provider-independent JMAP client and login storage come from the `com.otusfoss.core:jmap` library in
-otus-meta. See [JMAP](jmap.md) and [shared libraries](shared-libraries.md). Code shared with
-Calendar moves to otus-meta when both apps need it; other shared package names do not share code
-across Git repositories. Shared account setup and settings screens come from otus-meta.
+otus-core. See [JMAP](jmap.md) and [shared libraries](shared-libraries.md). Code shared with
+Calendar moves to otus-core when both apps need it; other shared package names do not share code
+across Git repositories. Shared account setup and settings screens come from otus-core.
 Mail supplies their state, persistence, service requirement, and destinations in
 app wiring. Mail-specific inbox, folder, and rule screens stay here.
 Mail's `feature/folders` holds folders and the Sieve rules that file into them; see
@@ -126,19 +126,19 @@ design-system elements. Mail resolves senders progressively after inbox loading.
 
 The design system (`com.otusfoss.core.designsystem`), date formatting (`com.otusfoss.core.dateformat`), avatars
 (`com.otusfoss.core.avatar`), JMAP client (`com.otusfoss.core.jmap`), settings (`com.otusfoss.core.settings`), and accounts
-(`com.otusfoss.core.accounts`) come from otus-meta; see
-[shared libraries](shared-libraries.md). All visual tokens, including `InboxTokens`, and symbol resources live in Meta.
-A new element or reusable component belongs in Meta even when Mail is its only current consumer.
+(`com.otusfoss.core.accounts`) come from otus-core; see
+[shared libraries](shared-libraries.md). All visual tokens, including `InboxTokens`, and symbol resources live in Core.
+A new element or reusable component belongs in Core even when Mail is its only current consumer.
 Mail feature adapters supply domain-derived labels, values, and callbacks to shared renderers.
 The checker rejects local production design-system code and drawable resources.
 
-Meta groups rendering beneath `com.otusfoss.core.designsystem.shared.<group>` and
+Core groups rendering beneath `com.otusfoss.core.designsystem.shared.<group>` and
 `com.otusfoss.core.designsystem.mail.<feature>`, each with `elements` and `components` where needed.
 For example, contact rows come from `shared.contacts.components` and message HTML from
 `mail.read.elements`. Theme declarations use `theme.colors`, `theme.motion`, `theme.brand`,
 `theme.typography`, and `theme.tokens.<family>`. `theme.OtusTheme` and `resources.Res` retain
 their packages. These groups contain UI; the feature layers above keep their responsibilities.
-See [Meta's migration guide](https://github.com/otus-foss/otus-meta/blob/main/docs/ui-package-migration.md).
+See [Core's migration guide](https://github.com/otus-foss/otus-core/blob/main/docs/ui-package-migration.md).
 
 ## Apple notification delivery
 

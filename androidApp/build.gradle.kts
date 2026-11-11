@@ -32,7 +32,7 @@ val commit =
 
 android {
     defaultConfig {
-        // The nightly workflow increments the release number for changes in Mail or Meta.
+        // The nightly workflow increments the release number for changes in Mail or Core.
         versionCode = providers.gradleProperty("otus.versionCode").map(String::toInt).getOrElse(1)
         versionName = providers.gradleProperty("otus.versionName").getOrElse("1.0")
         buildConfigField("String", "CHANNEL", "\"Dev\"")

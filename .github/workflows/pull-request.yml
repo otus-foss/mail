@@ -16,7 +16,7 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  # Decides whether this run checks anything; see otus-meta's .github/actions/ready-gate.
+  # Decides whether this run checks anything; see otus-core's .github/actions/ready-gate.
   gate:
     runs-on: ubuntu-24.04
     outputs:
@@ -24,14 +24,14 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          repository: ${{ github.repository_owner }}/otus-meta
-          path: otus-meta
+          repository: ${{ github.repository_owner }}/otus-core
+          path: otus-core
           fetch-depth: 0
           persist-credentials: false
-      # Meta's branch with this branch's name when there is one, else main, so every Meta action
-      # and the build come from the Meta that lands with this change.
-      - name: Use the Meta partner branch
-        working-directory: otus-meta
+      # Core's branch with this branch's name when there is one, else main, so every Core action
+      # and the build come from the Core that lands with this change.
+      - name: Use the Core partner branch
+        working-directory: otus-core
         env:
           BRANCH: ${{ github.head_ref || github.ref_name }}
         run: |
@@ -40,9 +40,9 @@ jobs:
           fi
           git log --oneline -1
       - id: gate
-        uses: ./otus-meta/.github/actions/ready-gate
+        uses: ./otus-core/.github/actions/ready-gate
 
-  # The size label and the screenshot comment; see otus-meta's .github/actions/size-label and
+  # The size label and the screenshot comment; see otus-core's .github/actions/size-label and
   # screenshot-comment.
   facts:
     # A fork's pull request gets a read-only token, so it skips this job, which writes to the pull request.
@@ -56,14 +56,14 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          repository: ${{ github.repository_owner }}/otus-meta
-          path: otus-meta
+          repository: ${{ github.repository_owner }}/otus-core
+          path: otus-core
           fetch-depth: 0
           persist-credentials: false
-      # Meta's branch with this branch's name when there is one, else main, so every Meta action
-      # and the build come from the Meta that lands with this change.
-      - name: Use the Meta partner branch
-        working-directory: otus-meta
+      # Core's branch with this branch's name when there is one, else main, so every Core action
+      # and the build come from the Core that lands with this change.
+      - name: Use the Core partner branch
+        working-directory: otus-core
         env:
           BRANCH: ${{ github.head_ref || github.ref_name }}
         run: |
@@ -71,12 +71,12 @@ jobs:
             git checkout --quiet --detach "origin/$BRANCH"
           fi
           git log --oneline -1
-      - uses: ./otus-meta/.github/actions/size-label
-      - uses: ./otus-meta/.github/actions/screenshot-comment
+      - uses: ./otus-core/.github/actions/size-label
+      - uses: ./otus-core/.github/actions/screenshot-comment
 
-  # Quality builds against the Meta branch with this branch's name when there is one, so the pair has
-  # to land together, Meta first. The label says so before anyone merges this alone.
-  meta-partner:
+  # Quality builds against the Core branch with this branch's name when there is one, so the pair has
+  # to land together, Core first. The label says so before anyone merges this alone.
+  core-partner:
     # A fork's pull request gets a read-only token, so it skips this job, which writes to the pull request.
     needs: gate
     if: needs.gate.outputs.ready == 'true' && github.event.pull_request.head.repo.full_name == github.repository
@@ -92,17 +92,17 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          repository: ${{ github.repository_owner }}/otus-meta
-          path: otus-meta
+          repository: ${{ github.repository_owner }}/otus-core
+          path: otus-core
           fetch-depth: 0
           persist-credentials: false
       - name: Label the pull request
         run: |
-          gh label create "needs meta" --force --color 5319e7 \
-            --description "Builds against a Meta branch of the same name; merge that first"
-          if git -C otus-meta rev-parse --verify --quiet "origin/$BRANCH" > /dev/null; then
-            echo "::notice title=Needs Meta::Merge $GITHUB_REPOSITORY_OWNER/otus-meta branch $BRANCH first."
-            gh pr edit "$PR" --add-label "needs meta"
+          gh label create "needs core" --force --color 5319e7 \
+            --description "Builds against a Core branch of the same name; merge that first"
+          if git -C otus-core rev-parse --verify --quiet "origin/$BRANCH" > /dev/null; then
+            echo "::notice title=Needs Core::Merge $GITHUB_REPOSITORY_OWNER/otus-core branch $BRANCH first."
+            gh pr edit "$PR" --add-label "needs core"
           else
-            gh pr edit "$PR" --remove-label "needs meta" 2>/dev/null || true
+            gh pr edit "$PR" --remove-label "needs core" 2>/dev/null || true
           fi

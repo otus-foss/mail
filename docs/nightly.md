@@ -1,7 +1,7 @@
 # Nightly builds
 
 `.github/workflows/nightly.yml` runs at 00:00 UTC, which is 01:00 in Berlin in winter and 02:00 in
-summer. It can also be started by hand. Changes to either Mail main or Meta main trigger a signed
+summer. It can also be started by hand. Changes to either Mail main or Core main trigger a signed
 APK, published as a prerelease of this repository. Each release is tagged `nightly-<number>` on the
 Mail commit it was built from, with a version code one higher than the previous release. That adds
 about one tag a day. A prerelease never becomes the repository's "Latest" release, so a stable
@@ -11,7 +11,7 @@ so a retry uses a code above every existing release, including unfinished drafts
 
 The version job resolves both commits. The build checks out those exact revisions and publishes
 them in `provenance.json` beside the APK. Notes include only `feat`, `fix`, and `perf` commits from
-Mail and Meta since the preceding recorded revisions. Internal changes such as `refactor`, `docs`, `test`, `build`, `ci`, and `chore`
+Mail and Core since the preceding recorded revisions. Internal changes such as `refactor`, `docs`, `test`, `build`, `ci`, and `chore`
 are omitted from both the release notes and the in-app changelog. When the preceding release has no
 recorded revision, the notes list the commits since it was published instead. Only a published release can make an unchanged pair skip scheduled and manual runs.
 The version check reads every release page, so unfinished drafts cannot hide the last publication.
@@ -19,12 +19,12 @@ A rerun after a failed build uses the next unpublished version code; a rerun aft
 
 The `build` job runs Gradle with a read-only token and uploads the unsigned APK. The `release`
 job, which runs no Gradle, signs it with `zipalign` and `apksigner` from build-tools 36.0.0 and
-publishes it with a token that can write releases. So Meta's build scripts and the Gradle plugins
+publishes it with a token that can write releases. So Core's build scripts and the Gradle plugins
 never see the key, its password, or a write token. The key file is deleted afterwards, even when a
 step failed. The `version` job also gets a write token, because only that sees draft releases.
 
-Meta source is used because package publishing is paused. The first release after this workflow
-change rebuilds even if Mail is unchanged, since older releases have no Meta provenance. Its code
+Core source is used because package publishing is paused. The first release after this workflow
+change rebuilds even if Mail is unchanged, since older releases have no Core provenance. Its code
 still increases from the previous release, so Android can update it. API or download failures stop
 the workflow instead of treating an unavailable release as an empty history.
 
@@ -42,7 +42,7 @@ The `nightly` build type is the release build with these changes:
 At each launch the nightly app reads the recent releases of the nightly repository. When one is
 newer than the installed build, a circled arrow leads the version in the sidebar footer. Tapping
 the version opens a sheet with the changes of every newer build, grouped by commit scope. Scopes spelled with and without hyphens share a group, and a change
-listed by both Mail and Meta appears once. Only
+listed by both Mail and Core appears once. Only
 `feat`, `fix`, and `perf` commits appear there. Changelog, beside Install update, lists every
 published nightly by date, with the installed ones on a lighter panel under an "Installed"
 divider. A failed check shows nothing. Other builds never check.
@@ -64,7 +64,7 @@ declares `REQUEST_INSTALL_PACKAGES`.
    ```
 
 2. Add the key and its password to otus-mail. The workflow publishes with its own token, and
-   otus-meta is public, so it needs no other secret:
+   otus-core is public, so it needs no other secret:
 
    ```sh
    base64 -w0 otus-nightly.p12 | gh secret set OTUS_NIGHTLY_KEYSTORE -R otus-foss/otus-mail

@@ -46,7 +46,7 @@ def previous_sources(repository, release):
 
 def version_outputs(repository):
     mail_sha = command("git", "rev-parse", "HEAD")
-    meta_sha = command("git", "-C", "otus-meta", "rev-parse", "HEAD")
+    meta_sha = command("git", "-C", "otus-core", "rev-parse", "HEAD")
     pages = json.loads(
         command("gh", "api", "--paginate", "--slurp", f"repos/{repository}/releases?per_page=100")
     )
@@ -80,7 +80,7 @@ def main():
         output.writelines(f"{key}={value}\n" for key, value in outputs.items())
     if "number" not in outputs:
         print(
-            "::notice::The latest published nightly already contains these Mail and Meta revisions."
+            "::notice::The latest published nightly already contains these Mail and Core revisions."
         )
 
 

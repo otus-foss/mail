@@ -24,7 +24,7 @@ concurrency:
   cancel-in-progress: ${{ github.event_name != 'push' }}
 
 jobs:
-  # Decides which jobs this change needs; see otus-meta's .github/actions/quality-changes.
+  # Decides which jobs this change needs; see otus-core's .github/actions/quality-changes.
   # A run the ready gate stops sets no outputs, so every later job skips.
   changes:
     runs-on: ubuntu-24.04
@@ -37,14 +37,14 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          repository: ${{ github.repository_owner }}/otus-meta
-          path: otus-meta
+          repository: ${{ github.repository_owner }}/otus-core
+          path: otus-core
           fetch-depth: 0
           persist-credentials: false
-      # Meta's branch with this branch's name when there is one, else main, so every Meta action
-      # and the build come from the Meta that lands with this change.
-      - name: Use the Meta partner branch
-        working-directory: otus-meta
+      # Core's branch with this branch's name when there is one, else main, so every Core action
+      # and the build come from the Core that lands with this change.
+      - name: Use the Core partner branch
+        working-directory: otus-core
         env:
           BRANCH: ${{ github.head_ref || github.ref_name }}
         run: |
@@ -53,10 +53,10 @@ jobs:
           fi
           git log --oneline -1
       - id: gate
-        uses: ./otus-meta/.github/actions/ready-gate
+        uses: ./otus-core/.github/actions/ready-gate
       - id: files
         if: steps.gate.outputs.ready == 'true'
-        uses: ./otus-meta/.github/actions/quality-changes
+        uses: ./otus-core/.github/actions/quality-changes
 
   # Each job runs one part of checkAll, so the parts run at the same time. The tests run in two
   # shards; each test class runs in exactly one of them.
@@ -80,8 +80,8 @@ jobs:
           # Not part of checkAll: builds the release APK so the apk-size job can compare it.
           - part: apk size
             tasks: :androidApp:assembleNightly
-    # Mail and otus-meta sit side by side, as on a development machine, so Gradle finds Meta at
-    # ../otus-meta and Spotless never sees Meta's files.
+    # Mail and otus-core sit side by side, as on a development machine, so Gradle finds Core at
+    # ../otus-core and Spotless never sees Core's files.
     defaults:
       run:
         working-directory: otus-mail
@@ -92,14 +92,14 @@ jobs:
           persist-credentials: false
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          repository: ${{ github.repository_owner }}/otus-meta
-          path: otus-meta
+          repository: ${{ github.repository_owner }}/otus-core
+          path: otus-core
           fetch-depth: 0
           persist-credentials: false
-      # Meta's branch with this branch's name when there is one, else main, so every Meta action
-      # and the build come from the Meta that lands with this change.
-      - name: Use the Meta partner branch
-        working-directory: otus-meta
+      # Core's branch with this branch's name when there is one, else main, so every Core action
+      # and the build come from the Core that lands with this change.
+      - name: Use the Core partner branch
+        working-directory: otus-core
         env:
           BRANCH: ${{ github.head_ref || github.ref_name }}
         run: |
@@ -107,7 +107,7 @@ jobs:
             git checkout --quiet --detach "origin/$BRANCH"
           fi
           git log --oneline -1
-      - uses: ./otus-meta/.github/actions/setup-build
+      - uses: ./otus-core/.github/actions/setup-build
         with:
           directory: otus-mail
       - run: ./gradlew ${{ matrix.tasks }} --console=plain
@@ -183,14 +183,14 @@ jobs:
           persist-credentials: false
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          repository: ${{ github.repository_owner }}/otus-meta
-          path: otus-meta
+          repository: ${{ github.repository_owner }}/otus-core
+          path: otus-core
           fetch-depth: 0
           persist-credentials: false
-      # Meta's branch with this branch's name when there is one, else main, so every Meta action
-      # and the build come from the Meta that lands with this change.
-      - name: Use the Meta partner branch
-        working-directory: otus-meta
+      # Core's branch with this branch's name when there is one, else main, so every Core action
+      # and the build come from the Core that lands with this change.
+      - name: Use the Core partner branch
+        working-directory: otus-core
         env:
           BRANCH: ${{ github.head_ref || github.ref_name }}
         run: |
@@ -200,7 +200,7 @@ jobs:
           git log --oneline -1
       # Compose Multiplatform links iOS 26 SDK symbols, so the app needs Xcode 26.
       - run: sudo xcode-select -s /Applications/Xcode_26.3.app && xcodebuild -version
-      - uses: ./otus-meta/.github/actions/setup-build
+      - uses: ./otus-core/.github/actions/setup-build
         with:
           directory: otus-mail
           android: "false"
