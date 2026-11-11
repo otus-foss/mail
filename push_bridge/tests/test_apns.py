@@ -25,7 +25,7 @@ class ApnsTest(unittest.TestCase):
             )
         )
         self.public = key.public_key()
-        self.apns = Apns(path, "test-key", "test-team", "com.otus.mail", sandbox=True)
+        self.apns = Apns(path, "test-key", "test-team", "com.otus-foss.mail", sandbox=True)
         self.addCleanup(self.apns.client.close)
 
     def test_signs_an_es256_jwt_and_reuses_it(self):
@@ -57,7 +57,7 @@ class ApnsTest(unittest.TestCase):
             self.apns.send({"id": "route", "token": "ab" * 32, "key_id": "key"}, "message")
         )
         request = captured[0]
-        self.assertEqual(request.headers["apns-topic"], "com.otus.mail")
+        self.assertEqual(request.headers["apns-topic"], "com.otus-foss.mail")
         self.assertEqual(request.headers["apns-push-type"], "alert")
         body = json.loads(request.content)
         self.assertEqual(body["otusMessage"], "message")

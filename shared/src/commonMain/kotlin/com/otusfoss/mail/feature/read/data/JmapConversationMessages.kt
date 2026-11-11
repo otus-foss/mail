@@ -1,0 +1,104 @@
+package com.otusfoss.mail.feature.read.data
+
+import com.otusfoss.core.jmap.JmapConnections
+import com.otusfoss.core.jmap.JmapException
+import com.otusfoss.core.jmap.login.LoginStoreException
+import com.otusfoss.mail.core.cache.CacheKind
+import com.otusfoss.mail.core.cache.MailCache
+import com.otusfoss.mail.core.mail.EMAIL_PROPERTIES
+import com.otusfoss.mail.core.mail.EmailObject
+import com.otusfoss.mail.core.mail.ThreadObject
+import com.otusfoss.mail.core.mail.isDraft
+import com.otusfoss.mail.core.mail.mailAccount
+import com.otusfoss.mail.core.mail.objects
+import com.otusfoss.mail.core.mail.received
+import com.otusfoss.mail.core.mailbox.MailFolder
+import com.otusfoss.mail.core.mailbox.Mailboxes
+import com.otusfoss.mail.core.messages.data.ServerSites
+import com.otusfoss.mail.core.messages.data.boxes
+import com.otusfoss.mail.core.messages.data.receivedAt
+import com.otusfoss.mail.core.messages.data.threadEmails
+import com.otusfoss.mail.core.messages.data.toMessage
+import com.otusfoss.mail.core.messages.domain.MailMessage
+import com.otusfoss.mail.feature.read.domain.ConversationMessages
+import kotlinx.datetime.TimeZone
+
+/**
+ * Reads every email of a message's thread with the row properties (RFC 8621, sections 3 and 4.2),
+ * so each becomes a page of the Read view. Offline, it falls back to the thread and emails the
+ * list saved in [cache], which may lack some of them. A page trusts DMARC results only from the
+ * server domain [sites] already knows for its login.
+ */
+class JmapConversationMessages(
+    private val connections: JmapConnections,
+    private val cache: MailCache,
+    private val mailboxes: Mailboxes,
+    private val zone: () -> TimeZone = { TimeZone.currentSystemDefault() },
+    private val sites: ServerSites = ServerSites { null },
+) : ConversationMessages {
+    override suspend fun messages(message: MailMessage): List<MailMessage>? {
+        val loginId = message.location.accountId
+        // A supplied message has no server id, so it stands alone.
+        val emails = if (message.emailId.isEmpty()) emptyList() else emails(message) ?: return null
+        val folders = mailboxes.cached(loginId).associateBy { it.id }
+        // Deleted and spam mail stay out of the pages, as in the list, unless the row itself is there.
+        val hidden =
+            folders.values
+                .filter { it.isBin }
+                .map { it.id }
+                .toSet()
+                .takeUnless { message.location.mailboxId in it }
+                .orEmpty()
+        return emails
+            .filter { !it.isDraft }
+            .filterNot { it.boxes.isNotEmpty() && hidden.containsAll(it.boxes) }
+            .sortedByDescending { it.received }
+            .map { it.page(message, folders) }
+            .ifEmpty { listOf(message.copy(conversation = null)) }
+    }
+
+    /** The thread's emails from the server, or from the device when the server cannot be reached. */
+    private suspend fun emails(message: MailMessage): List<EmailObject>? =
+        try {
+            connections
+                .mailAccount(message.location.accountId)
+                ?.threadEmails(message.emailId, EMAIL_PROPERTIES)
+        } catch (expected: JmapException) {
+            cached(message)
+        } catch (expected: LoginStoreException) {
+            null
+        }
+
+    /** The emails the list saved for the row's thread; null when it saved none. */
+    private suspend fun cached(message: MailMessage): List<EmailObject>? {
+        val loginId = message.location.accountId
+        val thread =
+            message.conversation?.threadId?.let {
+                cache.objects(loginId, CacheKind.Thread, ThreadObject.serializer(), listOf(it))[it]
+            } ?: return null
+        return cache
+            .objects(loginId, CacheKind.Email, EmailObject.serializer(), thread.emailIds)
+            .values
+            .toList()
+            .ifEmpty { null }
+    }
+
+    /**
+     * This email as a page of [row]'s conversation. It stays in the row's listed mailbox when it is
+     * in it, and otherwise names its own first mailbox, so Delete and Move act on where it is.
+     */
+    private fun EmailObject.page(
+        row: MailMessage,
+        folders: Map<String, MailFolder>,
+    ): MailMessage {
+        val listed = row.location.mailboxId.takeIf { it in boxes } ?: boxes.firstOrNull().orEmpty()
+        val inRow = listed == row.location.mailboxId
+        val mailbox = if (inRow) row.location.mailbox else folders[listed]?.mailboxName.orEmpty()
+        val role = if (inRow) row.location.mailboxRole else folders[listed]?.role
+        val place = row.location.copy(mailbox = mailbox, mailboxId = listed, mailboxRole = role)
+        val page = toMessage(place, zone(), sites.known(row.location.accountId))
+        // The list already found the row sender's photo; pages from the same address reuse it.
+        val sender = if (page.sender.address.equals(row.sender.address, ignoreCase = true)) row.sender else page.sender
+        return page.copy(sender = sender)
+    }
+}

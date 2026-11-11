@@ -1,0 +1,184 @@
+package com.otusfoss.mail.feature.folders.presentation.screens
+
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Modifier
+import com.otusfoss.core.designsystem.shared.controls.elements.UiAction
+import com.otusfoss.core.designsystem.shared.overlays.components.SheetFrame
+import com.otusfoss.core.designsystem.shared.pages.components.PageNote
+import com.otusfoss.core.designsystem.shared.pages.components.Subpage
+import com.otusfoss.core.designsystem.theme.colors.OtusColors
+import com.otusfoss.core.designsystem.theme.tokens.overlays.SheetTokens
+import com.otusfoss.mail.core.mailbox.MailFolder
+import com.otusfoss.mail.feature.folders.domain.RuleAvailability
+import com.otusfoss.mail.feature.folders.domain.scopeOf
+import com.otusfoss.mail.feature.folders.presentation.FolderColorsState
+import com.otusfoss.mail.feature.folders.presentation.FolderDialog
+import com.otusfoss.mail.feature.folders.presentation.FolderRulesState
+import com.otusfoss.mail.feature.folders.presentation.FoldersState
+import com.otusfoss.mail.feature.folders.presentation.KnownAddress
+import com.otusfoss.mail.feature.folders.presentation.RuleSheetDraft
+import com.otusfoss.mail.feature.folders.presentation.account
+import com.otusfoss.mail.feature.folders.presentation.canMove
+import com.otusfoss.mail.feature.folders.presentation.components.AddRuleSheet
+import com.otusfoss.mail.feature.folders.presentation.components.DeleteFolderRow
+import com.otusfoss.mail.feature.folders.presentation.components.FolderColorRow
+import com.otusfoss.mail.feature.folders.presentation.components.FolderDialogs
+import com.otusfoss.mail.feature.folders.presentation.components.FolderNameRow
+import com.otusfoss.mail.feature.folders.presentation.components.FolderParentRow
+import com.otusfoss.mail.feature.folders.presentation.components.FolderRulesSection
+import com.otusfoss.mail.feature.folders.presentation.components.RulesReplaceDialog
+import com.otusfoss.mail.feature.folders.presentation.components.folderActions
+import com.otusfoss.mail.feature.folders.presentation.deletable
+import com.otusfoss.mail.feature.folders.presentation.message
+import com.otusfoss.mail.feature.folders.presentation.parentRules
+import com.otusfoss.mail.feature.folders.presentation.remove
+import com.otusfoss.mail.feature.folders.presentation.sheetActions
+import com.otusfoss.mail.feature.folders.presentation.sheetDraft
+import com.otusfoss.mail.feature.folders.presentation.subfolderCount
+import com.otusfoss.mail.feature.folders.presentation.summary
+
+/** The state holders a folder page reads and changes. */
+class FolderDetailStates(
+    val folders: FoldersState,
+    val colors: FolderColorsState,
+    val rules: FolderRulesState,
+)
+
+/** The rule the page is showing a popup for: the Add rule sheet, or the delete-only menu of [locked]. */
+internal class RulePopup(
+    val sheet: RuleSheetDraft? = null,
+    val locked: Int? = null,
+)
+
+/**
+ * One folder's settings from Settings › Folders & rules: its counts, name, icon color, the rules that sort
+ * new mail into it, and Delete once it is empty. A mailbox shared with the login has no color or
+ * rules here: colors are for the login's own folders, and Sieve files only into those. [known]
+ * holds the addresses of loaded mail for the Add rule sheet's suggestions.
+ */
+@Composable
+fun FolderDetailScreen(
+    folder: MailFolder,
+    states: FolderDetailStates,
+    known: List<KnownAddress>,
+    onOpenFolder: (MailFolder) -> Unit,
+    onBack: () -> Unit,
+) {
+    val folders = states.folders
+    val colors = states.colors
+    val rules = states.rules
+    var dialog by rememberSaveable(stateSaver = FolderDialog.Saver) { mutableStateOf<FolderDialog?>(null) }
+    var popup by remember { mutableStateOf(RulePopup()) }
+    val scope = folders.account(folder.accountId)?.scopeOf(folder)
+    val subfolders = scope?.subfolderCount(folder) ?: 0
+    val own = folder.sharedIn == null && folder.isCustom
+    val id = folder.accountId
+    Subpage(folder.name, onBack) {
+        PageNote(folder.summary(subfolders))
+        listOfNotNull(folders.notice, rules.notice).forEach { PageNote(it) }
+        FolderNameRow(
+            folder.name,
+            { dialog = FolderDialog.Rename(id, folder.id) }.takeIf { folder.isCustom && folder.rights.mayRename },
+        )
+        if (own) {
+            val account = folders.account(id)
+            FolderParentRow(
+                account?.folder(folder.parentId.orEmpty())?.name,
+                { dialog = FolderDialog.Move(id, folder.id) }.takeIf { account?.canMove(folder) == true },
+            )
+        }
+        if (own && colors.colorable(folder)) {
+            FolderColorRow(colors.colors.of(folder)) { dialog = FolderDialog.Color(id, folder.id) }
+        }
+        if (own) {
+            FolderRules(folder, folders, rules, onOpenFolder) { popup = it }
+        }
+        DeleteFolderRow({ dialog = FolderDialog.Delete(id, folder.id) }.takeIf { folder.deletable(subfolders) })
+    }
+    FolderDetailDialogs(folder, states, known, dialog, popup, onDialog = { dialog = it }, onPopup = { popup = it })
+}
+
+@Composable
+private fun FolderRules(
+    folder: MailFolder,
+    folders: FoldersState,
+    rules: FolderRulesState,
+    onOpenFolder: (MailFolder) -> Unit,
+    onPopup: (RulePopup) -> Unit,
+) {
+    when (val availability = rules.account(folder.accountId)?.availability) {
+        is RuleAvailability.Available -> AvailableRules(folder, folders, rules, onOpenFolder, onPopup)
+        is RuleAvailability.Failed -> PageNote(availability.reason.message())
+        RuleAvailability.RulesUnavailable, null -> Unit
+    }
+}
+
+@Composable
+private fun AvailableRules(
+    folder: MailFolder,
+    folders: FoldersState,
+    rules: FolderRulesState,
+    onOpenFolder: (MailFolder) -> Unit,
+    onPopup: (RulePopup) -> Unit,
+) {
+    val folderRules = rules.rules(folder)
+    FolderRulesSection(
+        folderRules,
+        parentRules(folders.account(folder.accountId)?.folders.orEmpty(), folder, rules::rules),
+        onOpenParent = onOpenFolder,
+        onOpen = { index ->
+            val draft = folderRules[index].sheetDraft(index)
+            onPopup(if (draft != null) RulePopup(sheet = draft) else RulePopup(locked = index))
+        },
+        onAdd = { onPopup(RulePopup(sheet = RuleSheetDraft())) },
+    )
+}
+
+/** The folder popups, the Add rule sheet, the delete-only sheet, and the replace confirmation. */
+@Composable
+private fun FolderDetailDialogs(
+    folder: MailFolder,
+    states: FolderDetailStates,
+    known: List<KnownAddress>,
+    dialog: FolderDialog?,
+    popup: RulePopup,
+    onDialog: (FolderDialog?) -> Unit,
+    onPopup: (RulePopup) -> Unit,
+) {
+    val rules = states.rules
+    val close = { onPopup(RulePopup()) }
+    dialog?.let { open ->
+        val scope = states.folders.account(open.accountId)?.scopeOf(folder)
+        FolderDialogs(open, scope, folderActions(states.folders, states.colors, rules) { known }, onDialog)
+    }
+    popup.sheet?.let { draft ->
+        val actions = rules.sheetActions(folder, draft.editing, onClose = close, onMoved = states.folders::refresh)
+        AddRuleSheet(folder.name, draft, known, actions)
+    }
+    popup.locked?.let { index ->
+        val delete = {
+            rules.remove(folder, index)
+            close()
+        }
+        SheetFrame(
+            "Can't edit this rule here",
+            close,
+            done = UiAction("Delete rule", onClick = delete),
+            closeButton = true,
+        ) {
+            Text(
+                "Only rules on one sender, recipient, subject, or mailing list can be edited here.",
+                Modifier.padding(SheetTokens.inset),
+                color = OtusColors.text2,
+            )
+        }
+    }
+    RulesReplaceDialog(rules)
+}

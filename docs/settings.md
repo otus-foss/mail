@@ -13,7 +13,7 @@ a summary, and a chevron. Settings pages follow Notion's layout: title and descr
 left, the control on the right, and large section titles. Search covers every page; see
 [Search](#search).
 
-- **Email accounts** (`com.otus.accounts`) lists connected accounts as flat rows with a Remove
+- **Email accounts** (`com.otusfoss.core.accounts`) lists connected accounts as flat rows with a Remove
   button, under large section titles, and connects new ones with a JMAP server, username, and
   password or app password. It supports compatible JMAP mail servers with HTTP Basic
   authentication, such as Stalwart; no provider-specific behavior exists.
@@ -23,7 +23,7 @@ left, the control on the right, and large section titles. Search covers every pa
   shows how many alert buttons are chosen and opens an `OrderedChoiceSheet` that picks up to three
   and their order (Android only, since iOS alerts show no message). **Not instant** lists only
   accounts whose push failed; see [notifications](notifications.md#buttons).
-- **Appearance** (`AppearanceSettingsScreen` from `com.otus.settings`) holds only how Otus looks,
+- **Appearance** (`AppearanceSettingsScreen` from `com.otusfoss.core.settings`) holds only how Otus looks,
   in one **Look** section: **Theme** (its page), **App icon**, **Mail list** (its page),
   **Date format**, and **Animations**. Nothing on it changes what Mail does.
   - **Theme** shows a phone with the inbox under the control panel, in the current colors or the

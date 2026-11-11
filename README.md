@@ -19,7 +19,7 @@ See [JMAP](docs/jmap.md) for supported behavior and test coverage.
 - `androidApp`: Android application entry point.
 - `iosApp`: Xcode project hosting the shared Compose UI.
 
-Application and bundle ID: `com.otus.mail` (verify ownership before publishing).
+Application and bundle ID: `com.otusfoss.mail` (verify ownership before publishing).
 
 ## Android
 

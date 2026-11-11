@@ -1,0 +1,145 @@
+package com.otusfoss.mail.feature.inbox.presentation.components
+
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.focus.FocusRequester
+import com.otusfoss.core.dateformat.DateFormatter
+import com.otusfoss.core.designsystem.resources.Res
+import com.otusfoss.core.designsystem.resources.symbol_account_circle
+import com.otusfoss.core.designsystem.resources.symbol_alternate_email
+import com.otusfoss.core.designsystem.resources.symbol_calendar_today
+import com.otusfoss.core.designsystem.resources.symbol_straighten
+import com.otusfoss.core.designsystem.resources.symbol_swap_vert
+import com.otusfoss.mail.core.messages.domain.DateFilter
+import com.otusfoss.mail.core.messages.domain.FilterSort
+import com.otusfoss.mail.core.messages.domain.MailMessage
+import com.otusfoss.mail.core.messages.domain.ReadStatus
+import com.otusfoss.mail.core.messages.domain.RecipientField
+import com.otusfoss.mail.core.messages.domain.SizeFilter
+import com.otusfoss.mail.core.messages.presentation.icon
+import com.otusfoss.mail.core.messages.presentation.label
+import com.otusfoss.mail.core.settings.presentation.icon
+import com.otusfoss.mail.core.settings.presentation.label
+import com.otusfoss.mail.feature.inbox.domain.InboxFilters
+import com.otusfoss.mail.feature.inbox.presentation.FilterOptions
+import com.otusfoss.mail.feature.inbox.presentation.InboxFilterState
+
+/** One applied choice as its [pill], and what a tap on it does: [tap] removes it. */
+internal class ActiveFacet(
+    val key: Any,
+    val tap: () -> Unit,
+    val pill: ActivePill,
+)
+
+/**
+ * A page's [applied] filters for the pill row, which [onChange] replaces. [people] give the
+ * chosen people their avatars. [button] focuses the filter button, which the panel gives focus
+ * back to when it closes.
+ */
+class ActiveFilters(
+    val applied: InboxFilters = InboxFilters(),
+    val options: FilterOptions = FilterOptions(),
+    val dateFormatter: DateFormatter = DateFormatter(),
+    val onChange: (InboxFilters) -> Unit = {},
+    val button: FocusRequester = FocusRequester(),
+    private val people: FilterPeople = FilterPeople(),
+) {
+    /**
+     * Each applied choice in the panel's order, ending with the sort order while it is not the
+     * default. Tapping a pill removes its choice.
+     */
+    internal val active: List<ActiveFacet>
+        get() =
+            buildList {
+                val status = applied.status
+                if (status != ReadStatus.All) {
+                    add(removing(status, symbolPill(status.label, status.icon)) { it.copy(status = ReadStatus.All) })
+                }
+                applied.quick.sortedBy { it.ordinal }.forEach { facet ->
+                    add(removing(facet, symbolPill(facet.label, facet.icon)) { it.with(facet, false) })
+                }
+                if (applied.from.isNotEmpty()) {
+                    add(removing(InboxFilters::from, fromPill(applied, people)) { it.copy(from = emptySet()) })
+                }
+                // The To pill stands for the whole recipient filter, so removing it also resets Received in.
+                val noRecipients = { filters: InboxFilters ->
+                    filters.copy(sentTo = emptySet(), to = emptySet(), receivedIn = RecipientField.Default)
+                }
+                val recipients = recipientPill()
+                if (recipients != null) add(removing(InboxFilters::to, recipients, noRecipients))
+                val id = applied.account
+                if (id != null) {
+                    // An account this page no longer offers still filters, so its pill stays to show it.
+                    val pill =
+                        options.account(id)?.let(::accountPill) ?: symbolPill(id, Res.drawable.symbol_account_circle)
+                    add(removing(InboxFilters::account, pill) { it.copy(account = null) })
+                }
+                if (applied.folders.isNotEmpty()) {
+                    val pill = foldersPill(applied.folders.toList(), options)
+                    add(removing(InboxFilters::folders, pill) { it.copy(folders = emptySet()) })
+                }
+                if (applied.date != DateFilter.Any) {
+                    val pill = symbolPill(dateValue(applied.date, dateFormatter), Res.drawable.symbol_calendar_today)
+                    add(removing(InboxFilters::date, pill) { it.copy(date = DateFilter.Any) })
+                }
+                applied.types.sortedBy { it.ordinal }.forEach { facet ->
+                    add(removing(facet, symbolPill(facet.label, facet.icon)) { it.with(facet, false) })
+                }
+                if (applied.size != SizeFilter.Any) {
+                    val pill = symbolPill(applied.size.label, Res.drawable.symbol_straighten)
+                    add(removing(InboxFilters::size, pill) { it.copy(size = SizeFilter.Any) })
+                }
+                if (applied.sort != FilterSort.NewestFirst) {
+                    val pill = symbolPill("Oldest first", Res.drawable.symbol_swap_vert)
+                    add(removing(FilterSort.OldestFirst, pill) { it.copy(sort = FilterSort.NewestFirst) })
+                }
+            }
+
+    private fun recipientPill(): ActivePill? =
+        when {
+            applied.sentTo.isNotEmpty() || applied.to.isNotEmpty() -> toPill(applied, options, people)
+            applied.receivedIn != RecipientField.Default -> receivedInPill()
+            else -> null
+        }
+
+    private fun receivedInPill(): ActivePill =
+        symbolPill(
+            "In " + applied.receivedIn.sortedBy { it.ordinal }.joinToString(", ") { it.label },
+            Res.drawable.symbol_alternate_email,
+        )
+
+    private fun removing(
+        key: Any,
+        pill: ActivePill,
+        remove: (InboxFilters) -> InboxFilters,
+    ) = ActiveFacet(key, { onChange(remove(applied)) }, pill)
+}
+
+/** The applied filters of [state] for the pill row, whose filter button gets focus back once the filters close. */
+@Composable
+internal fun rememberActiveFilters(
+    state: InboxFilterState,
+    options: FilterOptions,
+    messages: List<MailMessage>,
+    dateFormatter: DateFormatter,
+): ActiveFilters {
+    val button = remember { FocusRequester() }
+    var wasOpen by remember { mutableStateOf(false) }
+    LaunchedEffect(state.isOpen) {
+        // The button is missing only while the page is leaving, when focus does not matter.
+        if (wasOpen && !state.isOpen) button.runCatching { requestFocus() }
+        wasOpen = state.isOpen
+    }
+    return ActiveFilters(
+        state.applied,
+        options,
+        dateFormatter,
+        state::update,
+        button,
+        people = rememberFilterPeople(state, options, messages),
+    )
+}

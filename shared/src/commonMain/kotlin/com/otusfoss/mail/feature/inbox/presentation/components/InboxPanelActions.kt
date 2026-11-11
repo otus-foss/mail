@@ -1,0 +1,30 @@
+package com.otusfoss.mail.feature.inbox.presentation.components
+
+import com.otusfoss.mail.core.settings.domain.InboxPill
+import com.otusfoss.mail.feature.inbox.domain.InboxSearch
+
+/**
+ * Everything the inbox panel can ask its screen to do. [onEditSearch] opens the search room again
+ * from a search filter's chip, [onOpenFilters] grows every filter, and [onFolder] shows a folder pill's mail, or none.
+ */
+class InboxPanelActions(
+    val onChange: (InboxSearch) -> Unit,
+    val onSearchingChange: (Boolean) -> Unit,
+    val onEditSearch: () -> Unit,
+    val onOpenFilters: () -> Unit,
+    val field: SearchFieldActions,
+    val onFolder: (InboxPill.FolderPill?) -> Unit,
+    val opens: PanelOpens,
+)
+
+/** What the panel's search field does: [onSubmit] on the keyboard's search key, [onFocus] when the user focuses it. */
+class SearchFieldActions(
+    val onSubmit: () -> Unit,
+    val onFocus: () -> Unit = {},
+)
+
+/** What the header's ends open: the chevron the sidebar, and the account stack the account switcher. */
+class PanelOpens(
+    val onOpenNavigation: () -> Unit,
+    val onOpenAccounts: () -> Unit,
+)

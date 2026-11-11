@@ -5,21 +5,21 @@ Code that Mail and Calendar both use lives in
 
 | Library | Version catalog entry |
 | --- | --- |
-| `com.otus:jmap` | `libs.otus.jmap` |
-| `com.otus:avatar` | `libs.otus.avatar` |
-| `com.otus:dateformat` | `libs.otus.dateformat` |
-| `com.otus:designsystem` | `libs.otus.designsystem` |
-| `com.otus:settings` | `libs.otus.settings` |
-| `com.otus:accounts` | `libs.otus.accounts` |
-| `com.otus:jmap-push` | `libs.otus.jmap.push` |
-| `com.otus:jscontact` | `libs.otus.jscontact` |
-| `com.otus:jmap-contacts` | `libs.otus.jmap.contacts` |
+| `com.otusfoss.core:jmap` | `libs.otus.jmap` |
+| `com.otusfoss.core:avatar` | `libs.otus.avatar` |
+| `com.otusfoss.core:dateformat` | `libs.otus.dateformat` |
+| `com.otusfoss.core:designsystem` | `libs.otus.designsystem` |
+| `com.otusfoss.core:settings` | `libs.otus.settings` |
+| `com.otusfoss.core:accounts` | `libs.otus.accounts` |
+| `com.otusfoss.core:jmap-push` | `libs.otus.jmap.push` |
+| `com.otusfoss.core:jscontact` | `libs.otus.jscontact` |
+| `com.otusfoss.core:jmap-contacts` | `libs.otus.jmap.contacts` |
 
 ## Building against Meta
 
 Mail builds otus-meta from source: the checkout next to it, `../otus-meta`, or the one the
 `otus.meta.path` Gradle property names, for example in `~/.gradle/gradle.properties` or with
-`-Potus.meta.path=../meta-worktree`. Gradle replaces each `com.otus:<module>` with the matching
+`-Potus.meta.path=../meta-worktree`. Gradle replaces each `com.otusfoss.core:<module>` with the matching
 project of that checkout, and the build also takes Meta's convention plugins, its version catalog
 as `libs`, its tools, and its detekt configuration from it. Nothing is downloaded from GitHub
 Packages and no Meta version is pinned. See

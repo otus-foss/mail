@@ -43,7 +43,7 @@ python3 -m venv .venv
 export APNS_KEY_FILE=/run/secrets/otus-apns.p8
 export APNS_KEY_ID=YOUR_APPLE_KEY_ID
 export APNS_TEAM_ID=YOUR_APPLE_TEAM_ID
-export APNS_TOPIC=com.otus.mail
+export APNS_TOPIC=com.otusfoss.mail
 export APNS_ENVIRONMENT=sandbox
 export OTUS_PUSH_DATABASE=/var/lib/otus-push/push.sqlite
 .venv/bin/gunicorn --bind 127.0.0.1:8080 --workers 2 --threads 4 push_bridge.server:application

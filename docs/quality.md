@@ -22,7 +22,7 @@ During development, batch edits and run the linters plus the test classes affect
 
 ```sh
 ./gradlew spotlessCheck detekt ruffCheck ruffFormatCheck
-./gradlew :androidApp:testDebugUnitTest --tests 'com.otus.mail.FilterPanelScreenshotTest'
+./gradlew :androidApp:testDebugUnitTest --tests 'com.otusfoss.mail.FilterPanelScreenshotTest'
 ```
 
 Use `:shared:testAndroidHostTest --tests '<fully qualified class>'` for shared tests.

@@ -1,0 +1,56 @@
+package com.otusfoss.mail.feature.read.presentation.components
+
+import androidx.compose.runtime.Composable
+import com.otusfoss.mail.core.messages.domain.ActionBarPlace
+import com.otusfoss.mail.core.messages.domain.MailMessage
+import com.otusfoss.mail.core.messages.domain.replyAction
+import com.otusfoss.mail.core.messages.presentation.MessageActions
+import com.otusfoss.mail.core.messages.presentation.actions.ActionSubject
+import com.otusfoss.mail.core.messages.presentation.actions.MailBar
+import com.otusfoss.mail.core.messages.presentation.actions.MoveOptions
+import com.otusfoss.mail.core.messages.presentation.actions.OfferedAction
+import com.otusfoss.mail.core.messages.presentation.actions.PageSubject
+import com.otusfoss.mail.core.messages.presentation.actions.barFor
+import com.otusfoss.mail.core.messages.presentation.actions.offer
+import com.otusfoss.mail.core.messages.presentation.actions.showsSuggestedMove
+import com.otusfoss.mail.core.messages.presentation.components.MailActionBar
+import com.otusfoss.mail.core.messages.presentation.components.MoveChoice
+import com.otusfoss.mail.core.messages.presentation.components.rememberSuggestedMove
+import com.otusfoss.mail.core.messages.presentation.components.replyContext
+import com.otusfoss.mail.feature.read.presentation.ReadReplies
+
+/**
+ * What the Read view's actions work on: filing acts on the [row], the whole conversation, while
+ * replies follow the [page] on screen. The [bar] is null without [ActionSubject.actions]; then
+ * only replies are offered, from the ⋯ menu.
+ */
+internal class ReadActions(
+    val subject: ActionSubject,
+    val bar: MailBar?,
+)
+
+/** The Read view's actions, with the bar's big button replying to all of the [page]'s people or to its sender. */
+@Composable
+internal fun rememberReadActions(
+    row: MailMessage,
+    page: MailMessage,
+    replies: ReadReplies,
+    actions: MessageActions?,
+    moveChoice: MoveChoice,
+): ReadActions {
+    val role = actions?.cleanup?.role?.invoke(row)
+    val saved = actions?.saved()
+    val wanted = saved?.showsSuggestedMove(ActionBarPlace.Message, role) == true
+    val suggestion = rememberSuggestedMove(listOf(row), actions, wanted)
+    val subject =
+        ActionSubject(
+            actions,
+            listOf(row),
+            moves = MoveOptions(moveChoice::choose, suggestion),
+            page = PageSubject(page, role, replies.onCompose, replies.scheduled),
+        )
+    return ReadActions(
+        subject,
+        saved?.barFor(ActionBarPlace.Message, role, subject::offer, page.replyAction(replies.own)),
+    )
+}

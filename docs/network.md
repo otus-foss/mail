@@ -31,17 +31,17 @@ Every account talks to one JMAP server (RFC 8620), at the address typed on the s
 - **Host:** the server the user typed. A bare host such as `mail.example.org` becomes
   `https://mail.example.org/.well-known/jmap` (section 2.2); a full HTTPS URL is used as the
   session URL. Plain `http://` is refused. There is no DNS SRV or autoconfig lookup. Source:
-  [`JmapServerAddress.kt`](https://github.com/reazndev/otus-meta/blob/main/accounts/src/commonMain/kotlin/com/otus/accounts/domain/JmapServerAddress.kt).
+  [`JmapServerAddress.kt`](https://github.com/reazndev/otus-meta/blob/main/accounts/src/commonMain/kotlin/com/otusfoss/core/accounts/domain/JmapServerAddress.kt).
 - **When:** on the sign-in page, half a second after the typed address stops changing and looks
   like a host, a request without credentials asks whether it answers like a JMAP server. Then at
   sign-in, on every inbox, folder, search, read, send, contact, and rule action, and
   in the background: the Android check about every 15 minutes
-  ([`JmapNewMailChecker.kt`](../shared/src/commonMain/kotlin/com/otus/mail/feature/notifications/data/JmapNewMailChecker.kt)),
-  [`OutboxWorker`](../androidApp/src/main/kotlin/com/otus/mail/OutboxWorker.kt) once the network
+  ([`JmapNewMailChecker.kt`](../shared/src/commonMain/kotlin/com/otusfoss/mail/feature/notifications/data/JmapNewMailChecker.kt)),
+  [`OutboxWorker`](../androidApp/src/main/kotlin/com/otusfoss/mail/OutboxWorker.kt) once the network
   is back, and push subscription upkeep. See [JMAP](jmap.md) and [notifications](notifications.md).
 - **Sends:** nothing but the request itself on the sign-in page's check. After that, the username
   and password as HTTP Basic on every request, or a stored bearer token
-  ([`JmapAuth.kt`](https://github.com/reazndev/otus-meta/blob/main/jmap/src/commonMain/kotlin/com/otus/jmap/JmapAuth.kt)),
+  ([`JmapAuth.kt`](https://github.com/reazndev/otus-meta/blob/main/jmap/src/commonMain/kotlin/com/otusfoss/core/jmap/JmapAuth.kt)),
   plus everything the user does with their mail: reads, changes, sent messages, uploads,
   contacts, Sieve scripts, and push subscriptions with the push endpoint and its keys.
 - **Off:** only by removing the account.
@@ -56,13 +56,13 @@ URL may redirect. `JmapClient` follows redirects itself and sends credentials on
 URL's origin and to origins the user approved on the sign-in page. A redirect or `apiUrl`
 elsewhere stops before credentials are sent. At sign-in, a blob URL on an unapproved origin also
 stops. Source:
-[`JmapClient.kt`](https://github.com/reazndev/otus-meta/blob/main/jmap/src/commonMain/kotlin/com/otus/jmap/JmapClient.kt),
-[`AccountsState.kt`](https://github.com/reazndev/otus-meta/blob/main/accounts/src/commonMain/kotlin/com/otus/accounts/presentation/AccountsState.kt).
+[`JmapClient.kt`](https://github.com/reazndev/otus-meta/blob/main/jmap/src/commonMain/kotlin/com/otusfoss/core/jmap/JmapClient.kt),
+[`AccountsState.kt`](https://github.com/reazndev/otus-meta/blob/main/accounts/src/commonMain/kotlin/com/otusfoss/core/accounts/presentation/AccountsState.kt).
 
 Blob downloads from these hosts include attachments, inline `cid:` images
-([`CidImages.kt`](../shared/src/commonMain/kotlin/com/otus/mail/feature/read/data/CidImages.kt)),
+([`CidImages.kt`](../shared/src/commonMain/kotlin/com/otusfoss/mail/feature/read/data/CidImages.kt)),
 and contact photos stored as blobs
-([`JmapContactAvatarSource.kt`](https://github.com/reazndev/otus-meta/blob/main/avatar/src/commonMain/kotlin/com/otus/avatar/JmapContactAvatarSource.kt)).
+([`JmapContactAvatarSource.kt`](https://github.com/reazndev/otus-meta/blob/main/avatar/src/commonMain/kotlin/com/otusfoss/core/avatar/JmapContactAvatarSource.kt)).
 
 ## Remote content in messages
 
@@ -74,30 +74,30 @@ WebView on Android and a WKWebView on iOS, with scripts, file access, and forms 
   **In your contacts** (the default) loads them for contacts, people the user wrote to, and
   allowed senders; **Always** for everyone; **Never** for no one. Mail in Spam never loads them.
   **Show** on the banner loads them once. Source:
-  [`ReadRules.kt`](../shared/src/commonMain/kotlin/com/otus/mail/core/messages/domain/ReadRules.kt),
-  [`ReadPages.kt`](../shared/src/commonMain/kotlin/com/otus/mail/feature/read/presentation/components/ReadPages.kt).
+  [`ReadRules.kt`](../shared/src/commonMain/kotlin/com/otusfoss/mail/core/messages/domain/ReadRules.kt),
+  [`ReadPages.kt`](../shared/src/commonMain/kotlin/com/otusfoss/mail/feature/read/presentation/components/ReadPages.kt).
 - **Sends:** the device's IP address, the URL (which can identify the recipient and act as a read
   receipt), and the time it was opened. Android sends a User-Agent without the device model or
   build, and turns Safe Browsing off so image addresses do not go to Google. Source:
-  [`HtmlView.kt`](https://github.com/reazndev/otus-meta/blob/main/designsystem/src/commonMain/kotlin/com/otus/designsystem/mail/read/elements/HtmlView.kt),
-  [`HtmlView.android.kt`](https://github.com/reazndev/otus-meta/blob/main/designsystem/src/androidMain/kotlin/com/otus/designsystem/mail/read/elements/HtmlView.android.kt),
-  [`HtmlView.ios.kt`](https://github.com/reazndev/otus-meta/blob/main/designsystem/src/iosMain/kotlin/com/otus/designsystem/mail/read/elements/HtmlView.ios.kt).
+  [`HtmlView.kt`](https://github.com/reazndev/otus-meta/blob/main/designsystem/src/commonMain/kotlin/com/otusfoss/core/designsystem/mail/read/elements/HtmlView.kt),
+  [`HtmlView.android.kt`](https://github.com/reazndev/otus-meta/blob/main/designsystem/src/androidMain/kotlin/com/otusfoss/core/designsystem/mail/read/elements/HtmlView.android.kt),
+  [`HtmlView.ios.kt`](https://github.com/reazndev/otus-meta/blob/main/designsystem/src/iosMain/kotlin/com/otusfoss/core/designsystem/mail/read/elements/HtmlView.ios.kt).
 - **Off:** Load images › **Never**. A blocked message's content-security policy allows only
   `data:` images, and Android's `blockNetworkLoads` and an iOS content rule list block every
   request beneath it.
 
 Printing on Android renders in a separate WebView with network loads off
-([`AndroidMessagePrinter.kt`](../androidApp/src/main/kotlin/com/otus/mail/AndroidMessagePrinter.kt)).
+([`AndroidMessagePrinter.kt`](../androidApp/src/main/kotlin/com/otusfoss/mail/AndroidMessagePrinter.kt)).
 
 ## Avatars
 
 Avatars always try contact photos on the user's own JMAP server. Every other avatar source waits
 for Settings › Privacy & security › **Website icons**, which is off by default
-([`MailBehavior.kt`](../shared/src/commonMain/kotlin/com/otus/mail/core/settings/domain/MailBehavior.kt),
+([`MailBehavior.kt`](../shared/src/commonMain/kotlin/com/otusfoss/mail/core/settings/domain/MailBehavior.kt),
 and otus-meta's `avatarOptions` in `avatar`).
 These requests carry no credentials or cookies, accept only public HTTPS hosts on port 443, and
 check every redirect
-([`HttpAvatarImageLoader.kt`](https://github.com/reazndev/otus-meta/blob/main/avatar/src/commonMain/kotlin/com/otus/avatar/HttpAvatarImageLoader.kt)).
+([`HttpAvatarImageLoader.kt`](https://github.com/reazndev/otus-meta/blob/main/avatar/src/commonMain/kotlin/com/otusfoss/core/avatar/HttpAvatarImageLoader.kt)).
 See [website icons](avatars.md#website-icons) and Meta's
 [avatar guide](https://github.com/reazndev/otus-meta/blob/main/docs/avatar.md).
 
@@ -106,8 +106,8 @@ See [website icons](avatars.md#website-icons) and Meta's
 - **Sender websites**, the default icon source. Mail asks the sender's registrable domain, never
   the exact host: `https://{domain}/` for its page head, then `apple-touch-icon.png`,
   `favicon.png`, and `favicon.ico`
-  ([`WebsiteIcons.kt`](https://github.com/reazndev/otus-meta/blob/main/avatar/src/commonMain/kotlin/com/otus/avatar/WebsiteIcons.kt),
-  [`HttpWebsiteIconSource.kt`](https://github.com/reazndev/otus-meta/blob/main/avatar/src/commonMain/kotlin/com/otus/avatar/HttpWebsiteIconSource.kt)).
+  ([`WebsiteIcons.kt`](https://github.com/reazndev/otus-meta/blob/main/avatar/src/commonMain/kotlin/com/otusfoss/core/avatar/WebsiteIcons.kt),
+  [`HttpWebsiteIconSource.kt`](https://github.com/reazndev/otus-meta/blob/main/avatar/src/commonMain/kotlin/com/otusfoss/core/avatar/HttpWebsiteIconSource.kt)).
   The website learns the device's IP address and that its mail was listed. Icons are cached per
   domain, so it sees this at most once per cache period.
 - **DuckDuckGo.** `https://icons.duckduckgo.com/ip3/{domain}.ico`. DuckDuckGo receives the domain
@@ -126,15 +126,15 @@ only runs its background check against the JMAP server. With push on, the JMAP s
 app, sends encrypted change notices to the push endpoint. The notices hold account ids and state
 strings, never mail. On Android, choosing Off unregisters every account and deletes its server
 subscriptions; on iOS it unregisters from APNs and revokes the bridge routes. Source:
-[`PushSubscriptions.kt`](https://github.com/reazndev/otus-meta/blob/main/jmap-push/src/commonMain/kotlin/com/otus/jmap/push/PushSubscriptions.kt),
-[`PushSyncWorker.kt`](../androidApp/src/main/kotlin/com/otus/mail/PushSyncWorker.kt).
+[`PushSubscriptions.kt`](https://github.com/reazndev/otus-meta/blob/main/jmap-push/src/commonMain/kotlin/com/otusfoss/core/jmap/push/PushSubscriptions.kt),
+[`PushSyncWorker.kt`](../androidApp/src/main/kotlin/com/otusfoss/mail/PushSyncWorker.kt).
 
 - **Google (Android).** The embedded FCM distributor registers through Google Play services on
   the device, with the server's VAPID key from its JMAP session. Google learns that the device
   uses Otus and how often pushes arrive; the JMAP server sends to the Web Push endpoint Google
   issued. Source:
-  [`AndroidPushRegistration.kt`](../androidApp/src/main/kotlin/com/otus/mail/AndroidPushRegistration.kt),
-  [`MailPushService.kt`](../androidApp/src/main/kotlin/com/otus/mail/MailPushService.kt).
+  [`AndroidPushRegistration.kt`](../androidApp/src/main/kotlin/com/otusfoss/mail/AndroidPushRegistration.kt),
+  [`MailPushService.kt`](../androidApp/src/main/kotlin/com/otusfoss/mail/MailPushService.kt).
 - **UnifiedPush apps (Android).** Mail hands its registration to the chosen app, such as ntfy, on
   the device. That app's server, which the user configured there, receives the encrypted notices
   from the JMAP server. Mail itself contacts no new host.
@@ -142,7 +142,7 @@ subscriptions; on iOS it unregisters from APNs and revokes the bridge routes. So
   key id with the bridge at `OtusPushBridgeURL` in the app's Info.plist. It polls the bridge for
   verification pushes, renews routes on foreground and background refresh, and revokes them on
   Off or account removal
-  ([`ApplePushBridge.kt`](../shared/src/commonMain/kotlin/com/otus/mail/feature/notifications/data/ApplePushBridge.kt),
+  ([`ApplePushBridge.kt`](../shared/src/commonMain/kotlin/com/otusfoss/mail/feature/notifications/data/ApplePushBridge.kt),
   [`ApplePushDelegate.swift`](../iosApp/iosApp/ApplePushDelegate.swift)). The notification
   extension downloads each encrypted notice from the same bridge and deletes it after reading
   ([`NotificationService.swift`](../iosApp/NotificationService/NotificationService.swift)). The
@@ -156,14 +156,14 @@ subscriptions; on iOS it unregisters from APNs and revokes the bridge routes. So
 ## Nightly updates
 
 Only the Android nightly build checks for updates. Other builds never do
-([`App.kt`](../shared/src/commonMain/kotlin/com/otus/mail/app/App.kt)).
+([`App.kt`](../shared/src/commonMain/kotlin/com/otusfoss/mail/app/App.kt)).
 
 - **Host:** `api.github.com`, for
   `/repos/reazndev/otus-mail-nightly/releases?per_page=30`
-  ([`GitHubNightlyFeed.kt`](../shared/src/commonMain/kotlin/com/otus/mail/feature/updates/data/GitHubNightlyFeed.kt)).
+  ([`GitHubNightlyFeed.kt`](../shared/src/commonMain/kotlin/com/otusfoss/mail/feature/updates/data/GitHubNightlyFeed.kt)).
   The APK comes from the release asset's `browser_download_url` on `github.com`, which GitHub
   redirects to its download host
-  ([`AndroidUpdateInstaller.kt`](../androidApp/src/main/kotlin/com/otus/mail/AndroidUpdateInstaller.kt)).
+  ([`AndroidUpdateInstaller.kt`](../androidApp/src/main/kotlin/com/otusfoss/mail/AndroidUpdateInstaller.kt)).
 - **When:** the release list once per launch; the APK only after a tap on **Install update**.
 - **Sends:** the device's IP address and the HTTP client's default headers. No token, account, or
   installed version leaves the device; the comparison runs locally.
@@ -173,10 +173,10 @@ Only the Android nightly build checks for updates. Other builds never do
 
 Links in a message, a list's unsubscribe page, and other web addresses open outside the app on a
 tap, in whatever app handles them
-([`ReadPageBody.kt`](../shared/src/commonMain/kotlin/com/otus/mail/feature/read/presentation/components/ReadPageBody.kt)).
+([`ReadPageBody.kt`](../shared/src/commonMain/kotlin/com/otusfoss/mail/feature/read/presentation/components/ReadPageBody.kt)).
 Mail sends nothing to these hosts itself. Unsubscribing by mail goes through the JMAP server; Mail
 does not send RFC 8058 one-click POSTs
-([`ListUnsubscriber.kt`](../shared/src/commonMain/kotlin/com/otus/mail/feature/read/data/ListUnsubscriber.kt)).
+([`ListUnsubscriber.kt`](../shared/src/commonMain/kotlin/com/otusfoss/mail/feature/read/data/ListUnsubscriber.kt)).
 
 ## Keeping this page current
 

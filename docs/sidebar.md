@@ -1,7 +1,7 @@
 # Sidebar
 
 Implemented in common Compose code for Mail. `Sidebar`, `SidebarHeader`, and `ListSheet` live in
-the shared design system's `components` (`com.otus.designsystem`, from otus-meta), and
+the shared design system's `components` (`com.otusfoss.core.designsystem`, from otus-meta), and
 `SidebarMailboxGrid`, `SidebarInboxEntry`, and `SidebarMailboxTile` in its `mail/sidebar`
 group. `SidebarEntry`, `SidebarFolderEntry`,
 `SectionCaption`, and `SidebarDivider` are elements. None of them knows about Mail: the caller

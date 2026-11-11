@@ -1,0 +1,184 @@
+package com.otusfoss.mail
+
+import androidx.activity.compose.setContent
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.semantics.SemanticsActions
+import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsFocused
+import androidx.compose.ui.test.assertIsOn
+import androidx.compose.ui.test.hasContentDescription
+import androidx.compose.ui.test.hasText
+import androidx.compose.ui.test.isToggleable
+import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
+import androidx.compose.ui.test.onNodeWithContentDescription
+import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performImeAction
+import androidx.compose.ui.test.performScrollTo
+import androidx.compose.ui.test.performSemanticsAction
+import androidx.compose.ui.test.performTextInput
+import androidx.compose.ui.test.performTextReplacement
+import androidx.compose.ui.unit.Density
+import com.otusfoss.core.designsystem.theme.OtusTheme
+import com.otusfoss.mail.core.mailbox.MailboxRole
+import com.otusfoss.mail.core.messages.domain.MailAttributes
+import com.otusfoss.mail.core.messages.domain.MailLocation
+import com.otusfoss.mail.core.messages.domain.MailMessage
+import com.otusfoss.mail.core.messages.domain.MailSender
+import com.otusfoss.mail.core.messages.domain.ReceivedAt
+import com.otusfoss.mail.core.messages.domain.RowFolder
+import com.otusfoss.mail.core.messages.presentation.components.LocalToday
+import com.otusfoss.mail.feature.inbox.presentation.screens.InboxScreen
+import org.junit.Rule
+import org.junit.Test
+import org.junit.runner.RunWith
+import org.robolectric.RobolectricTestRunner
+import org.robolectric.annotation.Config
+import org.robolectric.annotation.GraphicsMode
+
+@RunWith(RobolectricTestRunner::class)
+@Config(sdk = [35], qualifiers = "w412dp-h892dp-xxhdpi")
+@GraphicsMode(GraphicsMode.Mode.NATIVE)
+class InboxScreenTest {
+    @get:Rule val compose = createAndroidComposeRule<MainActivity>()
+
+    @Test
+    fun launchIsEmptyInboxAndSearchCanBeClearedAndClosed() {
+        compose.onNodeWithText("Your inbox is empty").assertIsDisplayed()
+        compose.onNodeWithText("Context panel playground").assertDoesNotExist()
+        compose.screenshot("inbox/empty")
+        compose.openSearch()
+        compose.searchField().assertIsFocused().performTextInput("hello")
+        compose.searchField().performImeAction()
+        compose.onNodeWithText("Nothing to search yet").assertIsDisplayed()
+        compose.screenshot("inbox/empty_search")
+        compose.onNodeWithContentDescription("Clear search").performClick().assertDoesNotExist()
+        compose.onNodeWithContentDescription("Back to inbox").performClick()
+        compose.onNodeWithText("Your inbox is empty").assertIsDisplayed()
+    }
+
+    @Test
+    fun searchTransitionCanReverseBeforeItFinishes() {
+        // The launch animation covers the inbox and would take the first tap.
+        compose.waitForIdle()
+        compose.mainClock.autoAdvance = false
+        compose.onNodeWithContentDescription("Search Inbox").performClick()
+        compose.mainClock.advanceTimeBy(96)
+        compose.searchField().assertExists()
+        compose.runOnUiThread { compose.activity.onBackPressedDispatcher.onBackPressed() }
+        compose.mainClock.advanceTimeBy(48)
+        compose.onNodeWithContentDescription("Search Inbox").performSemanticsAction(SemanticsActions.OnClick) { it() }
+        compose.mainClock.advanceTimeBy(320)
+        compose.searchField().assertIsFocused()
+        compose.onNodeWithContentDescription("Back to inbox").performClick()
+        compose.mainClock.advanceTimeBy(320)
+        compose.searchField().assertDoesNotExist()
+        compose.onNodeWithContentDescription("Search Inbox").assertIsDisplayed()
+        compose.mainClock.autoAdvance = true
+    }
+
+    @Test
+    fun liveSearchFiltersFixturesAndResetRestoresList() {
+        showFixtures()
+        // The saved message's row marks its attachment and Read later, which its description says.
+        compose
+            .onNode(hasText("Design review") and hasContentDescription("Attachment. Read later.", substring = true))
+            .assertIsDisplayed()
+        compose.onNode(hasText("Weekend plans")).assertIsDisplayed()
+        compose.screenshot("inbox/list")
+        compose.openSearchResults()
+        compose.searchField().performTextInput("prototype")
+        compose.onNodeWithText("Design review").assertIsDisplayed()
+        compose.onNodeWithText("Weekend plans").assertDoesNotExist()
+        compose.screenshot("inbox/search_results")
+        compose.searchField().performTextReplacement("nothing matches")
+        compose.onNodeWithText("No matching mail").assertIsDisplayed()
+        compose.searchField().performImeAction()
+        compose.onNodeWithText("Clear search and filters").performClick()
+        compose.onNodeWithText("Weekend plans").assertIsDisplayed()
+        compose.runOnUiThread { compose.activity.onBackPressedDispatcher.onBackPressed() }
+        compose.onNodeWithContentDescription("Search Inbox").assertIsDisplayed()
+    }
+
+    @Test
+    @Config(qualifiers = "w320dp-h800dp-mdpi")
+    fun filterChoicesActuallyRestrictMessagesAtNarrowWidth() {
+        showFixtures()
+        compose.onNodeWithText("Unread").performClick().assertIsOn()
+        compose.onNodeWithText("Weekend plans").assertDoesNotExist()
+        compose.openSearch()
+        compose
+            .onNodeWithText("Has files")
+            .performScrollTo()
+            .performClick()
+            .assertIsOn()
+        compose.searchField().performImeAction()
+        compose.onNodeWithText("Design review").assertIsDisplayed()
+        compose.searchField().performTextInput("lake")
+        compose.searchField().performImeAction()
+        compose.onNodeWithText("No matching mail").assertIsDisplayed()
+        compose.screenshot("inbox/narrow_filtered")
+    }
+
+    @Test
+    fun searchInputSurvivesActivityRecreation() {
+        compose.openSearchResults()
+        compose.searchField().performTextInput("saved query")
+        compose.activityRule.scenario.recreate()
+        compose.onNodeWithText("saved query").assertIsDisplayed()
+        compose.onNodeWithContentDescription("Back to inbox").performClick()
+        compose.onNodeWithText("Your inbox is empty").assertIsDisplayed()
+    }
+
+    @Test
+    @Config(qualifiers = "w320dp-h480dp-mdpi")
+    fun emptySearchRemainsUsableWithLargeTextAndLimitedHeight() {
+        compose.runOnUiThread {
+            compose.activity.setContent {
+                val density = LocalDensity.current.density
+                CompositionLocalProvider(LocalDensity provides Density(density, fontScale = 2f)) {
+                    OtusTheme { InboxScreen(emptyList(), context = inboxContext()) }
+                }
+            }
+        }
+        compose.openSearchResults()
+        compose.searchField().performTextInput("hello")
+        compose.searchField().performImeAction()
+        compose.onNodeWithText("Clear search and filters").performScrollTo().performClick()
+        compose.onNodeWithContentDescription("Clear search").assertDoesNotExist()
+        compose.screenshot("inbox/large_text_empty")
+    }
+
+    private fun showFixtures() {
+        val messages =
+            listOf(
+                MailMessage(
+                    "alex",
+                    MailSender("Alex", "alex@example.com"),
+                    "Design review",
+                    "The prototype is ready",
+                    ReceivedAt("2026-10-03", "10:30"),
+                    MailLocation("Inbox", "Work", mailboxRole = MailboxRole.Inbox),
+                    MailAttributes(unread = true, attachments = listOf("draft.pdf")),
+                    labels = listOf(RowFolder("later", "Read later", readLater = true)),
+                ),
+                MailMessage(
+                    "sam",
+                    MailSender("Sam", "sam@example.com"),
+                    "Weekend plans",
+                    "A walk by the lake",
+                    ReceivedAt("2026-10-02", "09:00"),
+                    MailLocation("Inbox", "Personal", mailboxRole = MailboxRole.Inbox),
+                ),
+            )
+        compose.runOnUiThread {
+            compose.activity.setContent {
+                // The rows' dates read the same in every year the screenshots are compared.
+                CompositionLocalProvider(LocalToday provides PinnedToday) {
+                    OtusTheme { InboxScreen(messages, context = inboxContext()) }
+                }
+            }
+        }
+    }
+}

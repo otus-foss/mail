@@ -1,0 +1,99 @@
+package com.otusfoss.mail.app
+
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
+import com.otusfoss.mail.core.mailbox.AccountFolders
+import com.otusfoss.mail.core.mailbox.MailboxRole
+import com.otusfoss.mail.core.settings.domain.SidebarPin
+import com.otusfoss.mail.feature.folders.presentation.FoldersState
+import com.otusfoss.mail.feature.sidebar.presentation.pinnableMailboxes
+import kotlinx.coroutines.flow.dropWhile
+import kotlinx.coroutines.flow.first
+
+/**
+ * The page of the sidebar mailbox [choice], which Mail also opens on before the folders have
+ * loaded. Only a system folder whose role Mail does not combine has no page, so it opens the Inbox.
+ */
+internal fun launchPage(choice: SidebarPin): MailPage =
+    when (choice) {
+        SidebarPin.Inbox -> {
+            MailPage.Inbox
+        }
+
+        SidebarPin.ReadLater -> {
+            MailPage.ReadLater
+        }
+
+        SidebarPin.Conversations -> {
+            MailPage.Conversations
+        }
+
+        SidebarPin.Contacts -> {
+            MailPage.Contacts
+        }
+
+        is SidebarPin.Role -> {
+            if (choice.role in
+                MailboxRole.combined
+            ) {
+                MailPage.Combined(choice.role)
+            } else {
+                MailPage.Inbox
+            }
+        }
+
+        is SidebarPin.Folder -> {
+            MailPage.Shared(choice.key)
+        }
+    }
+
+/**
+ * The page Mail opens on for [choice] once [accounts] have loaded: the sidebar mailbox's page, or
+ * the Inbox when no account has that mailbox any more, such as a renamed folder.
+ */
+internal fun startPage(
+    choice: SidebarPin,
+    accounts: List<AccountFolders>,
+): MailPage = if (pinnableMailboxes(accounts).any { it.pin == choice }) launchPage(choice) else MailPage.Inbox
+
+/**
+ * Opens Inbox through [show] when the first folder load of this launch finds that no account has
+ * [choice], while [current] still shows the page Mail opened on. An account that failed to load may
+ * still have it, so the page stays. Each launch checks once; a recreated activity does not.
+ */
+@Composable
+internal fun StartPageFallback(
+    choice: SidebarPin,
+    folders: FoldersState,
+    current: () -> MailPage,
+    show: (MailPage) -> Unit,
+) {
+    var checked by rememberSaveable { mutableStateOf(choice == SidebarPin.Inbox) }
+    if (checked) return
+    LaunchedEffect(folders) {
+        snapshotFlow { folders.loading }
+            .dropWhile { loading -> !loading }
+            .first { loading -> !loading }
+        checked = true
+        val accounts = folders.accounts
+        if (accounts.none { it.failure != null } && current() == launchPage(choice)) show(startPage(choice, accounts))
+    }
+}
+
+/** The sidebar mailbox this page is, or null for a page the sidebar does not list, such as Settings. */
+internal val MailPage.pin: SidebarPin?
+    get() =
+        when (this) {
+            MailPage.Inbox -> SidebarPin.Inbox
+            MailPage.ReadLater -> SidebarPin.ReadLater
+            MailPage.Conversations -> SidebarPin.Conversations
+            MailPage.Contacts -> SidebarPin.Contacts
+            is MailPage.Combined -> SidebarPin.Role(role)
+            is MailPage.Shared -> SidebarPin.Folder(key)
+            else -> null
+        }

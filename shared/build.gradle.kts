@@ -54,10 +54,10 @@ kotlin {
 sqldelight {
     databases {
         create("MailDatabase") {
-            packageName.set("com.otus.mail.core.cache")
+            packageName.set("com.otusfoss.mail.core.cache")
         }
     }
 }
 
 // Data files Mail ships with, such as the sender list Inbox categories start from.
-compose.resources { packageOfResClass = "com.otus.mail.resources" }
+compose.resources { packageOfResClass = "com.otusfoss.mail.resources" }

@@ -1,0 +1,188 @@
+package com.otusfoss.mail
+
+import androidx.activity.compose.setContent
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material.ProvideTextStyle
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.test.SemanticsNodeInteraction
+import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsNotEnabled
+import androidx.compose.ui.test.hasClickAction
+import androidx.compose.ui.test.hasContentDescription
+import androidx.compose.ui.test.hasText
+import androidx.compose.ui.test.isSelectable
+import androidx.compose.ui.test.isToggleable
+import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
+import androidx.compose.ui.test.onNodeWithContentDescription
+import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
+import com.otusfoss.core.designsystem.shared.feedback.components.ToastHost
+import com.otusfoss.core.designsystem.shared.feedback.components.ToastState
+import com.otusfoss.core.designsystem.theme.OtusTheme
+import com.otusfoss.core.designsystem.theme.typography.panelTextStyle
+import com.otusfoss.mail.core.mailbox.MailboxRole
+import com.otusfoss.mail.core.messages.domain.MailMessage
+import com.otusfoss.mail.core.messages.domain.MessageFlag
+import com.otusfoss.mail.core.messages.domain.OwnAddresses
+import com.otusfoss.mail.core.messages.presentation.MoveTarget
+import com.otusfoss.mail.feature.read.presentation.ReadContext
+import com.otusfoss.mail.feature.read.presentation.ReadEffects
+import com.otusfoss.mail.feature.read.presentation.screens.MessageScreen
+import kotlinx.coroutines.runBlocking
+import org.junit.Assert.assertEquals
+import org.junit.Rule
+import org.junit.Test
+import org.junit.runner.RunWith
+import org.robolectric.RobolectricTestRunner
+import org.robolectric.annotation.Config
+
+/**
+ * What the Read view's page entries and strips send: one email at a time, the whole conversation's
+ * folders together, and an unsubscribe only once its toast closes.
+ */
+@RunWith(RobolectricTestRunner::class)
+@Config(sdk = [35], qualifiers = "w412dp-h892dp-xxhdpi")
+class ReadPageActionsTest {
+    @get:Rule val compose = createAndroidComposeRule<MainActivity>()
+    private val fixtures = ReadViewFixtures
+    private val writer = RecordingWriter()
+    private val toasts = ToastState()
+    private var unsubscribed = 0
+
+    private fun show(
+        row: MailMessage,
+        pages: List<MailMessage>,
+    ) {
+        // Work that waits for a toast runs at once, so the test sees when it was sent.
+        val context =
+            fixtures.read(
+                pages,
+                setOf("in"),
+                writer,
+                { unsubscribed++ },
+                own = OWN,
+                toasts = toasts,
+                launch = { work -> runBlocking { work() } },
+            )
+        val actions = fixtures.actions(targets = listOf(MoveTarget("tr", listOf("Trash"), MailboxRole.Trash)))
+        compose.runOnUiThread {
+            compose.activity.setContent {
+                OtusTheme {
+                    ProvideTextStyle(panelTextStyle()) {
+                        Box(Modifier.fillMaxSize()) {
+                            MessageScreen(row, actions, null, context, setOf("in"), onClose = {})
+                            ToastHost(toasts, Modifier.align(Alignment.BottomCenter))
+                        }
+                    }
+                }
+            }
+        }
+        compose.waitForIdle()
+    }
+
+    private fun strip(description: String): SemanticsNodeInteraction {
+        val strip = hasContentDescription(description, substring = true)
+        compose.waitForNode(strip)
+        return compose.onNode(strip)
+    }
+
+    /** Opens the page of [sender] from the grown thread strip. */
+    private fun openPage(sender: String) {
+        show(fixtures.threadRow, fixtures.thread)
+        strip("message 1 of 6").performClick()
+        compose.onNode(hasText(sender, substring = true) and isSelectable()).performClick()
+    }
+
+    private fun menu(entry: String) {
+        compose.onNodeWithContentDescription("More actions").performClick()
+        compose.onNodeWithText(entry).performScrollTo().performClick()
+    }
+
+    @Test
+    fun marksOnAnOlderPageGoToItsOwnEmailOnly() {
+        openPage("Radia Perlman")
+        strip("Radia Perlman, message 3 of 6")
+        menu("Mark unread")
+        menu("Flag")
+        compose.waitForIdle()
+        assertEquals(listOf("r" to MessageFlag.Read, "r" to MessageFlag.Flagged), writer.marks)
+    }
+
+    @Test
+    fun deletingAnOlderPageTrashesOnlyItsEmailAndUndoBringsItBack() {
+        openPage("Margaret Knuth")
+        strip("Margaret Knuth, message 5 of 6")
+        menu("Delete this message")
+        // The toast closes on its timer, which an idle wait would run out.
+        compose.mainClock.autoAdvance = false
+        compose.mainClock.advanceTimeBy(FRAME)
+        compose.onNode(hasContentDescription("message 5 of 5", substring = true)).assertExists()
+        compose.onNode(hasText("Undo") and hasClickAction()).performClick()
+        compose.mainClock.autoAdvance = true
+        compose.waitForIdle()
+        assertEquals(listOf("m"), writer.moved)
+        strip(" of 6")
+    }
+
+    @Test
+    fun theFoldersSheetChangesEveryEmailOfTheConversation() {
+        show(fixtures.threadRow, fixtures.thread)
+        strip("also in Invoices")
+        compose.onNodeWithContentDescription("From Grace Hopper. Show details").performClick()
+        compose.onNode(hasText("Invoices", substring = true) and hasClickAction()).performClick()
+        compose.onNode(hasText("Inbox") and isToggleable()).performClick()
+        compose.onNodeWithText("Each mail needs a folder").assertIsDisplayed()
+        compose.onNode(hasText("Done") and hasClickAction()).assertIsNotEnabled()
+        compose.onNode(hasText("Inbox") and isToggleable()).performClick()
+        compose.onNode(hasText("Clients") and hasClickAction()).performScrollTo().performClick()
+        compose.onNode(hasText("Done") and hasClickAction()).performClick()
+        // The edit saves on the main thread, which the idle wait runs.
+        compose.waitForIdle()
+        val after = checkNotNull(writer.refiled)
+        assertEquals(fixtures.thread.map { it.emailId }.toSet(), after.keys)
+        assertEquals(setOf("in", "fi", "cl"), after.getValue("g"))
+        assertEquals(setOf("in", "cl"), after.getValue("k"))
+    }
+
+    @Test
+    fun anUnsubscribeIsSentOnlyOnceItsToastCloses() {
+        compose.mainClock.autoAdvance = false
+        show(fixtures.digest, listOf(fixtures.digest))
+        unsubscribe()
+        assertEquals(0, unsubscribed)
+        compose.mainClock.advanceTimeBy(TOAST_GONE)
+        compose.waitForIdle()
+        assertEquals(1, unsubscribed)
+    }
+
+    @Test
+    fun undoKeepsTheSubscription() {
+        compose.mainClock.autoAdvance = false
+        show(fixtures.digest, listOf(fixtures.digest))
+        unsubscribe()
+        compose.onNode(hasText("Undo") and hasClickAction()).performClick()
+        compose.mainClock.advanceTimeBy(TOAST_GONE)
+        compose.waitForIdle()
+        assertEquals(0, unsubscribed)
+        compose.onNode(hasText("Unsubscribe") and hasClickAction()).assertIsDisplayed()
+    }
+
+    private fun unsubscribe() {
+        compose.mainClock.advanceTimeUntil(TIMEOUT) {
+            compose.onAllNodes(hasText("Unsubscribe") and hasClickAction()).fetchSemanticsNodes().isNotEmpty()
+        }
+        compose.onNode(hasText("Unsubscribe") and hasClickAction()).performClick()
+        compose.mainClock.advanceTimeBy(FRAME)
+        compose.onNodeWithText("Unsubscribed from Sentry weekly digest").assertIsDisplayed()
+    }
+
+    private companion object {
+        const val TIMEOUT = 5_000L
+        const val FRAME = 100L
+        const val TOAST_GONE = 20_000L
+        val OWN = OwnAddresses(mapOf("acc" to listOf(ReadViewFixtures.alex.address)))
+    }
+}

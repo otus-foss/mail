@@ -1,0 +1,130 @@
+package com.otusfoss.mail.feature.read.presentation.components
+
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Modifier
+import com.otusfoss.core.designsystem.mail.folders.elements.DestinationPill
+import com.otusfoss.core.designsystem.resources.Res
+import com.otusfoss.core.designsystem.resources.symbol_add
+import com.otusfoss.core.designsystem.resources.symbol_bookmark
+import com.otusfoss.core.designsystem.resources.symbol_folder
+import com.otusfoss.core.designsystem.shared.controls.elements.IconPill
+import com.otusfoss.core.designsystem.shared.controls.elements.UiAction
+import com.otusfoss.core.designsystem.shared.overlays.components.SheetFrame
+import com.otusfoss.core.designsystem.shared.overlays.elements.sheetInset
+import com.otusfoss.core.designsystem.shared.rows.elements.Caption
+import com.otusfoss.core.designsystem.shared.selection.components.PickerSearch
+import com.otusfoss.core.designsystem.theme.tokens.core.Spacing
+import com.otusfoss.core.designsystem.theme.tokens.overlays.SheetTokens
+import com.otusfoss.core.designsystem.theme.tokens.selection.MoveTokens
+import com.otusfoss.mail.core.mailbox.presentation.READ_LATER_TITLE
+import com.otusfoss.mail.core.messages.domain.FolderChange
+import com.otusfoss.mail.core.messages.domain.MailMessage
+import com.otusfoss.mail.core.messages.domain.MessageFolder
+import com.otusfoss.mail.core.messages.presentation.components.MoveSummary
+import com.otusfoss.mail.core.messages.presentation.components.RowTextInset
+import com.otusfoss.mail.core.messages.presentation.folderSheetChoices
+import com.otusfoss.mail.core.messages.presentation.matchesSearch
+
+/**
+ * Adds every email of [message]'s conversation to folders and takes it out of others, laid out
+ * as the Move to sheet is: the system folders and Read later as pills, then the user's own folders as a tree,
+ * each ticked when any email is in it, since a JMAP email can be in several. [mailboxes] holds
+ * each email's mailboxes by Email id. Ticks stay a draft until Done, which runs [onApply] with the
+ * folder ids that changed. Done is off, with the reason, while an email would be left in no
+ * folder, which JMAP does not allow. [onNewFolder] adds a + pill after the system folders.
+ */
+@Composable
+fun FoldersSheet(
+    message: MailMessage,
+    mailboxes: Map<String, Set<String>>,
+    folders: List<MessageFolder>,
+    onApply: (added: Set<String>, removed: Set<String>) -> Unit,
+    onNewFolder: (() -> Unit)?,
+    onDismiss: () -> Unit,
+) {
+    val start = mailboxes.values.flatten().toSet()
+    var checked by remember(message.id) { mutableStateOf(start) }
+    var query by rememberSaveable { mutableStateOf("") }
+    val choices = remember(folders) { folderSheetChoices(folders) }
+    val toggle = { id: String -> checked = if (id in checked) checked - id else checked + id }
+    val change = FolderChange(message, mailboxes, added = checked - start, removed = start - checked)
+    SheetFrame(
+        "Folders",
+        onDismiss,
+        done =
+            UiAction("Done", enabled = change.keepsEveryEmail, onClick = {
+                if (change.changes) onApply(change.added, change.removed)
+                onDismiss()
+            }),
+    ) {
+        Column(
+            Modifier
+                .weight(1f)
+                .verticalScroll(rememberScrollState())
+                .sheetInset(),
+            verticalArrangement = Arrangement.spacedBy(SheetTokens.gap),
+        ) {
+            MoveSummary(listOf(message), oneSender = true)
+            PickerSearch(query, { query = it }, "Search folders…")
+            if (!change.keepsEveryEmail) Caption("Each mail needs a folder", heading = false)
+            val system = choices.system.filter { it.matchesSearch(query) }
+            val own = choices.own.filter { it.matchesSearch(query) }
+            SystemFolderPills(system, checked, toggle, onNewFolder)
+            FolderCheckTree(own, query.isNotBlank(), checked, toggle)
+            if (system.isEmpty() && own.isEmpty()) {
+                Caption(
+                    if (query.isBlank()) "No folders yet." else "No folders match.",
+                    RowTextInset,
+                    heading = false,
+                )
+            }
+        }
+    }
+}
+
+/**
+ * The system folders as pills that add the mail to them or take it out, filled while it is in
+ * them, then a + pill that runs [onNewFolder]; nothing when there is neither.
+ */
+@Composable
+private fun SystemFolderPills(
+    folders: List<MessageFolder>,
+    checked: Set<String>,
+    onToggle: (String) -> Unit,
+    onNewFolder: (() -> Unit)?,
+) {
+    if (folders.isEmpty() && onNewFolder == null) return
+    FlowRow(
+        horizontalArrangement = Arrangement.spacedBy(Spacing.inlineGap),
+        verticalArrangement = Arrangement.spacedBy(Spacing.inlineGap),
+    ) {
+        folders.forEach { folder ->
+            val icon = if (folder.readLater) Res.drawable.symbol_bookmark else folderName(folder).icon
+            DestinationPill(
+                folder.pillLabel,
+                icon ?: Res.drawable.symbol_folder,
+                { onToggle(folder.id) },
+                selected = folder.id in checked,
+            )
+        }
+        if (onNewFolder != null) {
+            IconPill(NEW_FOLDER, Res.drawable.symbol_add, selected = false, onNewFolder, size = MoveTokens.pillHeight)
+        }
+    }
+}
+
+/** The name the app gives a system folder, as the Move to sheet's pills do, else the server's. */
+private val MessageFolder.pillLabel: String
+    get() = if (readLater) READ_LATER_TITLE else role?.title ?: path.last()
+
+private const val NEW_FOLDER = "New folder"

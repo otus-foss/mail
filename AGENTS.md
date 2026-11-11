@@ -24,7 +24,7 @@ All UI follows **elements → components → screens**.
 
 - Meta's `designsystem/<shared|mail>/<group>/elements`: small branded controls, fields, and avatars.
 - Meta's `designsystem/<shared|mail>/<group>/components`: value-driven visual compositions.
-- Shared elements, components, and tokens come from otus-meta's `com.otus.designsystem`. Add new
+- Shared elements, components, and tokens come from otus-meta's `com.otusfoss.core.designsystem`. Add new
   elements, reusable components, visual tokens, and symbol resources there, even if only Mail
   currently uses them. Mail keeps feature adapters and screens. See decision 0008 in Meta.
 - `feature/<name>/presentation/components`: feature-specific compositions.
@@ -243,7 +243,7 @@ request. See [landing](https://github.com/reazndev/otus-meta/blob/main/docs/land
 
 During development, prefer `./gradlew spotlessCheck detekt ruffCheck ruffFormatCheck` and run
 only tests relevant to the change, for example
-`./gradlew :shared:testAndroidHostTest --tests 'com.otus.mail.SomeTest'` with the actual test
+`./gradlew :shared:testAndroidHostTest --tests 'com.otusfoss.mail.SomeTest'` with the actual test
 class name. Use `qualityCheck` when all quality checks are needed. Batch edits and run `checkAll`
 once at the end, rather than after each edit. Run it again only if later changes or failures
 require it.

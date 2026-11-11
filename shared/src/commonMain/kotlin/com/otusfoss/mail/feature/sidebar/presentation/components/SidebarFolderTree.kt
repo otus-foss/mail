@@ -1,0 +1,53 @@
+package com.otusfoss.mail.feature.sidebar.presentation.components
+
+import androidx.compose.foundation.layout.Column
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import com.otusfoss.core.designsystem.shared.controls.elements.LocalIconTint
+import com.otusfoss.core.designsystem.shared.rows.components.Collapsible
+import com.otusfoss.core.designsystem.shared.sidebar.elements.SidebarFolder
+import com.otusfoss.core.designsystem.shared.sidebar.elements.SidebarFolderEntry
+import com.otusfoss.core.designsystem.theme.colors.FolderColor
+import com.otusfoss.mail.core.mailbox.SharedFolder
+import com.otusfoss.mail.core.settings.domain.SidebarPin
+import com.otusfoss.mail.feature.sidebar.presentation.SidebarCounter
+
+/**
+ * The user's folders, shared by every account, nested under their parents. A folder with
+ * subfolders folds them away when its icon is tapped and then counts their mail with its own.
+ * [colorOf] names each folder's icon color, and a long press calls [onActions].
+ */
+internal class SidebarFolderTree(
+    private val collapsed: Set<List<String>>,
+    private val onCollapse: (key: List<String>, collapsed: Boolean) -> Unit,
+    private val current: SidebarPin?,
+    private val counter: SidebarCounter,
+    private val colorOf: (SharedFolder) -> String?,
+    private val onSelect: (SidebarPin) -> Unit,
+    private val onActions: (SharedFolder) -> Unit,
+) {
+    @Composable
+    fun Rows(
+        folders: List<SharedFolder>,
+        depth: Int = 0,
+    ) {
+        folders.forEach { folder ->
+            val open = folder.key !in collapsed
+            val page = SidebarPin.Folder(folder.key)
+            val count = counter.of(if (open) folder.folders else folder.flatten().flatMap { it.folders })
+            CompositionLocalProvider(LocalIconTint provides FolderColor.named(colorOf(folder)).tint) {
+                SidebarFolderEntry(
+                    SidebarFolder(folder.name, depth, count),
+                    selected = current == page,
+                    expanded = open.takeIf { folder.children.isNotEmpty() },
+                    onExpandedChange = { onCollapse(folder.key, !it) },
+                    onClick = { onSelect(page) },
+                    onLongClick = { onActions(folder) },
+                )
+            }
+            if (folder.children.isNotEmpty()) {
+                Collapsible(open) { Column { Rows(folder.children, depth + 1) } }
+            }
+        }
+    }
+}

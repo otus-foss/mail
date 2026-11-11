@@ -1,6 +1,6 @@
 # JMAP
 
-Mail uses the `com.otus:jmap` library from otus-meta: a provider-independent client for RFC 8620
+Mail uses the `com.otusfoss.core:jmap` library from otus-meta: a provider-independent client for RFC 8620
 (core) plus protected login storage. Its API, security rules, protocol coverage, and tests are
 documented in
 [otus-meta's JMAP guide](https://github.com/reazndev/otus-meta/blob/main/docs/jmap.md). This
