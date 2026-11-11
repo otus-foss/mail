@@ -50,6 +50,7 @@ class KeyValueMailBehaviorStore(
                 privacy = privacyBehavior(),
                 sidebar = sidebarBehavior(),
                 updateToasts = flag(UPDATE_TOASTS, MailBehavior().updateToasts),
+                lettersAtEnd = flag(LETTERS_AT_END, MailBehavior().lettersAtEnd),
             )
         }
 
@@ -64,6 +65,7 @@ class KeyValueMailBehaviorStore(
             put(behavior.privacy)
             put(behavior.sidebar)
             put(UPDATE_TOASTS, behavior.updateToasts)
+            put(LETTERS_AT_END, behavior.lettersAtEnd)
         }
     }
 }
@@ -153,6 +155,7 @@ private const val PILLS = "inbox_pills"
 
 private const val SHOW_QUOTES = "show_quotes"
 private const val UPDATE_TOASTS = "update_toasts"
+private const val LETTERS_AT_END = "contact_letters_at_end"
 private const val ZEN_READ = "read_zen"
 private const val PHOTO_CLEANING = "photo_cleaning"
 private const val RECENT_FROM = "recent_from"

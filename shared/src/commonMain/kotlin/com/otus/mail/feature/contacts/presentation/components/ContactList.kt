@@ -126,7 +126,10 @@ private fun LazyListScope.letterSections(
     letterIndex: LetterIndexState,
     onJump: (String) -> Unit,
 ) {
-    val indexLetters = sections.map { (letter, people) -> IndexLetter(letter, people.size) }
+    val indexLetters =
+        sections.map { (letter, people) ->
+            IndexLetter(letter, people.size, people.take(PREVIEW_PEOPLE).map { it.name.substringBefore(' ') })
+        }
     sections.forEach { (letter, people) ->
         item("letter:$letter") {
             SectionCaption(
@@ -197,3 +200,6 @@ private fun CardSync.label(): ContactRowLabel? =
         CardSync.Waiting -> ContactRowLabel("Not synced", Res.drawable.symbol_schedule)
         is CardSync.Refused -> ContactRowLabel("Not saved", Res.drawable.symbol_cloud_off)
     }
+
+/** How many first names each letter of the index gets; it shows at most two. */
+private const val PREVIEW_PEOPLE = 2

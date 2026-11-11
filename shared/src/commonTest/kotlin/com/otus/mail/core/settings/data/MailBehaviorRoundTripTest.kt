@@ -113,5 +113,6 @@ class MailBehaviorRoundTripTest {
                     ),
                     startPage = SidebarPin.Folder(listOf("clients", "a/b testing")),
                 ),
+            lettersAtEnd = true,
         )
 }

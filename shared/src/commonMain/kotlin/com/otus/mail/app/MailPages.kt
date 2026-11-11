@@ -89,7 +89,7 @@ private fun PageContent(
         }
 
         MailPage.Contacts, is MailPage.Contact, is MailPage.ContactEditor -> {
-            ContactsPages(page, states.contacts.cards, states.moveToasts.toasts, navigation, back)
+            ContactsPages(page, states.contacts.cards, states.moveToasts.toasts, states.behavior, navigation, back)
         }
     }
 }
