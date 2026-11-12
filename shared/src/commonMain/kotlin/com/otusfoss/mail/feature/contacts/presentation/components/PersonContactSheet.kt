@@ -21,11 +21,14 @@ import com.otusfoss.core.designsystem.shared.controls.elements.ActionButton
 import com.otusfoss.core.designsystem.shared.controls.elements.PlainAction
 import com.otusfoss.core.designsystem.shared.overlays.components.SheetFrame
 import com.otusfoss.core.designsystem.shared.overlays.elements.sheetInset
+import com.otusfoss.core.designsystem.shared.people.components.ChipAvatar
+import com.otusfoss.core.designsystem.shared.people.components.PersonAvatar
 import com.otusfoss.core.designsystem.shared.rows.elements.SectionCaption
 import com.otusfoss.core.designsystem.shared.selection.components.PickerSearch
 import com.otusfoss.core.designsystem.theme.colors.OtusColors
 import com.otusfoss.core.designsystem.theme.tokens.layout.PageTokens
 import com.otusfoss.core.designsystem.theme.tokens.overlays.SheetTokens
+import com.otusfoss.core.designsystem.theme.tokens.people.AvatarTokens
 import com.otusfoss.core.designsystem.theme.tokens.rows.StripTokens
 import com.otusfoss.mail.feature.contacts.domain.CardKey
 import com.otusfoss.mail.feature.contacts.domain.ContactAddress
@@ -46,6 +49,7 @@ import com.otusfoss.mail.feature.contacts.presentation.withAddress
 @Composable
 internal fun PersonContactSheet(
     person: ContactAddress,
+    avatar: ChipAvatar,
     state: ContactsState,
     onNew: () -> Unit,
     onOpen: (CardKey) -> Unit,
@@ -62,7 +66,13 @@ internal fun PersonContactSheet(
         state.notice = "Added to contact"
         onDismiss()
     }
-    SheetFrame(name, onDismiss, done = null, closeButton = true) {
+    SheetFrame(
+        name,
+        onDismiss,
+        done = null,
+        closeButton = true,
+        titleLeading = { PersonAvatar(avatar, AvatarTokens.menuSize) },
+    ) {
         Column(
             Modifier.fillMaxWidth().verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(SheetTokens.gap),
