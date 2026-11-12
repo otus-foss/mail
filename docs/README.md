@@ -19,7 +19,8 @@ See [JMAP](jmap.md) for supported behavior and test coverage.
 - `androidApp`: Android application entry point.
 - `iosApp`: Xcode project hosting the shared Compose UI.
 
-Application and bundle ID: `com.otusfoss.mail` (verify ownership before publishing).
+Application and bundle ID: `com.otusfoss.mail` (verify ownership before publishing). On Android, nightly
+builds add `.nightly` and dev and debug builds add `.dev`, so each channel installs beside the others.
 
 ## Android
 

@@ -46,6 +46,10 @@ android {
             isShrinkResources = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"))
         }
+        // Its own app id, so a debug or dev build installs beside the stable app.
+        getByName("debug") {
+            applicationIdSuffix = ".dev"
+        }
         // The dev app for daily use on a phone: debug's id and key, so it installs over a debug build,
         // but not debuggable, so Compose runs near release speed. Unshrunk, so it builds about as fast.
         create("dev") {
@@ -62,6 +66,8 @@ android {
             buildConfigField("String", "CHANNEL", "\"Nightly\"")
         }
     }
+    // The dev build is the debug app for daily use, so it shows debug's name, "Otus Mail Dev".
+    sourceSets.getByName("dev").res.srcDir("src/debug/res")
 }
 
 tasks.withType<Test>().configureEach {
