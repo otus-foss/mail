@@ -26,6 +26,7 @@ import com.otusfoss.core.designsystem.shared.selection.components.PickerSearch
 import com.otusfoss.core.designsystem.theme.colors.OtusColors
 import com.otusfoss.core.designsystem.theme.tokens.layout.PageTokens
 import com.otusfoss.core.designsystem.theme.tokens.overlays.SheetTokens
+import com.otusfoss.core.designsystem.theme.tokens.rows.StripTokens
 import com.otusfoss.mail.feature.contacts.domain.CardKey
 import com.otusfoss.mail.feature.contacts.domain.ContactAddress
 import com.otusfoss.mail.feature.contacts.domain.ContactCard
@@ -66,7 +67,8 @@ internal fun PersonContactSheet(
             Modifier.fillMaxWidth().verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(SheetTokens.gap),
         ) {
-            Text(person.address, Modifier.sheetInset(), color = OtusColors.text2)
+            // The extra gap sets the name and address apart from the choices below them.
+            Text(person.address, Modifier.sheetInset().padding(bottom = SheetTokens.gap), color = OtusColors.text2)
             val create = {
                 state.prefill = newDraft(person)
                 onNew()
@@ -117,9 +119,12 @@ private fun NewContactOptions(
         CardRow(match) { onOpen(match.key) }
         ActionButton("Add this address there", { onAdd(match) }, Modifier.sheetInset().fillMaxWidth(), primary = true)
     }
-    PlainAction("New contact", Res.drawable.symbol_person_add, onNew, Modifier.fillMaxWidth())
-    if (onPick != null) {
-        PlainAction("Add to another contact…", Res.drawable.symbol_group_add, onPick, Modifier.fillMaxWidth())
+    // Touch targets already space the actions apart, so the sheet gap would double it.
+    Column {
+        PlainAction("New contact", Res.drawable.symbol_person_add, onNew, ActionInset)
+        if (onPick != null) {
+            PlainAction("Add to another contact…", Res.drawable.symbol_group_add, onPick, ActionInset)
+        }
     }
 }
 
@@ -149,3 +154,9 @@ private const val PICKER_LIMIT = 50
 
 // Captions and contact rows pad their own text by the page's text inset, so they add only the rest.
 private val RowInset = Modifier.padding(horizontal = SheetTokens.inset - PageTokens.textInset)
+
+// Plain actions pad their own symbol, so the symbol lines up with the title and address.
+private val ActionInset =
+    Modifier
+        .fillMaxWidth()
+        .padding(horizontal = SheetTokens.inset - StripTokens.plainPadding)
