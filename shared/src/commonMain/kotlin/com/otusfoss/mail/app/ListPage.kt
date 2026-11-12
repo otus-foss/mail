@@ -66,6 +66,7 @@ internal fun ListPage(
                         messageActions,
                         rowLook.own,
                         base.categories != null,
+                        filters,
                     ),
                 nudge =
                     rememberFolderNudge(

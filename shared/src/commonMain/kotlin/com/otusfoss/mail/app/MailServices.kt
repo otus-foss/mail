@@ -27,6 +27,7 @@ import com.otusfoss.mail.core.mailbox.Mailboxes
 import com.otusfoss.mail.core.messages.data.EmailChangeQueue
 import com.otusfoss.mail.core.messages.data.JmapEmailByIdWriter
 import com.otusfoss.mail.core.messages.data.JmapEmailWriter
+import com.otusfoss.mail.core.messages.data.JmapPersonHistories
 import com.otusfoss.mail.core.messages.data.ServerSites
 import com.otusfoss.mail.core.messages.domain.AddressBook
 import com.otusfoss.mail.core.messages.domain.DevicePrivacy
@@ -36,6 +37,7 @@ import com.otusfoss.mail.core.messages.domain.EmailByIdWriter
 import com.otusfoss.mail.core.messages.domain.EmailWriter
 import com.otusfoss.mail.core.messages.domain.MessageBodies
 import com.otusfoss.mail.core.messages.domain.PeopleSearch
+import com.otusfoss.mail.core.messages.domain.PersonHistories
 import com.otusfoss.mail.core.messages.domain.ScheduledSends
 import com.otusfoss.mail.core.messages.domain.SenderBlocks
 import com.otusfoss.mail.core.messages.presentation.MoveToasts
@@ -211,6 +213,7 @@ class MailServices(
         JmapNewsletters(connections, drafts, sender, writer, mailboxes, domains)
     }
     internal val senderMails: SenderMails by lazy { JmapSenderMails(connections, mailboxes) }
+    internal val personHistories: PersonHistories by lazy { JmapPersonHistories(connections, mailboxes) }
     internal val headers: MessageHeaders by lazy { JmapMessageHeaders(connections) }
     internal val blocks: SenderBlocks by lazy { RuleSenderBlocks(rules, folders) }
 

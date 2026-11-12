@@ -4,6 +4,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import com.otusfoss.mail.core.messages.domain.ComposeRequest
 import com.otusfoss.mail.core.messages.domain.OwnAddresses
+import com.otusfoss.mail.core.messages.domain.PersonHistories
 import com.otusfoss.mail.core.messages.presentation.MailEdits
 import com.otusfoss.mail.core.messages.presentation.MessageActions
 import com.otusfoss.mail.core.messages.presentation.actions.ScheduledActions
@@ -14,6 +15,7 @@ import com.otusfoss.mail.feature.folders.presentation.account
 import com.otusfoss.mail.feature.folders.presentation.components.FolderActions
 import com.otusfoss.mail.feature.folders.presentation.components.FolderDialogs
 import com.otusfoss.mail.feature.inbox.presentation.InboxFeedState
+import com.otusfoss.mail.feature.inbox.presentation.InboxFilterState
 import com.otusfoss.mail.feature.inbox.presentation.components.ReadView
 import com.otusfoss.mail.feature.read.presentation.ReadCategories
 import com.otusfoss.mail.feature.read.presentation.ReadContext
@@ -53,6 +55,15 @@ internal class ReadWiring(
             known = services.knownPeople,
             allowSender = { address -> behavior.updateRead { it.allowingSender(address) } },
         )
+
+    /** Looks up a person's threads for the person sheet. */
+    val personHistories: PersonHistories get() = services.personHistories
+
+    fun openMessage(
+        loginId: String,
+        emailId: String,
+    ) = services.requests.openMessage(loginId, emailId)
+
     private val files = ReadFiles(services.attachments, services.pickers.savedFiles, services.pickers.printer)
 
     private val categories =
@@ -123,11 +134,13 @@ internal fun rememberReadView(
     actions: MessageActions,
     own: OwnAddresses,
     sorted: Boolean,
+    filters: InboxFilterState,
 ): ReadView {
     val scheduled = rememberScheduledActions(states, navigation, page)
     val read =
-        remember(states, feed, own, sorted) {
-            states.reading.context(feed, contactSheet(states.contacts.cards, navigation), own, sorted, scheduled) {
+        remember(states, feed, own, sorted, filters) {
+            val person = personSheet(states, filters, navigation, page, own)
+            states.reading.context(feed, person, own, sorted, scheduled) {
                 navigation.go(MailPage.Compose(it, parent = page))
             }
         }

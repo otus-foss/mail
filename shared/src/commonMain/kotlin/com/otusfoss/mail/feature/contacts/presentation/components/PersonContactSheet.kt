@@ -7,7 +7,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -15,111 +14,187 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import com.otusfoss.core.designsystem.resources.Res
+import com.otusfoss.core.designsystem.resources.symbol_chevron_left
 import com.otusfoss.core.designsystem.resources.symbol_group_add
 import com.otusfoss.core.designsystem.resources.symbol_person
 import com.otusfoss.core.designsystem.resources.symbol_person_add
 import com.otusfoss.core.designsystem.shared.contacts.components.ContactRow
 import com.otusfoss.core.designsystem.shared.controls.elements.ActionButton
+import com.otusfoss.core.designsystem.shared.controls.elements.IconButton
+import com.otusfoss.core.designsystem.shared.controls.elements.IconButtonLook
 import com.otusfoss.core.designsystem.shared.controls.elements.PlainAction
+import com.otusfoss.core.designsystem.shared.controls.elements.Symbol
 import com.otusfoss.core.designsystem.shared.overlays.components.SheetFrame
 import com.otusfoss.core.designsystem.shared.overlays.elements.sheetInset
 import com.otusfoss.core.designsystem.shared.people.components.ChipAvatar
 import com.otusfoss.core.designsystem.shared.people.components.PersonAvatar
 import com.otusfoss.core.designsystem.shared.rows.elements.SectionCaption
 import com.otusfoss.core.designsystem.shared.selection.components.PickerSearch
-import com.otusfoss.core.designsystem.theme.colors.OtusColors
+import com.otusfoss.core.designsystem.shared.settings.components.SettingPageRow
 import com.otusfoss.core.designsystem.theme.tokens.layout.PageTokens
 import com.otusfoss.core.designsystem.theme.tokens.overlays.SheetTokens
 import com.otusfoss.core.designsystem.theme.tokens.people.AvatarTokens
 import com.otusfoss.core.designsystem.theme.tokens.rows.StripTokens
+import com.otusfoss.mail.core.messages.domain.MailSender
+import com.otusfoss.mail.core.messages.presentation.components.firstName
 import com.otusfoss.mail.feature.contacts.domain.CardKey
 import com.otusfoss.mail.feature.contacts.domain.ContactAddress
 import com.otusfoss.mail.feature.contacts.domain.ContactCard
 import com.otusfoss.mail.feature.contacts.domain.ContactDraft
 import com.otusfoss.mail.feature.contacts.domain.DraftValue
+import com.otusfoss.mail.feature.contacts.domain.firstNote
 import com.otusfoss.mail.feature.contacts.presentation.ContactsState
+import com.otusfoss.mail.feature.contacts.presentation.PersonMail
 import com.otusfoss.mail.feature.contacts.presentation.addAddress
 import com.otusfoss.mail.feature.contacts.presentation.avatar
 import com.otusfoss.mail.feature.contacts.presentation.book
 import com.otusfoss.mail.feature.contacts.presentation.withAddress
 
 /**
- * What the app offers for a person a message names: their card when the address is saved already;
- * else a card with the same name to add the address to, a new contact, or any other card. People
- * are never merged by name alone; the user picks.
+ * The sheet about a person a message names: their card's note, ways to write, call, and see their
+ * mail, the people they share threads with, and their recent threads. A saved person's card opens
+ * from it; for anyone else it offers a card with the same name to add the address to, a new
+ * contact, or any other card. People are never merged by name alone; the user picks.
  */
 @Composable
 internal fun PersonContactSheet(
     person: ContactAddress,
     avatar: ChipAvatar,
     state: ContactsState,
+    mail: PersonMail,
     onNew: () -> Unit,
     onOpen: (CardKey) -> Unit,
     onDismiss: () -> Unit,
 ) {
-    var picking by remember { mutableStateOf(false) }
-    var query by remember { mutableStateOf("") }
+    var page by remember { mutableStateOf(SheetPage.Overview) }
+    val activity = rememberPersonActivity(mail)
+    val shared = activity?.history?.shared.orEmpty()
     val name = person.name.ifBlank { person.address }
-    val saved = state.withAddress(person.address)
-    val writable = state.cards.filter { card -> !card.isGroup && card.books.any { state.book(it)?.canWrite == true } }
-    val sameName = writable.filter { it.displayName.equals(person.name.trim(), ignoreCase = true) && it !in saved }
+    val back = { page = SheetPage.Overview }
     val add = { card: ContactCard ->
         state.addAddress(card, person.address)
         state.notice = "Added to contact"
         onDismiss()
     }
+    val onShared = page == SheetPage.Shared
     SheetFrame(
-        name,
+        if (onShared) "Threads with ${MailSender(person.name, person.address).firstName}" else name,
         onDismiss,
         done = null,
         closeButton = true,
-        titleLeading = { PersonAvatar(avatar, AvatarTokens.menuSize) },
+        titleLeading = {
+            if (onShared) {
+                IconButton("Back", back, look = IconButtonLook.Plain) {
+                    Symbol(Res.drawable.symbol_chevron_left, mirrorInRtl = true)
+                }
+            } else {
+                PersonAvatar(avatar, AvatarTokens.size)
+            }
+        },
+        subtitle = if (onShared) alsoTakePart(shared.size) else person.address,
     ) {
         Column(
-            Modifier.fillMaxWidth().verticalScroll(rememberScrollState()),
+            Modifier
+                .fillMaxWidth()
+                .verticalScroll(rememberScrollState())
+                .padding(top = SheetTokens.gap),
             verticalArrangement = Arrangement.spacedBy(SheetTokens.gap),
         ) {
-            // The extra gap sets the name and address apart from the choices below them.
-            Text(person.address, Modifier.sheetInset().padding(bottom = SheetTokens.gap), color = OtusColors.text2)
-            val create = {
-                state.prefill = newDraft(person)
-                onNew()
-            }
-            val pick = { picking = true }.takeIf { writable.isNotEmpty() }
-            when {
-                picking -> PickContact(writable, query, { query = it }, add)
-                saved.isNotEmpty() -> SavedContacts(saved, onOpen)
-                else -> NewContactOptions(sameName.firstOrNull(), onOpen, add, create, pick)
+            when (page) {
+                SheetPage.Overview -> {
+                    val pages = PageLinks(onPick = { page = SheetPage.Picking }, onShared = { page = SheetPage.Shared })
+                    PersonPage(person, state, mail, activity, ContactLinks(onNew, onOpen, add), pages)
+                }
+
+                SheetPage.Shared -> {
+                    SharedThreads(shared, mail.showWith)
+                }
+
+                SheetPage.Picking -> {
+                    PickContact(state, add)
+                }
             }
         }
     }
 }
 
+/** Which of the sheet's pages shows; the others swap in over the overview rather than stack a sheet. */
+private enum class SheetPage { Overview, Shared, Picking }
+
+/** Where the sheet's contact actions lead: a [new] contact, a saved card to [open], or one to [add] the address to. */
+private class ContactLinks(
+    val new: () -> Unit,
+    val open: (CardKey) -> Unit,
+    val add: (ContactCard) -> Unit,
+)
+
+/** The sheet's other pages: the cards to [onPick] from, and the people [onShared] with them. */
+private class PageLinks(
+    val onPick: () -> Unit,
+    val onShared: () -> Unit,
+)
+
+@Composable
+private fun PersonPage(
+    person: ContactAddress,
+    state: ContactsState,
+    mail: PersonMail,
+    activity: PersonActivity?,
+    contacts: ContactLinks,
+    pages: PageLinks,
+) {
+    val saved = state.withAddress(person.address)
+    val card = saved.firstOrNull()
+    PersonOverview(
+        note = card?.let { listOfNotNull(it.role, it.card.firstNote).joinToString("\n") },
+        phone = saved.firstNotNullOfOrNull { it.phones.firstOrNull()?.value },
+        mail = mail,
+        activity = activity,
+        onShared = pages.onShared,
+    )
+    if (saved.isNotEmpty()) {
+        SavedContacts(saved, contacts.open)
+        return
+    }
+    val writable = state.writableCards()
+    val create = {
+        state.prefill = newDraft(person)
+        contacts.new()
+    }
+    NewContactOptions(
+        writable.firstOrNull { it.displayName.equals(person.name.trim(), ignoreCase = true) },
+        contacts.open,
+        contacts.add,
+        create,
+        pages.onPick.takeIf { writable.isNotEmpty() },
+    )
+}
+
 @Composable
 private fun PickContact(
-    contacts: List<ContactCard>,
-    query: String,
-    onQuery: (String) -> Unit,
+    state: ContactsState,
     onAdd: (ContactCard) -> Unit,
 ) {
-    PickerSearch(query, onQuery, "Search people…", Modifier.sheetInset())
-    contacts
+    var query by remember { mutableStateOf("") }
+    PickerSearch(query, { query = it }, "Search people…", Modifier.sheetInset())
+    state
+        .writableCards()
         .filter { query.isBlank() || it.displayName.contains(query, ignoreCase = true) }
         .take(PICKER_LIMIT)
         .forEach { card -> CardRow(card) { onAdd(card) } }
 }
+
+private fun ContactsState.writableCards(): List<ContactCard> =
+    cards.filter { card -> !card.isGroup && card.books.any { book(it)?.canWrite == true } }
 
 @Composable
 private fun SavedContacts(
     contacts: List<ContactCard>,
     onOpen: (CardKey) -> Unit,
 ) {
-    // The header already shows who this is, so the sheet only offers to open the card.
-    Actions {
-        contacts.forEach { card ->
-            val label = if (contacts.size == 1) "Open contact" else "Open ${card.displayName}"
-            PlainAction(label, Res.drawable.symbol_person, { onOpen(card.key) }, ActionInset)
-        }
+    contacts.forEach { card ->
+        val label = if (contacts.size == 1) "Open contact" else "Open ${card.displayName}"
+        SettingPageRow(label, { onOpen(card.key) }, RowInset, icon = Res.drawable.symbol_person)
     }
 }
 
@@ -175,7 +250,7 @@ private fun newDraft(person: ContactAddress): ContactDraft {
 private const val PICKER_LIMIT = 50
 
 // Captions and contact rows pad their own text by the page's text inset, so they add only the rest.
-private val RowInset = Modifier.padding(horizontal = SheetTokens.inset - PageTokens.textInset)
+internal val RowInset = Modifier.padding(horizontal = SheetTokens.inset - PageTokens.textInset)
 
 // Plain actions pad their own symbol, so the symbol lines up with the title and address.
 private val ActionInset =

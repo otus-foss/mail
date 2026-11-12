@@ -57,11 +57,16 @@ internal class ReadParts(
     fun content(page: MailMessage): MessageContent? = (state.bodies.body(page) as? PageBody.Loaded)?.content
 }
 
-/** The sheet for a person a message names, which the app supplies; it shows until it runs `onDismiss`. */
+/**
+ * The sheet for a person the open [message] names, which the app supplies; it shows until it runs
+ * `onDismiss`, and runs [closeRead] first when it leaves the Read view, such as to show their mail.
+ */
 fun interface PersonSheet {
     @Composable
     fun Show(
         person: MailSender,
+        message: MailMessage,
+        closeRead: () -> Unit,
         onDismiss: () -> Unit,
     )
 }
@@ -171,7 +176,7 @@ internal fun ReadSheets(
         }
 
         is ReadSheet.Person -> {
-            read.services.person?.Show(sheet.person, dismiss)
+            read.services.person?.Show(sheet.person, row, parts::close, dismiss)
         }
 
         is ReadSheet.People -> {

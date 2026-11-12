@@ -7,40 +7,14 @@ import com.otusfoss.core.designsystem.shared.feedback.components.ToastMessage
 import com.otusfoss.core.designsystem.shared.feedback.components.ToastState
 import com.otusfoss.mail.core.messages.domain.ComposeRequest
 import com.otusfoss.mail.core.messages.domain.MailSender
-import com.otusfoss.mail.core.messages.presentation.components.chipAvatar
 import com.otusfoss.mail.core.settings.presentation.MailBehaviorState
 import com.otusfoss.mail.feature.contacts.domain.ContactAddress
 import com.otusfoss.mail.feature.contacts.presentation.ContactNavigation
 import com.otusfoss.mail.feature.contacts.presentation.ContactsNavigation
 import com.otusfoss.mail.feature.contacts.presentation.ContactsState
-import com.otusfoss.mail.feature.contacts.presentation.components.PersonContactSheet
 import com.otusfoss.mail.feature.contacts.presentation.screens.ContactEditorScreen
 import com.otusfoss.mail.feature.contacts.presentation.screens.ContactScreen
 import com.otusfoss.mail.feature.contacts.presentation.screens.ContactsScreen
-import com.otusfoss.mail.feature.read.presentation.components.PersonSheet
-
-/** The Read view's sheet for a person a message names: their card, or ways to save the address. */
-internal fun contactSheet(
-    contacts: ContactsState,
-    navigation: MailNavigation,
-): PersonSheet =
-    PersonSheet { person, onDismiss ->
-        LaunchedEffect(Unit) { if (contacts.snapshot == null) contacts.refresh() }
-        PersonContactSheet(
-            ContactAddress(person.name, person.address),
-            person.chipAvatar,
-            contacts,
-            onNew = {
-                onDismiss()
-                navigation.go(MailPage.ContactEditor())
-            },
-            onOpen = {
-                onDismiss()
-                navigation.go(MailPage.Contact(it))
-            },
-            onDismiss = onDismiss,
-        )
-    }
 
 /** The Contacts page, one person, and the contact editor. Opening any of them loads the contacts. */
 @Composable
