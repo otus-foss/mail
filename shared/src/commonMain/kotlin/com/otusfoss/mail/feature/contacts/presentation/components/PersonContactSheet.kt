@@ -2,6 +2,7 @@ package com.otusfoss.mail.feature.contacts.presentation.components
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
@@ -15,6 +16,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import com.otusfoss.core.designsystem.resources.Res
 import com.otusfoss.core.designsystem.resources.symbol_group_add
+import com.otusfoss.core.designsystem.resources.symbol_person
 import com.otusfoss.core.designsystem.resources.symbol_person_add
 import com.otusfoss.core.designsystem.shared.contacts.components.ContactRow
 import com.otusfoss.core.designsystem.shared.controls.elements.ActionButton
@@ -112,8 +114,13 @@ private fun SavedContacts(
     contacts: List<ContactCard>,
     onOpen: (CardKey) -> Unit,
 ) {
-    SectionCaption("In your contacts", RowInset)
-    contacts.forEach { card -> CardRow(card) { onOpen(card.key) } }
+    // The header already shows who this is, so the sheet only offers to open the card.
+    Actions {
+        contacts.forEach { card ->
+            val label = if (contacts.size == 1) "Open contact" else "Open ${card.displayName}"
+            PlainAction(label, Res.drawable.symbol_person, { onOpen(card.key) }, ActionInset)
+        }
+    }
 }
 
 @Composable
@@ -129,13 +136,18 @@ private fun NewContactOptions(
         CardRow(match) { onOpen(match.key) }
         ActionButton("Add this address there", { onAdd(match) }, Modifier.sheetInset().fillMaxWidth(), primary = true)
     }
-    // Touch targets already space the actions apart, so the sheet gap would double it.
-    Column {
+    Actions {
         PlainAction("New contact", Res.drawable.symbol_person_add, onNew, ActionInset)
         if (onPick != null) {
             PlainAction("Add to another contact…", Res.drawable.symbol_group_add, onPick, ActionInset)
         }
     }
+}
+
+/** Stacks plain actions on their touch targets, which already space them apart. */
+@Composable
+private fun Actions(content: @Composable ColumnScope.() -> Unit) {
+    Column(content = content)
 }
 
 @Composable
