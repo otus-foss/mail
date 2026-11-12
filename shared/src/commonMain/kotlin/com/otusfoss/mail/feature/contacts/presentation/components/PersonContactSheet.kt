@@ -2,7 +2,6 @@ package com.otusfoss.mail.feature.contacts.presentation.components
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
@@ -22,19 +21,18 @@ import com.otusfoss.core.designsystem.shared.contacts.components.ContactRow
 import com.otusfoss.core.designsystem.shared.controls.elements.ActionButton
 import com.otusfoss.core.designsystem.shared.controls.elements.IconButton
 import com.otusfoss.core.designsystem.shared.controls.elements.IconButtonLook
-import com.otusfoss.core.designsystem.shared.controls.elements.PlainAction
 import com.otusfoss.core.designsystem.shared.controls.elements.Symbol
 import com.otusfoss.core.designsystem.shared.overlays.components.SheetFrame
 import com.otusfoss.core.designsystem.shared.overlays.elements.sheetInset
 import com.otusfoss.core.designsystem.shared.people.components.ChipAvatar
 import com.otusfoss.core.designsystem.shared.people.components.PersonAvatar
+import com.otusfoss.core.designsystem.shared.people.components.PersonTile
 import com.otusfoss.core.designsystem.shared.rows.elements.SectionCaption
 import com.otusfoss.core.designsystem.shared.selection.components.PickerSearch
 import com.otusfoss.core.designsystem.shared.settings.components.SettingPageRow
 import com.otusfoss.core.designsystem.theme.tokens.layout.PageTokens
 import com.otusfoss.core.designsystem.theme.tokens.overlays.SheetTokens
 import com.otusfoss.core.designsystem.theme.tokens.people.AvatarTokens
-import com.otusfoss.core.designsystem.theme.tokens.rows.StripTokens
 import com.otusfoss.mail.core.messages.domain.MailSender
 import com.otusfoss.mail.core.messages.presentation.components.firstName
 import com.otusfoss.mail.feature.contacts.domain.CardKey
@@ -145,29 +143,40 @@ private fun PersonPage(
 ) {
     val saved = state.withAddress(person.address)
     val card = saved.firstOrNull()
-    PersonOverview(
-        note = card?.let { listOfNotNull(it.role, it.card.firstNote).joinToString("\n") },
-        phone = saved.firstNotNullOfOrNull { it.phones.firstOrNull()?.value },
-        mail = mail,
-        activity = activity,
-        onShared = pages.onShared,
-    )
-    if (saved.isNotEmpty()) {
-        SavedContacts(saved, contacts.open)
-        return
-    }
     val writable = state.writableCards()
     val create = {
         state.prefill = newDraft(person)
         contacts.new()
     }
-    NewContactOptions(
-        writable.firstOrNull { it.displayName.equals(person.name.trim(), ignoreCase = true) },
-        contacts.open,
-        contacts.add,
-        create,
-        pages.onPick.takeIf { writable.isNotEmpty() },
+    val contactActions =
+        if (saved.isNotEmpty()) {
+            emptyList()
+        } else {
+            listOfNotNull(
+                PersonTile.Action("New contact", Res.drawable.symbol_person_add, create),
+                PersonTile
+                    .Action(
+                        "Add to…",
+                        Res.drawable.symbol_group_add,
+                        pages.onPick,
+                    ).takeIf { writable.isNotEmpty() },
+            )
+        }
+    PersonOverview(
+        note = card?.let { listOfNotNull(it.role, it.card.firstNote).joinToString("\n") },
+        phone = saved.firstNotNullOfOrNull { it.phones.firstOrNull()?.value },
+        mail = mail,
+        activity = activity,
+        contactActions = contactActions,
+        onShared = pages.onShared,
     )
+    if (saved.isNotEmpty()) {
+        SavedContacts(saved, contacts.open)
+    } else {
+        writable
+            .firstOrNull { it.displayName.equals(person.name.trim(), ignoreCase = true) }
+            ?.let { SameNameCard(it, contacts.open, contacts.add) }
+    }
 }
 
 @Composable
@@ -198,31 +207,16 @@ private fun SavedContacts(
     }
 }
 
+/** A saved [match] with the same name as the person, which may be them; the user decides. */
 @Composable
-private fun NewContactOptions(
-    match: ContactCard?,
+private fun SameNameCard(
+    match: ContactCard,
     onOpen: (CardKey) -> Unit,
     onAdd: (ContactCard) -> Unit,
-    onNew: () -> Unit,
-    onPick: (() -> Unit)?,
 ) {
-    if (match != null) {
-        SectionCaption("Maybe already in your contacts", RowInset)
-        CardRow(match) { onOpen(match.key) }
-        ActionButton("Add this address there", { onAdd(match) }, Modifier.sheetInset().fillMaxWidth(), primary = true)
-    }
-    Actions {
-        PlainAction("New contact", Res.drawable.symbol_person_add, onNew, ActionInset)
-        if (onPick != null) {
-            PlainAction("Add to another contact…", Res.drawable.symbol_group_add, onPick, ActionInset)
-        }
-    }
-}
-
-/** Stacks plain actions on their touch targets, which already space them apart. */
-@Composable
-private fun Actions(content: @Composable ColumnScope.() -> Unit) {
-    Column(content = content)
+    SectionCaption("Maybe already in your contacts", RowInset)
+    CardRow(match) { onOpen(match.key) }
+    ActionButton("Add this address there", { onAdd(match) }, Modifier.sheetInset().fillMaxWidth(), primary = true)
 }
 
 @Composable
@@ -251,9 +245,3 @@ private const val PICKER_LIMIT = 50
 
 // Captions and contact rows pad their own text by the page's text inset, so they add only the rest.
 internal val RowInset = Modifier.padding(horizontal = SheetTokens.inset - PageTokens.textInset)
-
-// Plain actions pad their own symbol, so the symbol lines up with the title and address.
-private val ActionInset =
-    Modifier
-        .fillMaxWidth()
-        .padding(horizontal = SheetTokens.inset - StripTokens.plainPadding)

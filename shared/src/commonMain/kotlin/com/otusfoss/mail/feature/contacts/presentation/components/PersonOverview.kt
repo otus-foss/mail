@@ -48,8 +48,8 @@ internal fun rememberPersonActivity(mail: PersonMail): PersonActivity? =
     }.value
 
 /**
- * The person's card [note], the tiles to write, call when they have a [phone], and show their
- * mail, the people they share threads with, which [onShared] lists, and their recent threads.
+ * The person's card [note], the tiles to write, call when they have a [phone], take the
+ * [contactActions], such as New contact, and show their mail, the people they share threads with, which [onShared] lists, and their recent threads.
  * Each part shows only when there is something in it.
  */
 @Composable
@@ -58,6 +58,7 @@ internal fun PersonOverview(
     phone: String?,
     mail: PersonMail,
     activity: PersonActivity?,
+    contactActions: List<PersonTile.Action>,
     onShared: () -> Unit,
 ) {
     if (!note.isNullOrBlank()) {
@@ -68,6 +69,7 @@ internal fun PersonOverview(
         buildList {
             add(PersonTile.Action("Write", Res.drawable.symbol_mail, mail.write, primary = true))
             if (phone != null) add(PersonTile.Action("Call", Res.drawable.symbol_call, { uris.call(phone) }))
+            addAll(contactActions)
             val messages = activity?.messages?.takeIf { it > 0 }
             if (messages != null) {
                 add(PersonTile.Count("Messages", messages) { mail.showMail(false) })

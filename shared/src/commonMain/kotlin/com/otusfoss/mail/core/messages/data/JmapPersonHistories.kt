@@ -4,7 +4,9 @@ import com.otusfoss.core.jmap.GetMethod
 import com.otusfoss.core.jmap.GetResult
 import com.otusfoss.core.jmap.JmapCall
 import com.otusfoss.core.jmap.JmapConnections
+import com.otusfoss.core.jmap.JmapFilter
 import com.otusfoss.core.jmap.JmapIds
+import com.otusfoss.core.jmap.JmapRequestBuilder
 import com.otusfoss.core.jmap.QueryMethod
 import com.otusfoss.core.jmap.anyOf
 import com.otusfoss.core.jmap.filterCondition
@@ -27,8 +29,10 @@ import kotlinx.datetime.TimeZone
 import kotlinx.serialization.json.JsonPrimitive
 
 /**
- * A person's threads from one `Email/query` on `from`, `to`, and `cc` (RFC 8621, section 4.4),
- * one email per thread, newest first. The server may match an address loosely, such as by
+ * A person's threads from two lookups in one request, one email per thread, newest first: an
+ * `Email/query` on `from`, `to`, and `cc` (RFC 8621, section 4.4), which reaches old mail, and the
+ * account's newest [RECENT] threads without a filter, since a server's search can miss mail it
+ * lists, such as mail it has not indexed. The server may also match an address loosely, such as by
  * substring, so only mail that names the same address stays. The people shared with them come
  * from the same [SEARCHED] threads, so their counts cover recent mail, not all of it.
  */
@@ -50,11 +54,12 @@ internal class JmapPersonHistories(
         own: (String) -> Boolean,
     ): PersonHistory {
         lateinit var found: JmapCall<GetResult<EmailObject>>
+        lateinit var recent: JmapCall<GetResult<EmailObject>>
         val filter = anyOf(listOf("from", "to", "cc").map { filterCondition(it, JsonPrimitive(address)) })
         val (folders, response) =
             mailboxes.send(this) {
-                val query = call(QueryMethod(EmailType, id, filter, NEWEST_FIRST, SEARCHED, COLLAPSED))
-                found = call(GetMethod(EmailType, id, JmapIds.Result(query.resultOf("/ids")), PROPERTIES))
+                found = newest(id, filter, SEARCHED)
+                recent = newest(id, filter = null, RECENT)
             }
         val bins =
             folders
@@ -62,8 +67,8 @@ internal class JmapPersonHistories(
                 .map { it.id }
                 .toSet()
         val threads =
-            response[found]
-                .list
+            (response[found].list + response[recent].list)
+                .distinctBy { it.threadId.ifEmpty { it.id } }
                 .filter { email -> email.boxes.none(bins::contains) && email.people.any { it.isSame(address) } }
                 .sortedByDescending { it.receivedTime }
         val zone = TimeZone.currentSystemDefault()
@@ -105,14 +110,27 @@ internal class JmapPersonHistories(
                 )
             }.sortedByDescending { it.threads }
 
+    /** The newest [limit] threads of [accountId] that match [filter], or of all its mail without one. */
+    private fun JmapRequestBuilder.newest(
+        accountId: String,
+        filter: JmapFilter?,
+        limit: Int,
+    ): JmapCall<GetResult<EmailObject>> {
+        val query = call(QueryMethod(EmailType, accountId, filter, NEWEST_FIRST, limit, COLLAPSED))
+        return call(GetMethod(EmailType, accountId, JmapIds.Result(query.resultOf("/ids")), PROPERTIES))
+    }
+
     private val EmailObject.people: List<EmailAddress>
         get() = from.orEmpty() + to.orEmpty() + cc.orEmpty()
 
     private fun EmailAddress.isSame(address: String): Boolean = email.equals(address, ignoreCase = true)
 
     private companion object {
-        /** How many threads the lookup reads, for Recent and for the people shared in them. */
+        /** How many threads the search reads, for Recent and for the people shared in them. */
         const val SEARCHED = 50
+
+        /** How far back the unfiltered lookup reads, for mail the server's search misses. */
+        const val RECENT = 100
         val COLLAPSED = mapOf("collapseThreads" to JsonPrimitive(true))
         val PROPERTIES =
             listOf("id", "threadId", "subject", "preview", "receivedAt", "mailboxIds", "keywords", "from", "to", "cc")
