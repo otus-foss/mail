@@ -45,10 +45,14 @@ class ReadContext(
     val replies: ReadReplies,
 )
 
-/** The conversation's [pages], and [content], which loads a page's full body, then with its inline images. */
+/**
+ * The conversation's [pages], [content], which loads a page's full body, then with its inline
+ * images, and [senderMail], the sender's other mail; null where none is wired.
+ */
 class ReadLoads(
     val pages: ConversationMessages,
     val content: (MailMessage) -> Flow<MessageContent?>,
+    val senderMail: SenderMailLinks? = null,
 )
 
 /**
@@ -115,8 +119,7 @@ class ReadFiles(
  * The services behind the newsletter strip and the ⋯ menu, including the [edits] the view makes,
  * [person], what tapping a person or the menu's contact entries open, and the Inbox's
  * [categories]; each is null where none is wired, and without [person] the pills stay plain.
- * [files] handles attachments and printing. [senderMails] finds a sender's other mail, and
- * [openMail] opens one of them by its login and email id.
+ * [files] handles attachments and printing.
  */
 class ReadServices(
     val newsletters: Newsletters?,
@@ -126,8 +129,12 @@ class ReadServices(
     val person: PersonSheet?,
     val files: ReadFiles,
     val categories: ReadCategories?,
-    val senderMails: SenderMails? = null,
-    val openMail: ((loginId: String, emailId: String) -> Unit)? = null,
+)
+
+/** A sender's other mail: [mails] finds it, and [open] opens one of them by its login and email id. */
+class SenderMailLinks(
+    val mails: SenderMails,
+    val open: (loginId: String, emailId: String) -> Unit,
 )
 
 /**

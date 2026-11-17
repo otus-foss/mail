@@ -16,10 +16,7 @@ import com.otusfoss.mail.core.messages.domain.BodyPrefetch
 import com.otusfoss.mail.core.settings.domain.ReadBehavior
 import com.otusfoss.mail.core.settings.presentation.MailBehaviorState
 
-/**
- * The Mail behavior page's Reading rows: marking mail read, quoted text, downloading mail ahead,
- * and the Read view's quick view.
- */
+/** The Mail behavior page's Reading rows: marking mail read, quoted text, and downloading mail ahead. */
 internal fun readingRows(state: MailBehaviorState): List<SettingRowSpec> {
     val read = state.behavior.read
     return listOf(

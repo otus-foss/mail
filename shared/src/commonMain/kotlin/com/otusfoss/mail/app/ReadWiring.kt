@@ -25,6 +25,7 @@ import com.otusfoss.mail.feature.read.presentation.ReadLoads
 import com.otusfoss.mail.feature.read.presentation.ReadPrivacy
 import com.otusfoss.mail.feature.read.presentation.ReadReplies
 import com.otusfoss.mail.feature.read.presentation.ReadServices
+import com.otusfoss.mail.feature.read.presentation.SenderMailLinks
 import com.otusfoss.mail.feature.read.presentation.components.NewFolderSheet
 import com.otusfoss.mail.feature.read.presentation.components.PersonSheet
 import com.otusfoss.mail.feature.read.presentation.readFolders
@@ -73,7 +74,12 @@ internal class ReadWiring(
         onCompose: (ComposeRequest) -> Unit,
     ): ReadContext =
         ReadContext(
-            loads = ReadLoads(services.conversationMessages, services.bodies::content),
+            loads =
+                ReadLoads(
+                    services.conversationMessages,
+                    services.bodies::content,
+                    SenderMailLinks(services.senderMails, services.requests::openMessage),
+                ),
             folders =
                 readFolders(
                     folders.all::account,
@@ -96,8 +102,6 @@ internal class ReadWiring(
                     person,
                     files,
                     categories.takeIf { sorted },
-                    services.senderMails,
-                    services.requests::openMessage,
                 ),
             effects = effects,
             display =
