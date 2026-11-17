@@ -7,6 +7,7 @@ import com.otusfoss.mail.core.mail.isSeen
 import com.otusfoss.mail.core.mail.received
 import com.otusfoss.mail.core.mailbox.MailFolder
 import com.otusfoss.mail.core.mailbox.MailboxRole
+import com.otusfoss.mail.core.messages.domain.displayAddress
 import com.otusfoss.mail.core.messages.domain.displayLine
 import com.otusfoss.mail.core.messages.domain.displayText
 import com.otusfoss.mail.feature.notifications.domain.NewMail
@@ -32,8 +33,7 @@ internal fun EmailObject.toNewMail(account: MailAccount): NewMail {
         accountName = account.login.name,
         emailId = id,
         sender =
-            listOfNotNull(from?.name, from?.email)
-                .map { it.displayLine() }
+            listOfNotNull(from?.name?.displayLine(), from?.email?.displayAddress())
                 .firstOrNull { it.isNotBlank() }
                 .orEmpty(),
         subject = subject.orEmpty().displayLine(),
