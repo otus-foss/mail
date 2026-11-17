@@ -15,8 +15,9 @@ class ReadRulesTest {
     private fun shows(
         setting: RemoteImages,
         sender: String,
+        verified: Boolean = true,
         inSpam: Boolean = false,
-    ) = showsRemoteImages(setting, sender, known, allowed, inSpam)
+    ) = showsRemoteImages(setting, sender, verified, known, allowed, inSpam)
 
     @Test
     fun spamNeverLoadsImages() {
@@ -25,16 +26,24 @@ class ReadRulesTest {
     }
 
     @Test
-    fun alwaysLoadsFromAnyone() = assertTrue(shows(RemoteImages.Always, "stranger@example.com"))
+    fun alwaysLoadsFromAnyone() = assertTrue(shows(RemoteImages.Always, "stranger@example.com", verified = false))
 
     @Test
     fun neverLoadsEvenFromKnownPeople() = assertFalse(shows(RemoteImages.Never, "grace@example.org"))
 
     @Test
-    fun knownLoadsFromKnownPeopleIgnoringCase() = assertTrue(shows(RemoteImages.Known, "Grace@Example.org"))
+    fun knownLoadsFromVerifiedKnownPeopleIgnoringCase() = assertTrue(shows(RemoteImages.Known, "Grace@Example.org"))
 
     @Test
-    fun knownLoadsFromAllowedSenders() = assertTrue(shows(RemoteImages.Known, "news@sentry.example"))
+    fun knownBlocksKnownPeopleWhoAreNotVerified() =
+        assertFalse(shows(RemoteImages.Known, "grace@example.org", verified = false))
+
+    @Test
+    fun knownLoadsFromVerifiedAllowedSenders() = assertTrue(shows(RemoteImages.Known, "news@sentry.example"))
+
+    @Test
+    fun knownBlocksAllowedSendersWhoAreNotVerified() =
+        assertFalse(shows(RemoteImages.Known, "news@sentry.example", verified = false))
 
     @Test
     fun aLookalikeAddressIsNotAKnownContact() {
@@ -42,12 +51,21 @@ class ReadRulesTest {
         listOf("ada@corp\u200E.example.com", "ada@corp\u007F.example.com", "ada@corp.example\u0001.com")
             .map { it.displayAddress() }
             .forEach { address ->
-                assertFalse(showsRemoteImages(RemoteImages.Known, address, known, listOf(address), inSpam = false))
+                assertFalse(
+                    showsRemoteImages(RemoteImages.Known, address, verified = true, known, listOf(address), inSpam = false),
+                )
             }
     }
 
     @Test
     fun knownBlocksUnknownSenders() = assertFalse(shows(RemoteImages.Known, "stranger@example.com"))
+
+    @Test
+    fun aSenderIsVerifiedWhenTheirDomainPassed() {
+        assertTrue(MailSender("Grace", "grace@Example.org", brandDomain = "example.org").isVerified)
+        assertFalse(MailSender("Grace", "grace@example.org").isVerified)
+        assertFalse(MailSender("Grace", "grace@example.org", brandDomain = "other.example").isVerified)
+    }
 
     private val ada = MailSender("Ada Lovelace", "ada@example.org")
     private val grace = MailSender("Grace Hopper", "grace@example.org")

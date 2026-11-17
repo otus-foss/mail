@@ -72,8 +72,11 @@ WebView on Android and a WKWebView on iOS, with scripts, file access, and forms 
 - **Host:** whatever the message's HTML names, over `http:` or `https:`.
 - **When:** when the message opens and Settings › Privacy & security › **Load images** allows it:
   **In your contacts** (the default) loads them for contacts, people the user wrote to, and
-  allowed senders; **Always** for everyone; **Never** for no one. Mail in Spam never loads them.
-  **Show** on the banner loads them once. Source:
+  allowed senders, but only when the user's own server confirmed the sender: its topmost
+  `Authentication-Results` field reports a DMARC pass for the From domain. Anyone can write any
+  From address, so mail that only claims to come from a contact waits for **Show**. **Always**
+  loads them for everyone; **Never** for no one. Mail in Spam never loads them. **Show** on the
+  banner loads them once, and **Always** beside **Hide** appears only for a confirmed sender. Source:
   [`ReadRules.kt`](../shared/src/commonMain/kotlin/com/otusfoss/mail/core/messages/domain/ReadRules.kt),
   [`ReadPages.kt`](../shared/src/commonMain/kotlin/com/otusfoss/mail/feature/read/presentation/components/ReadPages.kt).
 - **Sends:** the device's IP address, the URL (which can identify the recipient and act as a read

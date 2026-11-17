@@ -100,6 +100,15 @@ class JmapConversationMessagesTest {
         }
 
     @Test
+    fun aPageFromTheRowsSenderKeepsItsOwnServerCheck() =
+        runTest {
+            val verifiedRow = row.copy(sender = sender.copy(brandDomain = "example.org"))
+            val fromGrace = pages.messages(verifiedRow)!!.filter { it.sender.address == sender.address }
+            assertTrue(fromGrace.isNotEmpty())
+            assertTrue(fromGrace.all { it.sender.brandDomain == null }, "These emails carry no DMARC pass")
+        }
+
+    @Test
     fun offlineTheListsSavedThreadAnswersAndAnUnknownOneGivesNull() =
         runTest {
             server.down = true
