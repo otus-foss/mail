@@ -1,6 +1,7 @@
 package com.otusfoss.mail.feature.contacts.presentation
 
 import com.otusfoss.core.avatar.AvatarImage
+import com.otusfoss.core.avatar.AvatarMark
 import com.otusfoss.core.avatar.AvatarRequest
 import com.otusfoss.core.avatar.AvatarService
 import com.otusfoss.core.avatar.AvatarStyle
@@ -77,8 +78,13 @@ internal data class ShownAvatar(
 }
 
 /**
- * What mail to each login should show for each address on a card. One of the user's avatar cards
- * wins, then a card in that login, then, with [allAccounts], another login's card. Null for an
+ * What mail to each login should show for each address on a card. Cards come in this order: the
+ * login's own cards, its avatar cards first, then its other cards, then, with [allAccounts], other
+ * logins' own cards and then their other cards. An own card is in a book of the user's that they
+ * may write and that nobody shared with them; only own cards count as avatar cards, so a shared
+ * book or another login cannot replace the user's choice. A Website style counts only on an own
+ * card of the same login, since it fetches the website icon with Website icons off. Other styles
+ * draw nothing from the network and count on any card, as in core's server lookup. Null for an
  * address whose cards have no style and no inline photo, so a photo stored as a link or a blob is
  * still found on the server.
  */
@@ -86,10 +92,15 @@ internal fun contactPhotos(
     snapshot: ContactsSnapshot,
     allAccounts: Boolean,
 ): Map<PhotoAddress, ShownAvatar?> {
+    val ownBooks =
+        snapshot.books
+            .filter { it.canWrite && !it.isShared }
+            .map { it.key }
+            .toSet()
     val entries =
         snapshot.cards.flatMap { card ->
-            val shown = card.card.shownAvatar()
-            card.emails.map { PhotoEntry(card.key.loginId, avatarEmailKey(it.value), card.card.isAvatarCard, shown) }
+            val own = card.books.any { it in ownBooks }
+            card.emails.map { PhotoEntry(card.key.loginId, avatarEmailKey(it.value), own, card.card) }
         }
     val logins = (snapshot.books.map { it.key.loginId } + entries.map { it.loginId }).toSet()
     return logins
@@ -100,21 +111,24 @@ internal fun contactPhotos(
                 .map { (email, found) ->
                     PhotoAddress(login, email) to
                         found
-                            .sortedWith(compareBy({ !it.avatarCard }, { it.loginId != login }))
-                            .firstNotNullOfOrNull { it.shown }
+                            .sortedWith(
+                                compareBy({ it.loginId != login }, { !it.own }, { !(it.own && it.card.isAvatarCard) }),
+                            ).firstNotNullOfOrNull { it.shownTo(login) }
                 }
         }.toMap()
 }
 
-private fun Card.shownAvatar(): ShownAvatar? =
-    avatarStyle?.let { ShownAvatar(style = it) }
-        ?: photo?.takeIf { it.inlineBytes() != null }?.let { ShownAvatar(photo = it) }
-
 private class PhotoEntry(
     val loginId: String,
     val email: String,
-    val avatarCard: Boolean,
-    val shown: ShownAvatar?,
-)
+    val own: Boolean,
+    val card: Card,
+) {
+    fun shownTo(login: String): ShownAvatar? =
+        card.avatarStyle
+            ?.takeIf { it.mark != AvatarMark.Website || (own && loginId == login) }
+            ?.let { ShownAvatar(style = it) }
+            ?: card.photo?.takeIf { it.inlineBytes() != null }?.let { ShownAvatar(photo = it) }
+}
 
 private const val DEFAULT_PHOTO_TYPE = "image/jpeg"
