@@ -50,6 +50,17 @@ class DisplayTextTest {
     }
 
     @Test
+    fun charactersThatDrawNothingShowAsEscapes() {
+        listOf('\u200B', '\u2060', '\uFEFF', '\u00AD').forEach { invisible ->
+            val address = "ada@corp$invisible.example.com"
+
+            assertNotEquals("ada@corp.example.com", address.displayAddress())
+            assertTrue(address.displayAddress().all { it.code in 0x20..0x7E })
+            assertFalse(address.isUsableAddress())
+        }
+    }
+
+    @Test
     fun innerWhitespaceMakesAnAddressUnusable() {
         assertEquals("ada\\u{0020}@example.org", "ada @example.org".displayAddress())
         assertFalse("".isUsableAddress())

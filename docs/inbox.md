@@ -272,7 +272,8 @@ runs into one space. The open message shows the sender's address after the name.
 
 Addresses are never cleaned, because removing a character can turn one address into another.
 `displayAddress` keeps a clean address as it is and shows each hidden character, inner whitespace,
-or backslash in any other address as an escape such as `\u{200E}`. Such an address fails
+or backslash in any other address as an escape such as `\u{200E}`. Hidden here also covers the
+format characters that draw nothing, such as a zero-width space or a soft hyphen. Such an address fails
 `isUsableAddress`: it loads no avatar or website icon, matches no contact or allowed sender, loads
 remote images only when the setting is Always, and offers no block or sorting rule.
 

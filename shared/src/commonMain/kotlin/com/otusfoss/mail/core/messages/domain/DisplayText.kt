@@ -24,9 +24,9 @@ fun String.displayText(): String =
 
 /**
  * An email address from a server, trimmed. A different address must never become a known one, so
- * nothing is removed: an address with a character [displayLine] would drop or change, or with a
- * backslash, shows each of them as an escape such as `\u{200E}`. That form is visible, unique to
- * the address, and fails [isUsableAddress].
+ * nothing is removed: an address with a character [displayLine] would drop or change, a character
+ * that draws nothing, or a backslash shows each of them as an escape such as `\u{200E}`. That form
+ * is visible, unique to the address, and fails [isUsableAddress].
  */
 fun String.displayAddress(): String =
     trim().let { address ->
@@ -43,7 +43,12 @@ fun String.displayAddress(): String =
  */
 fun String.isUsableAddress(): Boolean = isNotBlank() && none { it.isUnsafeInAddress() }
 
-private fun Char.isUnsafeInAddress(): Boolean = isHidden() || isWhitespace() || this == '\\'
+/**
+ * Format characters, such as a zero-width space or a soft hyphen, draw nothing, so an address with
+ * one would read as the address without it.
+ */
+private fun Char.isUnsafeInAddress(): Boolean =
+    isHidden() || isWhitespace() || this == '\\' || category == CharCategory.FORMAT
 
 private fun Char.escaped(): String = "\\u{${code.toString(HEX).uppercase().padStart(4, '0')}}"
 
