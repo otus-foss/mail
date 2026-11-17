@@ -5,9 +5,10 @@ covers Mail's own code and the core libraries it links. Links to Core point at i
 branch. Build-time hosts, such as Gradle and `maven.pkg.github.com`, are out of scope; so are
 services the operating system runs on its own.
 
-Android requests only the `INTERNET` permission for this
-([manifest](../androidApp/src/main/AndroidManifest.xml)). The nightly build adds
-`REQUEST_INSTALL_PACKAGES` for its updater.
+Android requests the `INTERNET` permission for this
+([manifest](../androidApp/src/main/AndroidManifest.xml)), and `ACCESS_NETWORK_STATE` to tell
+whether the network is metered or Data Saver is on before it downloads mail ahead. The nightly
+build adds `REQUEST_INSTALL_PACKAGES` for its updater.
 
 | Destination | Contacted | Default | Can be turned off |
 | --- | --- | --- | --- |

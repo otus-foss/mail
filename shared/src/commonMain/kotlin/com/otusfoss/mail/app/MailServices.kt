@@ -35,6 +35,7 @@ import com.otusfoss.mail.core.messages.domain.DraftSender
 import com.otusfoss.mail.core.messages.domain.EmailByIdWriter
 import com.otusfoss.mail.core.messages.domain.EmailWriter
 import com.otusfoss.mail.core.messages.domain.MessageBodies
+import com.otusfoss.mail.core.messages.domain.NetworkCost
 import com.otusfoss.mail.core.messages.domain.PeopleSearch
 import com.otusfoss.mail.core.messages.domain.ScheduledSends
 import com.otusfoss.mail.core.messages.domain.SenderBlocks
@@ -115,6 +116,7 @@ class MailServices(
 
     /** The screen and keyboard protections this platform can apply. */
     internal val devicePrivacy: DevicePrivacy get() = host.devicePrivacy
+    internal val network: NetworkCost get() = host.network
 
     /** Pushed changes, which reload the open inbox and folders while Mail is in [visibility]. */
     val serverChanges = ServerChanges()

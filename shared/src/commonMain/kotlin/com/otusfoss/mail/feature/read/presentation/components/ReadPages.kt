@@ -72,7 +72,7 @@ internal class ReadPageLook(
         body: PageBody,
     ): PageImages {
         val load = allowed(page) == true || state.bodies.imagesShown(page)
-        val onShow = { state.bodies.showImages(page) }.takeIf { !load && hasRemote(body) && allowed(page) != null }
+        val onShow = { state.bodies.showImages(page) }.takeIf { !load && hasRemote(body) }
         return PageImages(load, onShow)
     }
 
@@ -87,7 +87,9 @@ internal class ReadPageLook(
 
     /**
      * The banner above [page]'s text, below the sender details: images blocked with Show, or shown
-     * this time with Hide and Always for its sender; nothing once they are allowed. Zen mode hides
+     * this time with Hide and Always for its sender; nothing once they are allowed. It shows while
+     * the rule that may allow them is still loading too, when they are blocked all the same, so
+     * the text below it does not move and reload once the rule answers. Zen mode hides
      * it but keeps its space, so the text does not move and reload, and a tap on an image's
      * placeholder still shows them.
      */
@@ -96,7 +98,7 @@ internal class ReadPageLook(
         page: MailMessage,
         body: PageBody,
     ) {
-        if (!hasRemote(body) || allowed(page) != false) return
+        if (!hasRemote(body) || allowed(page) == true) return
         val bodies = state.bodies
         Dismissible(page, Modifier.holdsSpace(read.display.zen())) {
             if (!bodies.imagesShown(page)) {
@@ -141,9 +143,10 @@ internal class ReadPageLook(
 
     /**
      * Whether the page at [index] leaves its quoted text out: unless the user shows quotes, a page
-     * with older pages in its conversation does, since a swipe shows them.
+     * with older pages in its conversation does, since a swipe shows them. Until the pages load,
+     * the row's count says whether there are older ones, so the page's HTML is not loaded twice.
      */
-    fun hidesQuote(index: Int): Boolean = !read.display.showQuotes() && index < state.pages.lastIndex
+    fun hidesQuote(index: Int): Boolean = !read.display.showQuotes() && index < state.messageCount(row) - 1
 
     /** [page]'s full record, with every folder it is in, the one shown included. */
     @Composable
@@ -200,7 +203,8 @@ private fun MailMessage.shows(address: String): Boolean =
 
 /**
  * Whether a page's remote images [load]; [onShow] loads them on a placeholder tap, null while
- * they load or the page has none.
+ * they load or the page has none. The placeholders show from the start, also while the rule that
+ * may allow the images is still loading, so a page whose images stay blocked loads once.
  */
 internal class PageImages(
     val load: Boolean,

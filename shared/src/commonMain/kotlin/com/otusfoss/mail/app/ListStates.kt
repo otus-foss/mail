@@ -1,5 +1,6 @@
 package com.otusfoss.mail.app
 
+import androidx.compose.runtime.snapshotFlow
 import com.otusfoss.core.avatar.AvatarOptions
 import com.otusfoss.core.dateformat.DateFormatter
 import com.otusfoss.mail.core.mailbox.folderTree
@@ -7,6 +8,7 @@ import com.otusfoss.mail.core.messages.domain.MailScope
 import com.otusfoss.mail.core.messages.domain.MailScopeChoice
 import com.otusfoss.mail.core.messages.domain.MailboxScope
 import com.otusfoss.mail.core.messages.domain.accountId
+import com.otusfoss.mail.core.messages.domain.prefetch
 import com.otusfoss.mail.core.messages.presentation.MailEdits
 import com.otusfoss.mail.core.messages.presentation.MessageActions
 import com.otusfoss.mail.core.messages.presentation.MessageMarking
@@ -17,7 +19,12 @@ import com.otusfoss.mail.feature.inbox.presentation.FilterLookups
 import com.otusfoss.mail.feature.inbox.presentation.InboxFeedState
 import com.otusfoss.mail.feature.inbox.presentation.mailScope
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.distinctUntilChangedBy
 import kotlinx.coroutines.job
+import kotlinx.coroutines.launch
+import kotlin.time.Duration.Companion.milliseconds
 
 /**
  * The Inbox's feed and every list page's feeds, the actions on their messages, and the filters
@@ -39,6 +46,10 @@ internal class ListStates(
                 .mailScope(),
             scope,
         )
+
+    init {
+        scope.launch { prefetchInbox() }
+    }
 
     /** The feeds of the list pages open now, besides the Inbox's [feed]. */
     private val pageFeeds = mutableSetOf<InboxFeedState>()
@@ -67,6 +78,25 @@ internal class ListStates(
         val stop = edits.observe(feed.edits)
         scope.coroutineContext.job.invokeOnCompletion { stop() }
         return feed
+    }
+
+    /**
+     * Brings the bodies of the Inbox's first rows to the device as it shows them, where the
+     * setting and the network allow, so they open without a download. Rows must hold still for
+     * [PREFETCH_DELAY] first, so a run of edits fetches once. Only the Inbox's own mail counts,
+     * not what a search or a filter shows in its place.
+     */
+    private suspend fun prefetchInbox() {
+        snapshotFlow {
+            feed.messages
+                .take(PREFETCH_ROWS)
+                .takeIf { feed.showsOwnMail }
+                .orEmpty()
+        }.distinctUntilChangedBy { rows -> rows.map { it.id } }
+            .collectLatest { rows ->
+                delay(PREFETCH_DELAY)
+                services.bodies.prefetch(rows, behavior.behavior.read.prefetch, services.network)
+            }
     }
 
     private fun opened(
@@ -112,3 +142,9 @@ internal class ListStates(
             cleanup = folders.cleaning.cleanup(feed),
         )
 }
+
+/** How many of the Inbox's first rows have their bodies fetched ahead; the bodies' own limit is the same. */
+private const val PREFETCH_ROWS = 20
+
+/** How long the Inbox's first rows hold still before their bodies are fetched. */
+private val PREFETCH_DELAY = 400.milliseconds
