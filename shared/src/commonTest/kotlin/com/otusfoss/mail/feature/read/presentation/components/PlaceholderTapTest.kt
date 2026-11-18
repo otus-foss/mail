@@ -21,6 +21,7 @@ import com.otusfoss.mail.feature.read.presentation.ReadFolders
 import com.otusfoss.mail.feature.read.presentation.ReadLoads
 import com.otusfoss.mail.feature.read.presentation.ReadPrivacy
 import com.otusfoss.mail.feature.read.presentation.ReadReplies
+import com.otusfoss.mail.feature.read.presentation.ReadSender
 import com.otusfoss.mail.feature.read.presentation.ReadServices
 import com.otusfoss.mail.feature.read.presentation.ReadState
 import kotlinx.coroutines.flow.flowOf
@@ -89,7 +90,7 @@ class PlaceholderTapTest {
                 known = KnownPeople { emptySet() },
                 allowSender = {},
             ),
-            ReadServices(null, null, null, null, null, ReadFiles(null, null, null), null),
+            ReadServices(null, null, null, null, ReadFiles(null, null, null), null, ReadSender(null)),
             ReadEffects(toasts, launch = {}, NewsletterSteps()),
             ReadDisplay(showQuotes = { false }, zen = { true }, setZen = {}),
             ReadReplies(OwnAddresses(emptyMap()), onCompose = {}),
