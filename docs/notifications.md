@@ -141,7 +141,8 @@ An alert that shows its message offers up to three buttons. A "New mail only" al
 locked version of an alert offer none, because the user cannot see which message they would
 change. A device set to show full alerts on its lock screen shows the buttons there too, so every
 button that changes mail asks the user to unlock first (`setAuthenticationRequired`, Android 12
-and later). Settings › Notifications › **Buttons** › **Alert buttons** picks them and their order
+and later). Android 11 and older cannot ask, so `AlertActionReceiver` ignores the press while the
+phone is locked: the alert stays, and the button works once the user unlocks. Settings › Notifications › **Buttons** › **Alert buttons** picks them and their order
 in the same `OrderedChoiceSheet` the Quick views use; see [settings](settings.md#kinds-of-setting). The
 choice is `MailBehavior.notificationActions`, saved with the other behavior settings under
 `notification_actions`. The default is **Delete**, **Archive**, **Mark read**, in that order.
@@ -223,7 +224,9 @@ the choice. `AlertActionsTest` checks that tapping an alert names its message an
 none, that only alerts that show the message have buttons, that they are the chosen ones the
 account can run, that Reply opens Mail on a reply, that every button but Reply asks to unlock,
 that a button clears its alert and queues the change, that a failed change brings the alert back
-saying so, and that a change for a removed account stops without one. `EmailShortcutsTest` checks
+saying so, and that a change for a removed account stops without one. `AlertButtonLockTest` checks
+that on Android 11 a button on a locked phone keeps its alert and queues nothing, that it acts once
+unlocked, and that Android 12 and later never check the lock. `EmailShortcutsTest` checks
 the `Email/set` patches against a mock server, an account without an Archive, Trash, or Spam
 folder, and a removed login. `MessageListingTest` checks finding the row of a
 message inside a conversation. `AlertRemovalTest` checks that removing an account clears only its
