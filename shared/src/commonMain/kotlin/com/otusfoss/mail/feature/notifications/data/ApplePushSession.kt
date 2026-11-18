@@ -1,5 +1,6 @@
 package com.otusfoss.mail.feature.notifications.data
 
+import com.otusfoss.core.jmap.JmapException
 import com.otusfoss.core.jmap.PushKeys
 import com.otusfoss.core.jmap.PushMessage
 import com.otusfoss.core.jmap.push.PushEndpoint
@@ -103,7 +104,7 @@ internal class ApplePushSession<S : PushServices>(
         val deviceToken = (token ?: host.read("token")).takeIf { enabled && !registrationError }
         if (deviceToken != null) syncLogins(logins, deviceToken, client, push)
         // Turning pushes on, a new device token, or the next foreground activation syncs again.
-        val waiting = deviceToken != null && PushDeliveryStatus.Connecting in results.values
+        val waiting = deviceToken != null && results.values.any { it in RETRIED }
         settledLogins = logins.takeUnless { waiting }
     }
 
@@ -113,33 +114,51 @@ internal class ApplePushSession<S : PushServices>(
         client: ApplePushBridge,
         push: PushSubscriptions,
     ) {
-        logins.forEach { login ->
-            val old = storage.registrations()[login]
-            if (old != null && old.token != deviceToken) remove(login)
-            val registration = storage.registrations()[login] ?: register(login, deviceToken, client)
-            try {
-                client.pending(registration.route)
-                push.setEndpoint(
-                    login,
-                    PushEndpoint(
-                        client.endpoint(registration.route),
-                        Json.decodeFromString<PushKeys>(registration.keys),
-                    ),
-                )
-            } catch (_: ApplePushRouteExpired) {
-                storage.save(storage.registrations() - login)
-                host.removeKey(registration.keyId)
-                push.clearEndpoint(login)
-            }
-        }
+        val unconnected = logins.filterNot { login -> succeeds { connect(login, deviceToken, client, push) } }
         push.sync()
-        storage.registrations().forEach { (login, registration) -> receive(login, registration, client, push) }
+        val unreceived =
+            storage
+                .registrations()
+                .filterNot { (login, registration) -> succeeds { receive(login, registration, client, push) } }
+                .keys
         push.sync()
         val statuses = push.status()
-        storage.registrations().forEach { (login, registration) ->
-            client.active(registration.route, statuses[login] == PushStatus.Active)
+        val unrenewed =
+            storage
+                .registrations()
+                .filterNot { (login, registration) ->
+                    succeeds { client.active(registration.route, statuses[login] == PushStatus.Active) }
+                }.keys
+        val failed = unconnected + unreceived + unrenewed
+        results =
+            logins.associateWith { login ->
+                if (login in failed) PushDeliveryStatus.Unavailable else statuses[login].delivery
+            }
+    }
+
+    private suspend fun connect(
+        login: String,
+        deviceToken: String,
+        client: ApplePushBridge,
+        push: PushSubscriptions,
+    ) {
+        val old = storage.registrations()[login]
+        if (old != null && old.token != deviceToken) remove(login)
+        val registration = storage.registrations()[login] ?: register(login, deviceToken, client)
+        try {
+            client.pending(registration.route)
+            push.setEndpoint(
+                login,
+                PushEndpoint(
+                    client.endpoint(registration.route),
+                    Json.decodeFromString<PushKeys>(registration.keys),
+                ),
+            )
+        } catch (_: ApplePushRouteExpired) {
+            storage.save(storage.registrations() - login)
+            host.removeKey(registration.keyId)
+            push.clearEndpoint(login)
         }
-        results = logins.associateWith { login -> statuses[login].delivery }
     }
 
     private suspend fun register(
@@ -170,7 +189,7 @@ internal class ApplePushSession<S : PushServices>(
         client.pending(registration.route).forEach { messageId ->
             val payload = client.message(messageId) ?: return@forEach
             val text = host.decrypt(registration.keyId, Base64.encode(payload))
-            when (val message = text?.let(PushMessage::decode)) {
+            when (val message = text?.let(::readPush)) {
                 is PushMessage.Verification -> push.receive(login, message)
                 is PushMessage.StateChange -> host.showDelivery(message)
                 else -> Unit
@@ -179,6 +198,28 @@ internal class ApplePushSession<S : PushServices>(
         }
     }
 }
+
+/** Runs one login's step. A failure marks only that login, so the others still sync and renew their routes. */
+private suspend fun succeeds(step: suspend () -> Unit): Boolean =
+    try {
+        step()
+        true
+    } catch (error: CancellationException) {
+        throw error
+    } catch (_: Exception) {
+        false
+    }
+
+/** Text that is not a push object is acknowledged like an unknown type, or it would block the queue forever. */
+private fun readPush(text: String): PushMessage? =
+    try {
+        PushMessage.decode(text)
+    } catch (_: JmapException) {
+        null
+    }
+
+/** A sync that leaves a login in one of these states runs again at the next foreground check. */
+private val RETRIED = setOf(PushDeliveryStatus.Connecting, PushDeliveryStatus.Unavailable)
 
 private fun ApplePushPlatform.showDelivery(message: PushMessage.StateChange) {
     if (message.changed.values.any { "EmailDelivery" in it }) showNewMail()
