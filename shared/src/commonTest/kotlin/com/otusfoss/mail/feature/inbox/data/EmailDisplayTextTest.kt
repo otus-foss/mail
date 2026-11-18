@@ -5,10 +5,13 @@ import com.otusfoss.mail.core.mail.EmailBodyPart
 import com.otusfoss.mail.core.mail.EmailObject
 import com.otusfoss.mail.core.messages.data.receivedAt
 import com.otusfoss.mail.core.messages.data.toMessage
+import com.otusfoss.mail.core.messages.data.toSender
 import com.otusfoss.mail.core.messages.domain.MailLocation
+import com.otusfoss.mail.core.messages.domain.isUsableAddress
 import kotlinx.datetime.TimeZone
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 
 class EmailDisplayTextTest {
     private val hostile =
@@ -27,7 +30,7 @@ class EmailDisplayTextTest {
         val message = hostile.toMessage(MailLocation("Inbox", "Ada", "work"), TimeZone.UTC)
 
         assertEquals("lapyap Support", message.sender.name)
-        assertEquals("service@evil.example", message.sender.address)
+        assertEquals("\\u{200F}service@evil.example", message.sender.address)
         assertEquals("Your account is locked", message.subject)
         assertEquals("Line one\nLine two", message.body)
         assertEquals(listOf("invoicefdp.exe", "Attachment"), message.attributes.attachments)
@@ -42,5 +45,26 @@ class EmailDisplayTextTest {
                 ).toMessage(MailLocation("Inbox", "Ada", "work"), TimeZone.UTC)
 
         assertEquals("grace@example.org", message.sender.name)
+    }
+
+    @Test
+    fun hiddenCharactersDoNotTurnOneAddressIntoAnother() {
+        mapOf(
+            "ada@corp\u200E.example.com" to "ada@corp\\u{200E}.example.com",
+            "ada@corp\u007F.example.com" to "ada@corp\\u{007F}.example.com",
+            "ada@corp.example\u0001.com" to "ada@corp.example\\u{0001}.com",
+        ).forEach { (raw, shown) ->
+            val sender = EmailAddress("Ada", raw).toSender("a")
+            assertEquals(shown, sender.address)
+            assertFalse(sender.address.isUsableAddress())
+        }
+    }
+
+    @Test
+    fun aCleanAddressIsKeptAndTheNameIsStillCleaned() {
+        val sender = EmailAddress("\u202EAda\u200E Lovelace", " Ada@corp.example.com ").toSender("a")
+
+        assertEquals("Ada Lovelace", sender.name)
+        assertEquals("Ada@corp.example.com", sender.address)
     }
 }

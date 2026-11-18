@@ -1,5 +1,7 @@
 package com.otusfoss.mail.feature.folders.domain
 
+import com.otusfoss.mail.core.messages.domain.isUsableAddress
+
 /** Which part of a message a [SortCondition] matches mail by. */
 enum class SortBy { Sender, Domain, Recipient, Subject }
 
@@ -13,7 +15,7 @@ data class SortCondition(
 /**
  * Conditions for sorting mail like one message, narrowest first: its [sender], everyone at the
  * sender's domain, the [recipient] address it was sent to, and a word from its [subject]. Parts
- * the message lacks are left out.
+ * the message lacks, and addresses that are not usable ([isUsableAddress]), are left out.
  */
 fun sortConditions(
     sender: String,
@@ -22,13 +24,13 @@ fun sortConditions(
 ): List<SortCondition> =
     buildList {
         val address = sender.trim()
-        if (address.isNotEmpty()) {
+        if (address.isUsableAddress()) {
             add(SortCondition(SortBy.Sender, address, from(AddressMatch.Exact(address))))
+            val domain = address.substringAfterLast('@', "")
+            if (domain.isNotEmpty()) add(SortCondition(SortBy.Domain, "@$domain", from(AddressMatch.Domain(domain))))
         }
-        val domain = address.substringAfterLast('@', "")
-        if (domain.isNotEmpty()) add(SortCondition(SortBy.Domain, "@$domain", from(AddressMatch.Domain(domain))))
         val recipientAddress = recipient.trim()
-        if (recipientAddress.isNotEmpty()) {
+        if (recipientAddress.isUsableAddress()) {
             val condition = RuleCondition.Address(AddressField.To, AddressMatch.Exact(recipientAddress))
             add(SortCondition(SortBy.Recipient, recipientAddress, condition))
         }

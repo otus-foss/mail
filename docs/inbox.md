@@ -264,12 +264,18 @@ The last line shows only what the page doesn't already say:
 A row with none of these shows the start of the message instead. The line keeps a label's height,
 so rows with and without labels line up.
 
-`toMessage` cleans sender names and addresses, subjects, bodies, and attachment names before any
-screen shows them. `displayText` and `displayLine` remove control characters and the
-bidirectional marks, embeddings, overrides, and isolates (U+061C, U+200E, U+200F, U+202A to
-U+202E, U+2066 to U+2069) that can make "lapyap" read as "paypal". Single-line fields also turn
-line breaks and whitespace runs into one space. The open message shows the sender's address after
-the name.
+`toMessage` cleans sender names, subjects, bodies, and attachment names before any screen shows
+them. `displayText` and `displayLine` remove control characters and the bidirectional marks,
+embeddings, overrides, and isolates (U+061C, U+200E, U+200F, U+202A to U+202E, U+2066 to U+2069)
+that can make "lapyap" read as "paypal". Single-line fields also turn line breaks and whitespace
+runs into one space. The open message shows the sender's address after the name.
+
+Addresses are never cleaned, because removing a character can turn one address into another.
+`displayAddress` keeps a clean address as it is and shows each hidden character, inner whitespace,
+or backslash in any other address as an escape such as `\u{200E}`. Hidden here also covers the
+format characters that draw nothing, such as a zero-width space or a soft hyphen. Such an address fails
+`isUsableAddress`: it loads no avatar or website icon, matches no contact or allowed sender, loads
+remote images only when the setting is Always, and offers no block or sorting rule.
 
 ## Swipe actions
 
