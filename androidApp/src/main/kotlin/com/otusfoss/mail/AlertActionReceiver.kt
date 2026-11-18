@@ -18,9 +18,12 @@ class AlertActionReceiver : BroadcastReceiver() {
         intent: Intent,
     ) {
         val action = alertButton(intent.action)?.takeIf { !it.opensMailFromAlert } ?: return
-        val mail = intent.mail() ?: return
         val keyguard = context.getSystemService(KeyguardManager::class.java)
-        if (waitsForUnlock(Build.VERSION.SDK_INT) { keyguard.isDeviceLocked }) return
+        val mail =
+            intent
+                .mail()
+                ?.takeUnless { waitsForUnlock(Build.VERSION.SDK_INT) { keyguard.isDeviceLocked } }
+                ?: return
         MailNotifications(context).clear(listOf(AlertedMail(mail.loginId, mail.emailId)))
         AlertActionWorker.enqueue(context, action, mail)
     }
