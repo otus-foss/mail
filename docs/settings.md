@@ -80,9 +80,11 @@ left, the control on the right, and large section titles. Search covers every pa
   and how the device protects Mail. [Network destinations](network.md) lists every host the app
   may contact and which of these choices turns each off.
   - Under **Load remote images**, **Load images** opens a `ChoiceSheet`: **In your contacts**
-    (the default: contacts, people the user wrote to, and allowed senders), **Always**, or
-    **Never**. The section's info button says that images inside the mail itself always show and
-    that mail in Spam never loads remote images. **Allowed senders** names how many there are and
+    (the default: contacts, people the user wrote to, and allowed senders, each only when the
+    user's server confirmed the sender with a DMARC pass), **Always**, or
+    **Never**. The section's info button says that images inside the mail itself always show, that
+    In your contacts needs the sender confirmed by the user's mail server, and that mail in Spam
+    never loads remote images. **Allowed senders** names how many there are and
     opens their page (`AllowedSendersScreen`); while Load images is not In your contacts, its
     summary says the list only counts with that choice. The page stays open so senders can still
     be removed.

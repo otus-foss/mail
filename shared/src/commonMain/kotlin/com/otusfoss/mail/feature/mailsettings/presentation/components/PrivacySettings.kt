@@ -145,7 +145,8 @@ private fun PhotosSheet(
 private val ImagesInfo =
     InfoText(
         "Remote images",
-        "Images that are part of the mail itself always show. Mail in Spam never loads remote images.",
+        "Images that are part of the mail itself always show. In your contacts loads remote images only " +
+            "when your mail server confirmed the sender. Mail in Spam never loads them.",
     )
 
 private val PhotosInfo =

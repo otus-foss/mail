@@ -5,6 +5,7 @@ internal class TestApplePlatform : ApplePushPlatform {
     var shown = 0
     var removed = false
     var stopped = false
+    var decrypted = """{"@type":"PushVerification","pushSubscriptionId":"ps1","verificationCode":"verified"}"""
 
     override fun createIdentifier() = "12345678-1234-1234-1234-123456789012"
 
@@ -29,7 +30,7 @@ internal class TestApplePlatform : ApplePushPlatform {
     override fun decrypt(
         id: String,
         payload: String,
-    ) = """{"@type":"PushVerification","pushSubscriptionId":"ps1","verificationCode":"verified"}"""
+    ) = decrypted
 
     override fun removeKey(id: String) {
         removed = true

@@ -31,6 +31,7 @@ import com.otusfoss.mail.core.messages.domain.MessageContent
 import com.otusfoss.mail.core.messages.domain.MessageFolder
 import com.otusfoss.mail.core.messages.domain.RemoteImages
 import com.otusfoss.mail.core.messages.domain.inJunk
+import com.otusfoss.mail.core.messages.domain.isVerified
 import com.otusfoss.mail.core.messages.domain.orderedFolders
 import com.otusfoss.mail.core.messages.domain.showsRemoteImages
 import com.otusfoss.mail.core.messages.presentation.fullLabel
@@ -62,7 +63,14 @@ internal class ReadPageLook(
         val people = known ?: if (setting == RemoteImages.Known) return null else emptySet()
         val boxes = page.location.mailboxIds + page.location.mailboxId + row.location.mailboxId - ""
         val inSpam = inJunk(boxes, folders) || boxes.any { it !in folders }
-        return showsRemoteImages(setting, page.sender.address, people, read.privacy.allowed(), inSpam)
+        return showsRemoteImages(
+            setting,
+            page.sender.address,
+            page.sender.isVerified,
+            people,
+            read.privacy.allowed(),
+            inSpam,
+        )
     }
 
     private fun hasRemote(body: PageBody): Boolean = (body as? PageBody.Loaded)?.content?.html?.remoteContent == true
@@ -78,18 +86,19 @@ internal class ReadPageLook(
 
     /**
      * Whether [page]'s sender is not allowed to show remote images, so the ⋯ menu offers to always
-     * show them, also after the user showed them this time.
+     * show them, also after the user showed them this time. Not for a sender the server did not
+     * confirm, since allowing that address would not load its images.
      */
     fun blocked(
         page: MailMessage,
         body: PageBody,
-    ): Boolean = hasRemote(body) && allowed(page) == false
+    ): Boolean = hasRemote(body) && allowed(page) == false && page.sender.isVerified
 
     /**
      * The banner above [page]'s text, below the sender details: images blocked with Show, or shown
-     * this time with Hide and Always for its sender; nothing once they are allowed. It shows while
-     * the rule that may allow them is still loading too, when they are blocked all the same, so
-     * the text below it does not move and reload once the rule answers. Zen mode hides
+     * this time with Hide, and Always for a confirmed sender; nothing once they are allowed. It
+     * shows while the rule that may allow them is still loading too, when they are blocked all the
+     * same, so the text below it does not move and reload once the rule answers. Zen mode hides
      * it but keeps its space, so the text does not move and reload, and a tap on an image's
      * placeholder still shows them.
      */
@@ -112,9 +121,10 @@ internal class ReadPageLook(
                 ImageBanner(
                     Res.drawable.symbol_image,
                     "Images shown",
-                    listOf(
+                    listOfNotNull(
                         UiAction("Hide") { bodies.hideImages(page) },
-                        UiAction("Always") { read.privacy.allowSender(page.sender.address) },
+                        UiAction("Always") { read.privacy.allowSender(page.sender.address) }
+                            .takeIf { page.sender.isVerified },
                     ),
                 )
             }
