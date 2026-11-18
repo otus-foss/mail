@@ -16,7 +16,7 @@ by installed UnifiedPush apps. Google delivery needs no extra app or Firebase pr
 The user chooses the service; periodic checks remain the default until they do. The first run's
 Notifications step marks one service as chosen: an installed UnifiedPush app under private
 settings, and Google otherwise. Nothing registers until the user taps a service or goes on with
-Continue, Allow notifications or Not now. Going back or closing the app leaves periodic checks on.
+Continue or Allow notifications. Not now, going back, or closing the app leaves periodic checks on.
 
 The embedded distributor is `org.unifiedpush.android:embedded-fcm-distributor:3.1.0`. It uses
 Play services on the device and contains no proprietary Google SDK, so the same dependency is

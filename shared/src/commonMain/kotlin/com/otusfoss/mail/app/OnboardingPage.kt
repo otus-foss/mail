@@ -84,7 +84,7 @@ internal fun OnboardingPage(
                     { DeliveryChoices(it, private = states.behavior.behavior.privacyPreset() == PrivacyPreset.Private) }
                 },
             deliveryLabel = notifications?.deliveryLabel,
-            onDeliveryNext = { notifications?.useSuggestion() },
+            onDeliveryAccepted = { notifications?.useSuggestion() },
             allowNotifications = LocalAllowNotifications.current,
             themeControls = { onTry -> ThemeHueSlider(settings.theme.choice, onTry) },
         ),
