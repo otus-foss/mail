@@ -69,6 +69,7 @@ fun OnboardingScreen(
 
             OnboardingStep.Notifications -> {
                 NotificationsStep(delivery ?: {}, slots.allowNotifications) {
+                    slots.onDeliveryNext()
                     go(OnboardingStep.Look)
                 }
             }
