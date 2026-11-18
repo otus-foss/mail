@@ -87,6 +87,16 @@ External contact URLs load only while Website icons is on. PNG, JPEG, and WebP c
 accepted. Missing capabilities, permissions, images, or optional request failures leave the
 generated avatar. Cancellation propagates and stops work from an obsolete inbox refresh.
 
+`ContactAvatarUpdates` gives the avatar cache the photos and styles of the synced contact list, so
+mail shows them without asking the server. For mail to a login, `contactPhotos` tries that login's
+own cards first, then its cards in shared or read-only books, then, while Photos from all accounts
+is on, other logins' own cards and then their other cards. An own card is in at least one book the
+user may write that nobody shared with them; a card whose book is unknown is not own. Only an own
+card counts as an avatar card, so a shared book or another login cannot replace the photo or style
+the user picked. A Website style counts only on an own card of the same login, because it fetches
+the website icon with Website icons off. A color with letters or an icon counts on any card, as in
+core's server lookup, and draws nothing from the network.
+
 `InboxFeedState` restores local avatars before publishing refreshed messages, then resolves new
 senders progressively. Reloading with the same Website icons setting does not clear avatars or
 replace known photos with initials.
