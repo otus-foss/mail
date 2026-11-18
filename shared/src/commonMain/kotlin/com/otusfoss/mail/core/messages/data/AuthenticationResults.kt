@@ -64,26 +64,31 @@ private fun words(part: String): List<String> = split(part, setOf(' ', '\t', '\r
  * [text] without its comments (RFC 5322 section 3.2.2), which may nest; quoted strings stay whole.
  * Null when [text] ends inside a comment or quoted string.
  */
-private fun withoutComments(text: String): String? {
-    var depth = 0
-    var quoted = false
-    var escaped = false
-    val kept =
-        buildString {
-            for (char in text) {
-                val inComment = depth > 0
-                when {
-                    escaped -> escaped = false
-                    char == '\\' && (quoted || inComment) -> escaped = true
-                    !inComment && char == '"' -> quoted = !quoted
-                    quoted -> Unit
-                    char == '(' -> depth++
-                    char == ')' && inComment -> depth--
-                }
-                if (!inComment && depth == 0) append(char)
-            }
+private fun withoutComments(text: String): String? =
+    CommentScan().let { scan -> text.filter(scan::isOutside).takeIf { scan.isClosed } }
+
+/** Reads a field one character at a time, in order, and knows whether it stands inside a comment or quoted string. */
+private class CommentScan {
+    private var depth = 0
+    private var quoted = false
+    private var escaped = false
+
+    /** Whether every comment and quoted string read so far has ended. */
+    val isClosed: Boolean get() = depth == 0 && !quoted
+
+    /** Reads [char] and tells whether it is outside every comment, so the field keeps it. */
+    fun isOutside(char: Char): Boolean {
+        val wasOutside = depth == 0
+        when {
+            escaped -> escaped = false
+            char == '\\' && (quoted || depth > 0) -> escaped = true
+            depth == 0 && char == '"' -> quoted = !quoted
+            quoted -> Unit
+            char == '(' -> depth++
+            char == ')' && depth > 0 -> depth--
         }
-    return kept.takeIf { depth == 0 && !quoted }
+        return wasOutside && depth == 0
+    }
 }
 
 /** [text] split at [separators] outside quoted strings, each piece trimmed, empty ones left out. */
