@@ -52,7 +52,14 @@ class ReadRulesTest {
             .map { it.displayAddress() }
             .forEach { address ->
                 assertFalse(
-                    showsRemoteImages(RemoteImages.Known, address, verified = true, known, listOf(address), inSpam = false),
+                    showsRemoteImages(
+                        RemoteImages.Known,
+                        address,
+                        verified = true,
+                        known,
+                        listOf(address),
+                        inSpam = false,
+                    ),
                 )
             }
     }
