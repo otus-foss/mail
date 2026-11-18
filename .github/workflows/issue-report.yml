@@ -22,7 +22,10 @@ jobs:
     steps:
       - name: Find open issues named by merged pull requests
         run: |
-          report=$(gh issue list --state all --search "in:title \"$TITLE\"" --json number,title \
+          # Only an issue this workflow created counts, so an issue anyone else opens with the same
+          # title is never edited.
+          report=$(gh issue list --state all --author "app/github-actions" \
+            --search "in:title \"$TITLE\"" --json number,title \
             --jq "map(select(.title == env.TITLE))[0].number // empty")
           gh issue list --state open --limit 500 --json number --jq '.[].number' | sort > open.txt
           # The jq filter's $pr belongs to jq, not the shell.
