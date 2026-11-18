@@ -65,6 +65,18 @@ class AttachmentCacheTest {
         }
 
     @Test
+    fun aFileWithoutASizeStopsAtTheBudget() =
+        runTest {
+            val cache = cache()
+            server.extra = 1_001
+            assertNull(cache.fetch(ada, unsized))
+            assertTrue(folder.entries().isEmpty())
+
+            server.extra = 5
+            assertEquals(5, assertNotNull(cache.fetch(ada, unsized)).size)
+        }
+
+    @Test
     fun cancellingADownloadLeavesNothing() =
         runTest {
             val cache = cache()
@@ -170,6 +182,7 @@ class AttachmentCacheTest {
         val photo = MailAttachment("photo.jpg", "image/jpeg", 6, "b-photo")
         val notes = MailAttachment("notes.txt", "text/plain", 7, "b-notes")
         val slides = MailAttachment("slides.key", "application/octet-stream", 8, "b-slides")
+        val unsized = MailAttachment("photo.png", "image/png", 0, "b-unsized")
         val ada = message("ada")
         val bob = message("bob")
 

@@ -58,14 +58,15 @@ internal class ReadStripActions(
 
     /**
      * A small picture of [file] for the strip, when it is an image small enough to download just
-     * for that; null for other files or when it cannot be had.
+     * for that; null for other files or when it cannot be had. An image without a size is skipped,
+     * because only a known size keeps the download within [THUMBNAIL_MAX_BYTES].
      */
     suspend fun thumbnail(
         message: MailMessage,
         file: MailAttachment,
     ): ImageBitmap? =
         file
-            .takeIf { it.kind() == AttachmentKindName.Image && it.size <= THUMBNAIL_MAX_BYTES }
+            .takeIf { it.kind() == AttachmentKindName.Image && it.size in 1..THUMBNAIL_MAX_BYTES }
             ?.let { transfers.bytes(message, it) }
             ?.let { withContext(Dispatchers.Default) { decodeImage(it, THUMBNAIL_PIXELS) } }
 

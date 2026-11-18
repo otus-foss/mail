@@ -47,7 +47,9 @@ each one from the account's `downloadUrl` (RFC 8620, section 6.2) through Core's
 `JmapConnection.downloadStream`, which hands over 64 KiB pieces as they arrive. No piece outlives
 its write, so a file of any size downloads without the JMAP client's 16 MiB response limit. A
 server that sends more than the size the message gives for the part, its decoded size (RFC 8621,
-section 4.1.4), is stopped, so it cannot fill the disk.
+section 4.1.4), is stopped, so it cannot fill the disk. A part whose size the server gives as 0
+or leaves out is stopped at the 256 MiB budget for unkept files. The read view's strip skips
+the thumbnail of an image without a size, so a thumbnail never downloads more than 2 MiB.
 
 - `core/files/DownloadFolder` is the contract, and `FileDownloadFolder` keeps it on disk on both
   platforms through kotlinx-io; each platform adds only file times, its folder setup, and which
