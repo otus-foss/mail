@@ -1,9 +1,5 @@
 package com.otusfoss.mail
 
-import android.graphics.Bitmap
-import android.graphics.Canvas
-import android.graphics.Color
-import android.graphics.Paint
 import com.otusfoss.core.designsystem.shared.feedback.components.ToastState
 import com.otusfoss.mail.core.mail.EmailAddressKey
 import com.otusfoss.mail.core.mailbox.MailboxRole
@@ -208,9 +204,9 @@ internal object ReadViewFixtures {
         block()
     }
 
-    /** Attachments that download as [photo], and a printer that prints nothing. */
+    /** Attachments that download as [twoTonePhoto], and a printer that prints nothing. */
     private fun photoFiles() =
-        ReadFiles(downloads = PhotoAttachments(::photo), saved = null, printer = MessagePrinter { _, _ -> })
+        ReadFiles(downloads = PhotoAttachments(::twoTonePhoto), saved = null, printer = MessagePrinter { _, _ -> })
 
     /** Edits that [writer] saves, run on the main thread like the app's, with their toasts in [toasts]. */
     private fun edits(
@@ -220,21 +216,6 @@ internal object ReadViewFixtures {
         val scope = MainScope()
         val feed = InboxFeedState(NoMail, scope)
         return ReadEdits(MailEdits(writer, scope, MoveToasts(toasts, scope)), feed)
-    }
-
-    /** A small two-tone picture as PNG bytes, standing in for a downloaded photo. */
-    private fun photo(): ByteArray {
-        val bitmap = Bitmap.createBitmap(PHOTO_SIZE, PHOTO_SIZE, Bitmap.Config.ARGB_8888)
-        Canvas(bitmap).apply {
-            drawColor(Color.rgb(0x3b, 0x5a, 0x6e))
-            drawCircle(
-                PHOTO_SIZE * 0.6f,
-                PHOTO_SIZE * 0.4f,
-                PHOTO_SIZE * 0.25f,
-                Paint().apply { color = Color.rgb(0xe8, 0xc4, 0x6a) },
-            )
-        }
-        return bitmap.pngBytes()
     }
 
     fun actions(targets: List<MoveTarget> = emptyList()) =
@@ -273,7 +254,6 @@ internal object ReadViewFixtures {
     }
 
     private const val OLDER = 23
-    private const val PHOTO_SIZE = 96
     private const val SHEET_TYPE = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
     private const val DIGEST_HTML =
         "<p>Your weekly digest is here.</p><p>12 new issues in mail, 3 regressions.</p>" +
