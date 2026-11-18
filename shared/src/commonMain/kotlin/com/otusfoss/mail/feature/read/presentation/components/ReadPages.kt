@@ -19,6 +19,7 @@ import com.otusfoss.core.designsystem.resources.Res
 import com.otusfoss.core.designsystem.resources.symbol_hide_image
 import com.otusfoss.core.designsystem.resources.symbol_image
 import com.otusfoss.core.designsystem.shared.controls.elements.UiAction
+import com.otusfoss.core.designsystem.shared.feedback.components.ToastMessage
 import com.otusfoss.core.designsystem.shared.pages.elements.holdsSpace
 import com.otusfoss.core.designsystem.shared.pages.elements.turnDim
 import com.otusfoss.core.designsystem.shared.pages.elements.turnSeam
@@ -80,9 +81,19 @@ internal class ReadPageLook(
         body: PageBody,
     ): PageImages {
         val load = allowed(page) == true || state.bodies.imagesShown(page)
-        val onShow = { state.bodies.showImages(page) }.takeIf { !load && hasRemote(body) }
-        return PageImages(load, onShow)
+        val onPlaceholder = { askToShow(page) }.takeIf { !load && hasRemote(body) }
+        return PageImages(load, onPlaceholder)
     }
+
+    /**
+     * Asks in a toast whether to show [page]'s images, since a placeholder sits inside the message,
+     * whose own styles can stretch it unseen over the text. The app draws the toast above the page,
+     * so its Show is the user's choice. Another tap replaces the toast instead of adding one.
+     */
+    private fun askToShow(page: MailMessage) =
+        read.effects.toasts.show(
+            ToastMessage("Images blocked", UiAction("Show") { state.bodies.showImages(page) }, group = ImagesPrompt),
+        )
 
     /**
      * Whether [page]'s sender is not allowed to show remote images, so the ⋯ menu offers to always
@@ -98,9 +109,9 @@ internal class ReadPageLook(
      * The banner above [page]'s text, below the sender details: images blocked with Show, or shown
      * this time with Hide, and Always for a confirmed sender; nothing once they are allowed. It
      * shows while the rule that may allow them is still loading too, when they are blocked all the
-     * same, so the text below it does not move and reload once the rule answers. Zen mode hides
-     * it but keeps its space, so the text does not move and reload, and a tap on an image's
-     * placeholder still shows them.
+     * same, so the text below it does not move and reload once the rule answers. Zen mode hides it
+     * but keeps its space, so the text does not move and reload; there a tap on an image's
+     * placeholder asks in a toast, whose Show loads them.
      */
     @Composable
     fun Banner(
@@ -133,7 +144,7 @@ internal class ReadPageLook(
 
     /**
      * [banner], which swipes away like a toast, in either state; the images stay as they are, and
-     * their placeholders still show them. Once gone, its space stays, so the text the page leaves
+     * a tap on their placeholders still asks to show them. Once gone, its space stays, so the text the page leaves
      * room for does not move and reload.
      */
     @Composable
@@ -212,11 +223,15 @@ private fun MailMessage.shows(address: String): Boolean =
     (listOf(sender) + to + cc).any { it.address.equals(address, ignoreCase = true) }
 
 /**
- * Whether a page's remote images [load]; [onShow] loads them on a placeholder tap, null while
- * they load or the page has none. The placeholders show from the start, also while the rule that
- * may allow the images is still loading, so a page whose images stay blocked loads once.
+ * Whether a page's remote images [load]; [onPlaceholder] runs on a placeholder tap and asks to
+ * load them, null while they load or the page has none. The placeholders show from the start,
+ * also while the rule that may allow the images is still loading, so a page whose images stay
+ * blocked loads once.
  */
 internal class PageImages(
     val load: Boolean,
-    val onShow: (() -> Unit)?,
+    val onPlaceholder: (() -> Unit)?,
 )
+
+/** The group of the toast that asks to show images, so repeated taps keep one toast. */
+private object ImagesPrompt

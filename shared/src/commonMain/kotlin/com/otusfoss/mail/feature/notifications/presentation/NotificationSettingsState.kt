@@ -46,6 +46,12 @@ class NotificationSettingsState(
     var current: PushDistributor? by mutableStateOf(null)
         private set
 
+    /** The first run's suggestion, shown as chosen but not used until [useSuggestion]. */
+    private var suggestion: PushDistributor? by mutableStateOf(null)
+
+    /** The service shown as chosen: the one in use, or else the first run's suggestion. */
+    val shown: PushDistributor? get() = current ?: suggestion
+
     /** Keyed by login id. */
     var statuses: Map<String, PushDeliveryStatus> by mutableStateOf(emptyMap())
         private set
@@ -66,7 +72,18 @@ class NotificationSettingsState(
         }
     }
 
+    /** Shows [distributor] as chosen without registering any account, until the user chooses. */
+    fun suggest(distributor: PushDistributor?) {
+        if (choices == 0) suggestion = distributor
+    }
+
+    /** Uses the suggestion, unless a service is already in use or the user chose another. */
+    fun useSuggestion() {
+        if (current == null) suggestion?.let(::choose)
+    }
+
     fun choose(distributor: PushDistributor?) {
+        suggestion = null
         current = distributor
         choices++
         applying++

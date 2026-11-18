@@ -47,9 +47,13 @@ class AndroidSavedFiles(
     ): Boolean {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) return false
         return withContext(Dispatchers.IO) {
+            val safeName = safeFileName(name)
+            // MediaStore appends the extension of the type it gets when the name ends in another
+            // one, so the type follows the name the user saw.
+            val savedType = viewType(safeName, type)
             // MediaStore numbers a name that is taken, "name (1)", but gives up after a few dozen;
             // then the file goes in under the time instead.
-            write(safeFileName(name), type, copy) ?: write(timedName(safeFileName(name)), type, copy) ?: false
+            write(safeName, savedType, copy) ?: write(timedName(safeName), savedType, copy) ?: false
         }
     }
 
@@ -115,9 +119,9 @@ class AndroidSavedFiles(
 }
 
 /**
- * The type an app opens [name] as: the one its extension stands for, else the [claimed] type the
- * sender gave. An app package or other program opens as plain bytes, so a file the sender labels as
- * one never reaches the installer.
+ * The type [name] is saved and opened as: the one its extension stands for, else the [claimed] type
+ * the sender gave. An app package or other program becomes plain bytes, so a file the sender labels
+ * as one never reaches the installer, and Downloads never gives it a program's extension.
  */
 internal fun viewType(
     name: String,
