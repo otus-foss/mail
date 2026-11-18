@@ -50,7 +50,7 @@ fun String.isUsableAddress(): Boolean = isNotBlank() && none { it.isUnsafeInAddr
 private fun Char.isUnsafeInAddress(): Boolean =
     isHidden() || isWhitespace() || this == '\\' || category == CharCategory.FORMAT
 
-private fun Char.escaped(): String = "\\u{${code.toString(HEX).uppercase().padStart(4, '0')}}"
+private fun Char.escaped(): String = "\\u{${code.toString(HEX).uppercase().padStart(ESCAPE_DIGITS, '0')}}"
 
 private fun Char.isHidden(): Boolean = (isISOControl() && this != '\t' && this != '\n') || this in BIDI_CONTROLS
 
@@ -58,3 +58,6 @@ private val BIDI_CONTROLS =
     setOf('\u061C', '\u200E', '\u200F') + ('\u202A'..'\u202E') + ('\u2066'..'\u2069')
 
 private const val HEX = 16
+
+/** A code point below U+10000 is written with four digits, as in `\u{200E}`. */
+private const val ESCAPE_DIGITS = 4
