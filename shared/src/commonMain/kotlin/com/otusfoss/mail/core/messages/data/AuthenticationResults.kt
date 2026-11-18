@@ -8,7 +8,9 @@ package com.otusfoss.mail.core.messages.data
  * or its whole host when it has none, such as an IP address. This trusts the server to add its own
  * field to all mail it delivers: on a server that adds none, a sender who names a host of the
  * user's domain is believed. A DMARC result other than a pass, or a pass for another From domain,
- * counts as none.
+ * counts as none. Each field is the Raw form (RFC 8621 section 4.1.2.1), as the server wrote it,
+ * since the Text form decodes encoded words and could turn sender text into a `"` or `;`. A field
+ * that ends inside a quoted string or comment counts as none, since its parts cannot be told apart.
  */
 internal fun dmarcPassDomain(
     fields: List<String>?,
@@ -45,33 +47,44 @@ private fun isOwnServer(
 }
 
 /**
- * The `;`-separated parts of one field, the server id first. Comments are left out, and a `;`
- * inside a comment or quoted string does not split, since both can hold text the sender chose,
- * such as the envelope address.
+ * The `;`-separated parts of one unfolded field, the server id first, or null when it ends inside a
+ * quoted string or comment. Comments are left out, and a `;` inside a comment or quoted string does
+ * not split, since both can hold text the sender chose, such as the envelope address.
  */
-private fun fieldParts(field: String): List<String> = split(withoutComments(field), setOf(';'))
+private fun fieldParts(field: String): List<String>? =
+    withoutComments(field.replace(FOLD, ""))?.let { split(it, setOf(';')) }
+
+/** A line break that folds a field onto the next line (RFC 5322 section 2.2.3). */
+private val FOLD = Regex("\r?\n(?=[ \t])")
 
 /** The whitespace-separated words of a part, each quoted string kept inside its word. */
 private fun words(part: String): List<String> = split(part, setOf(' ', '\t', '\r', '\n'))
 
-/** [text] without its comments (RFC 5322 section 3.2.2), which may nest; quoted strings stay whole. */
-private fun withoutComments(text: String): String =
-    buildString {
-        var depth = 0
-        var quoted = false
-        var escaped = false
-        for (char in text) {
-            when {
-                escaped -> escaped = false
-                char == '\\' && (quoted || depth > 0) -> escaped = true
-                depth == 0 && char == '"' -> quoted = !quoted
-                quoted -> Unit
-                char == '(' -> depth++
-                char == ')' && depth > 0 -> depth--
+/**
+ * [text] without its comments (RFC 5322 section 3.2.2), which may nest; quoted strings stay whole.
+ * Null when [text] ends inside a comment or quoted string.
+ */
+private fun withoutComments(text: String): String? {
+    var depth = 0
+    var quoted = false
+    var escaped = false
+    val kept =
+        buildString {
+            for (char in text) {
+                val inComment = depth > 0
+                when {
+                    escaped -> escaped = false
+                    char == '\\' && (quoted || inComment) -> escaped = true
+                    !inComment && char == '"' -> quoted = !quoted
+                    quoted -> Unit
+                    char == '(' -> depth++
+                    char == ')' && inComment -> depth--
+                }
+                if (!inComment && depth == 0) append(char)
             }
-            if (depth == 0 && char != ')') append(char)
         }
-    }
+    return kept.takeIf { depth == 0 && !quoted }
+}
 
 /** [text] split at [separators] outside quoted strings, each piece trimmed, empty ones left out. */
 private fun split(

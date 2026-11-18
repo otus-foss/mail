@@ -44,7 +44,9 @@ reloads the inbox's avatars.
 
 ### Brand logos
 
-The inbox requests every `Authentication-Results` field (`header:Authentication-Results:asText:all`).
+The inbox requests every `Authentication-Results` field in its Raw form
+(`header:Authentication-Results:asRaw:all`), as the server wrote it. The Text form decodes encoded
+words, which could turn text the sender chose into a `"` or `;`.
 `dmarcPassDomain` reads only the topmost one, which the receiving server adds; a sender can add
 fields further down. That field counts only when its server id (RFC 8601 `authserv-id`) is the
 login's JMAP host, its parent domain, or another host of that domain, such as `mx.example.net`
@@ -52,10 +54,11 @@ beside `mail.example.net`. A server that added no field would otherwise leave th
 top. A server whose id names another domain shows no brand logos. A message counts when every
 `dmarc=` result in that field is `pass` and names the From domain in `header.from`. A `;` or space
 inside a comment or quoted string does not split, so an envelope address or a `reason` cannot
-smuggle in a pass. The domain goes to `MailSender.brandDomain` and on
-to `AvatarRequest.brandDomain`; inbox lookups keep a sender's mail with and without a pass apart.
-Email objects cached before this
-change lack the header, so their senders show the icon until the message changes.
+smuggle in a pass. A field that ends inside a quoted string or comment counts as no pass, since
+its parts cannot be told apart. The domain goes to `MailSender.brandDomain` and on to
+`AvatarRequest.brandDomain`; inbox lookups keep a sender's mail with and without a pass apart.
+Email objects cached before the inbox requested the field, or that hold it under the older
+`asText` name, decode without it, so their senders show the icon until the message changes.
 
 Turned off, Mail loads only contact photos stored as JMAP blobs or embedded data URIs, which come
 from the user's own JMAP server; other senders show initials. Contact cache keys include the
