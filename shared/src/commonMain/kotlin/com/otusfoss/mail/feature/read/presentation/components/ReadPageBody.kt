@@ -133,7 +133,7 @@ private fun HtmlBody(
         images.load,
         { url -> openLink(uriHandler::openUri, url) },
         modifier.fillMaxWidth(),
-        onShowRemote = images.onShow,
+        onShowRemote = images.onPlaceholder,
         quote = shown.quote?.takeUnless { hideQuote },
         insets = room,
     )
