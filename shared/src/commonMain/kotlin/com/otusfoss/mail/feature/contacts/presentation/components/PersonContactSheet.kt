@@ -26,6 +26,7 @@ import com.otusfoss.core.designsystem.shared.selection.components.PickerSearch
 import com.otusfoss.core.designsystem.theme.colors.OtusColors
 import com.otusfoss.core.designsystem.theme.tokens.layout.PageTokens
 import com.otusfoss.core.designsystem.theme.tokens.overlays.SheetTokens
+import com.otusfoss.mail.core.messages.domain.shownName
 import com.otusfoss.mail.feature.contacts.domain.CardKey
 import com.otusfoss.mail.feature.contacts.domain.ContactAddress
 import com.otusfoss.mail.feature.contacts.domain.ContactCard
@@ -52,7 +53,7 @@ internal fun PersonContactSheet(
 ) {
     var picking by remember { mutableStateOf(false) }
     var query by remember { mutableStateOf("") }
-    val name = person.name.ifBlank { person.address }
+    val name = shownName(person.name, person.address)
     val saved = state.withAddress(person.address)
     val writable = state.cards.filter { card -> !card.isGroup && card.books.any { state.book(it)?.canWrite == true } }
     val sameName = writable.filter { it.displayName.equals(person.name.trim(), ignoreCase = true) && it !in saved }

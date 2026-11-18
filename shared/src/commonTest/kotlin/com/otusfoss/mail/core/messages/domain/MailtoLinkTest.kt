@@ -61,9 +61,20 @@ class MailtoLinkTest {
     }
 
     @Test
-    fun anEscapedAddressAndNamedRecipientsAreRead() {
+    fun anEscapedAddressAndANamedRecipientAreReadWithoutTheName() {
         val request = mailtoRequest("mailto:grace%40example.org?to=Ada%20Lovelace%20%3Cada%40example.org%3E")
-        assertEquals(listOf(person("grace@example.org"), MailSender("Ada Lovelace", "ada@example.org")), request?.to)
+        assertEquals(listOf(person("grace@example.org"), person("ada@example.org")), request?.to)
+    }
+
+    @Test
+    fun aQuotedNameInTheTargetIsDropped() {
+        val request = mailtoRequest("mailto:%22billing%40example.org%22%20%3Cother%40example.net%3E")
+        assertEquals(listOf(person("other@example.net")), request?.to)
+    }
+
+    @Test
+    fun aSubjectWithALineBreakBecomesOneLine() {
+        assertEquals("Lunch plans", mailtoRequest("mailto:a@example.com?subject=Lunch%0D%0Aplans")?.subject)
     }
 
     @Test
