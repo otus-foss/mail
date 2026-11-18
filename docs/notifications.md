@@ -13,7 +13,10 @@ describe Android behavior.
 
 Settings › Notifications lists Google Play services when it is installed on the device, followed
 by installed UnifiedPush apps. Google delivery needs no extra app or Firebase project setup.
-The user chooses the service; periodic checks remain the default until they do.
+The user chooses the service; periodic checks remain the default until they do. The first run's
+Notifications step marks one service as chosen: an installed UnifiedPush app under private
+settings, and Google otherwise. Nothing registers until the user taps a service or goes on with
+Continue or Allow notifications. Not now, going back, or closing the app leaves periodic checks on.
 
 The embedded distributor is `org.unifiedpush.android:embedded-fcm-distributor:3.1.0`. It uses
 Play services on the device and contains no proprietary Google SDK, so the same dependency is
@@ -49,7 +52,9 @@ Choosing a service registers each account as its own instance, keyed by login id
    every push that arrived before it started.
 
 The UnifiedPush connector decrypts pushes from either service. A push holds only account ids
-and state strings, never mail, so the push app and its server see encrypted change notices only. A server that
+and state strings, never mail, so the push app and its server see encrypted change notices only.
+Each account registers with the label "Otus Mail", which the push app shows in its list, so the
+push app never sees an account name. A server that
 refuses push subscriptions shows "The server can't push" and keeps the 15-minute check.
 Choosing Off unregisters every account and deletes its server subscription. The periodic run
 renews subscriptions before they expire and registers accounts added later.
