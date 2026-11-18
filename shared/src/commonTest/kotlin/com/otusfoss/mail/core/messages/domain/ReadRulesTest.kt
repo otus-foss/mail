@@ -37,6 +37,16 @@ class ReadRulesTest {
     fun knownLoadsFromAllowedSenders() = assertTrue(shows(RemoteImages.Known, "news@sentry.example"))
 
     @Test
+    fun aLookalikeAddressIsNotAKnownContact() {
+        val known = setOf(EmailAddressKey("ada@corp.example.com"))
+        listOf("ada@corp\u200E.example.com", "ada@corp\u007F.example.com", "ada@corp.example\u0001.com")
+            .map { it.displayAddress() }
+            .forEach { address ->
+                assertFalse(showsRemoteImages(RemoteImages.Known, address, known, listOf(address), inSpam = false))
+            }
+    }
+
+    @Test
     fun knownBlocksUnknownSenders() = assertFalse(shows(RemoteImages.Known, "stranger@example.com"))
 
     private val ada = MailSender("Ada Lovelace", "ada@example.org")

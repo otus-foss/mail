@@ -21,13 +21,13 @@ import com.otusfoss.mail.feature.read.domain.SenderMail
  */
 @Composable
 internal fun ReadMoreMail(room: ReadRoom) {
-    val senderMail = room.parts.read.loads.senderMail ?: return
+    val senderMail = room.parts.read.services.sender.mail ?: return
     val page = room.page
     val shown =
         room.state.pages
             .map { it.emailId }
             .toSet()
-    val mails by produceState(emptyList<SenderMail>(), page.id) { value = senderMail.mails.newest(page, shown) }
+    val mails by produceState(emptyList<SenderMail>(), page.id) { value = senderMail.find.newest(page, shown) }
     if (mails.isEmpty()) return
     var unfolded by remember(page.id) { mutableStateOf(room.files() == null) }
     val dates = LocalDateFormatter.current

@@ -45,14 +45,10 @@ class ReadContext(
     val replies: ReadReplies,
 )
 
-/**
- * The conversation's [pages], [content], which loads a page's full body, then with its inline
- * images, and [senderMail], the sender's other mail; null where none is wired.
- */
+/** The conversation's [pages], and [content], which loads a page's full body, then with its inline images. */
 class ReadLoads(
     val pages: ConversationMessages,
     val content: (MailMessage) -> Flow<MessageContent?>,
-    val senderMail: SenderMailLinks? = null,
 )
 
 /**
@@ -119,21 +115,30 @@ class ReadFiles(
  * The services behind the newsletter strip and the ⋯ menu, including the [edits] the view makes,
  * [person], what tapping a person or the menu's contact entries open, and the Inbox's
  * [categories]; each is null where none is wired, and without [person] the pills stay plain.
- * [files] handles attachments and printing.
+ * [files] handles attachments and printing, and [sender] acts on the message's sender.
  */
 class ReadServices(
     val newsletters: Newsletters?,
     val headers: MessageHeaders?,
-    val blocks: SenderBlocks?,
     val edits: ReadEdits?,
     val person: PersonSheet?,
     val files: ReadFiles,
     val categories: ReadCategories?,
+    val sender: ReadSender,
 )
 
-/** A sender's other mail: [mails] finds it, and [open] opens one of them by its login and email id. */
-class SenderMailLinks(
-    val mails: SenderMails,
+/**
+ * What the Read view does with a message's sender: [blocks] sends their mail to Spam, and [mail]
+ * lists their other mail. Each is null where none is wired.
+ */
+class ReadSender(
+    val blocks: SenderBlocks?,
+    val mail: ReadSenderMail? = null,
+)
+
+/** A sender's other mail: [find] looks it up, and [open] opens one of them by its login and email id. */
+class ReadSenderMail(
+    val find: SenderMails,
     val open: (loginId: String, emailId: String) -> Unit,
 )
 

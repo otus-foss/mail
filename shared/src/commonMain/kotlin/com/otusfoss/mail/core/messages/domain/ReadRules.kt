@@ -5,7 +5,8 @@ import com.otusfoss.mail.core.mail.EmailAddressKey
 /**
  * Whether a message's remote images load before the user asks. Never in Spam, whatever the
  * [setting]. With [RemoteImages.Known], only when the [sender] is in [known] (contacts and people
- * the user wrote to) or in [allowed]. Addresses compare without case.
+ * the user wrote to) or in [allowed], and its address is usable ([isUsableAddress]). Addresses
+ * compare without case.
  */
 fun showsRemoteImages(
     setting: RemoteImages,
@@ -19,6 +20,7 @@ fun showsRemoteImages(
         inSpam -> false
         setting == RemoteImages.Always -> true
         setting == RemoteImages.Never -> false
+        !sender.isUsableAddress() -> false
         else -> address in known || allowed.any { EmailAddressKey(it) == address }
     }
 }
