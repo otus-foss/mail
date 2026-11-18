@@ -3,7 +3,6 @@ package com.otusfoss.mail
 import android.app.Application
 import android.content.Context
 import androidx.work.Configuration
-import app.cash.sqldelight.driver.android.AndroidSqliteDriver
 import com.otusfoss.core.avatar.FileAvatarStore
 import com.otusfoss.core.jmap.login.AndroidLoginStore
 import com.otusfoss.core.jmap.push.PushSubscriptions
@@ -14,7 +13,6 @@ import com.otusfoss.mail.app.MailPlatform
 import com.otusfoss.mail.app.MailServices
 import com.otusfoss.mail.app.NightlyUpdates
 import com.otusfoss.mail.app.trimCache
-import com.otusfoss.mail.core.cache.MailDatabase
 import com.otusfoss.mail.core.cache.SqlMailCache
 import com.otusfoss.mail.core.files.FileDownloadFolder
 import com.otusfoss.mail.core.messages.domain.DevicePrivacy
@@ -41,7 +39,7 @@ open class OtusMailApplication :
     val stores: MailDeviceStores by lazy {
         MailDeviceStores.named(
             { name, commit -> mailPreferences(this, name, commit) },
-            SqlMailCache(AndroidSqliteDriver(MailDatabase.Schema, this, CACHE_DATABASE)),
+            SqlMailCache(mailCacheDriver(this, CACHE_DATABASE)),
             // Matches the `files-path` in `res/xml/shared_files.xml`, so Open can lend these files.
             FileDownloadFolder(File(filesDir, "attachments").absolutePath),
             AndroidNotificationPreviewStore(this),
@@ -70,6 +68,7 @@ open class OtusMailApplication :
                     instantPush = instantPush,
                     categoriesOn = { behavior.behavior.list.categories.enabled },
                     alerts = MailNotifications(this),
+                    network = AndroidNetworkCost(this),
                 ),
         )
     }

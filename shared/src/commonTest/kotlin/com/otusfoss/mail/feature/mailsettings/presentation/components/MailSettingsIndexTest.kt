@@ -69,6 +69,11 @@ class MailSettingsIndexTest {
     }
 
     @Test
+    fun downloadingMailAheadIsFoundUnderMailBehavior() {
+        assertEquals(listOf("Mail behavior"), index().path("Download mail ahead"))
+    }
+
+    @Test
     fun aSettingWaitingOnAnotherSaysWhy() {
         val behavior =
             MailBehavior(

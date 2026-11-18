@@ -68,6 +68,9 @@ class InboxFeedState(
     override var mailScope by mutableStateOf(defaultScope)
         private set
 
+    /** Whether the list shows the page's own messages, not a search's, a folder pill's, or a filter's. */
+    val showsOwnMail: Boolean get() = mailScope == defaultScope && query == MailQuery()
+
     override var messages by mutableStateOf(emptyList<MailMessage>())
         private set
     var loading by mutableStateOf(false)

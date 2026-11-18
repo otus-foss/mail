@@ -1,5 +1,6 @@
 package com.otusfoss.mail.core.settings.domain
 
+import com.otusfoss.mail.core.messages.domain.BodyPrefetch
 import com.otusfoss.mail.core.messages.domain.RemoteImages
 
 /**
@@ -7,7 +8,8 @@ import com.otusfoss.mail.core.messages.domain.RemoteImages
  * messages of its conversation are a swipe away; off, the Read view leaves that text out. [zen]
  * keeps the Read view to the message, its control panel, and its bar. [remoteImages] decides when
  * a message loads images from other servers, and [allowedSenders] are the lowercase addresses whose
- * images always load.
+ * images always load. [prefetch] decides when the Inbox downloads its first messages ahead, so
+ * they open without waiting.
  */
 data class ReadBehavior(
     val markReadOnOpen: Boolean = true,
@@ -15,4 +17,5 @@ data class ReadBehavior(
     val zen: Boolean = false,
     val remoteImages: RemoteImages = RemoteImages.Known,
     val allowedSenders: List<String> = emptyList(),
+    val prefetch: BodyPrefetch = BodyPrefetch.Always,
 )

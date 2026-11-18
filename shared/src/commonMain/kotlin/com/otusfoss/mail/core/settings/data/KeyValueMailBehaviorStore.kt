@@ -9,6 +9,7 @@ import com.otusfoss.core.storage.int
 import com.otusfoss.mail.core.messages.domain.ActionBarLayout
 import com.otusfoss.mail.core.messages.domain.ActionBarMode
 import com.otusfoss.mail.core.messages.domain.ActionBarPlace
+import com.otusfoss.mail.core.messages.domain.BodyPrefetch
 import com.otusfoss.mail.core.messages.domain.MailAction
 import com.otusfoss.mail.core.messages.domain.RemoteImages
 import com.otusfoss.mail.core.settings.domain.ActionBehavior
@@ -103,6 +104,7 @@ private fun KeyValueStore.readBehavior(): ReadBehavior {
             decodeRemoteImages(string(REMOTE_IMAGES), string(ALWAYS_REMOTE_IMAGES), string(EARLIER_REMOTE_IMAGES))
                 ?: defaults.remoteImages,
         allowedSenders = string(ALLOWED_SENDERS)?.let(TextCodec.Lines.decode).orEmpty(),
+        prefetch = BodyPrefetch.entries.firstOrNull { it.storageValue == string(PREFETCH) } ?: defaults.prefetch,
     )
 }
 
@@ -112,6 +114,7 @@ private fun KeyValueEditor.put(read: ReadBehavior) {
     put(ZEN_READ, read.zen)
     put(REMOTE_IMAGES, read.remoteImages.storageValue)
     put(ALLOWED_SENDERS, TextCodec.Lines.encode(read.allowedSenders))
+    put(PREFETCH, read.prefetch.storageValue)
 }
 
 private fun KeyValueStore.writeBehavior(): WriteBehavior {
@@ -132,6 +135,9 @@ private fun KeyValueEditor.put(write: WriteBehavior) {
 }
 
 private val RemoteImages.storageValue: String
+    get() = name.lowercase()
+
+private val BodyPrefetch.storageValue: String
     get() = name.lowercase()
 
 /**
@@ -165,6 +171,7 @@ private const val INBOX = "inbox_contents"
 private const val FILTERS = "filter_layout"
 private const val LIST = "mail_list"
 private const val REMOTE_IMAGES = "remote_images_setting"
+private const val PREFETCH = "body_prefetch"
 
 // The keys the setting had while images loaded always, and before that, by default.
 private const val ALWAYS_REMOTE_IMAGES = "load_remote_images"

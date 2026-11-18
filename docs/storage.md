@@ -10,7 +10,10 @@ strings. It knows nothing of JMAP; the callers encode and decode the objects.
 - Mailboxes, with their counts.
 - Emails with the properties a list row shows, and the smaller member emails a conversation counts.
 - Threads, as lists of email ids.
-- Bodies of opened messages: their text and HTML body values.
+- Bodies of opened messages: their text and HTML body values. The Inbox also saves the bodies of
+  its first 20 rows ahead, each up to 256 kB, so they open without a download. Settings › Mail
+  behavior › **Download mail ahead** limits that to networks that are not metered or turns it off,
+  and Android's Data Saver stops it whatever the setting.
 - Address books and contact cards of every account the login reaches, by account and id.
 - Sync values per login, such as the `Email` and `Thread` states and the loaded listings, and
   each contacts account's name, sharing, and `AddressBook` and `ContactCard` states.
