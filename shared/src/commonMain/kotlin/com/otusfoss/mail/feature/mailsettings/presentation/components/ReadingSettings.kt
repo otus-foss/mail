@@ -8,7 +8,7 @@ import com.otusfoss.core.settings.presentation.components.SettingRowSpec
 import com.otusfoss.core.settings.presentation.components.ToggleRowSpec
 import com.otusfoss.mail.core.settings.presentation.MailBehaviorState
 
-/** The Mail behavior page's Reading rows: marking mail read, quoted text, and the Read view's quick view. */
+/** The Mail behavior page's Reading rows: marking mail read and quoted text. */
 internal fun readingRows(state: MailBehaviorState): List<SettingRowSpec> {
     val read = state.behavior.read
     return listOf(

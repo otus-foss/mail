@@ -49,6 +49,7 @@ internal class ReadMenuActions(
     private val row = subject.messages.single()
     private val edits = read.services.edits
     private val headers = read.services.headers != null
+    private val blocks = read.services.sender.blocks
 
     /** Whether the app offers something for a person: their card, or ways to save the address. */
     private val people = read.services.person != null
@@ -119,7 +120,7 @@ internal class ReadMenuActions(
             }
 
             ReadMenuEntry.BlockSender -> {
-                read.services.blocks?.let { action("Block sender", Res.drawable.symbol_block, run = ::block) }
+                blocks?.let { action("Block sender", Res.drawable.symbol_block, run = ::block) }
             }
 
             is ReadMenuEntry.Mute -> {
@@ -181,10 +182,10 @@ internal class ReadMenuActions(
         if (action == MailAction.Read || action == MailAction.Flag) pageSubject.offer(action) else subject.offer(action)
 
     private fun block() {
-        val blocks = read.services.blocks ?: return
+        val senderBlocks = blocks ?: return
         val name = page.sender.shownName
         read.effects.launch {
-            val blocked = blocks.block(page)
+            val blocked = senderBlocks.block(page)
             val text = if (blocked) "Mail from $name now goes to Spam" else "Couldn't block $name. Try again."
             read.effects.toasts.show(ToastMessage(text))
         }
