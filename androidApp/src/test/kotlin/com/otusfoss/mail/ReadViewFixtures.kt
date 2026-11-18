@@ -47,6 +47,7 @@ import com.otusfoss.mail.feature.read.presentation.ReadEffects
 import com.otusfoss.mail.feature.read.presentation.ReadFiles
 import com.otusfoss.mail.feature.read.presentation.ReadFolders
 import com.otusfoss.mail.feature.read.presentation.ReadPrivacy
+import com.otusfoss.mail.feature.read.presentation.ReadSender
 import com.otusfoss.mail.feature.read.presentation.ReadServices
 import com.otusfoss.mail.feature.read.presentation.components.NewFolderSheet
 import kotlinx.coroutines.MainScope
@@ -193,11 +194,11 @@ internal object ReadViewFixtures {
             ReadServices(
                 newsletters = FakeNewsletters(unsubscribed),
                 headers = MessageHeaders { emptyList() },
-                blocks = SenderBlocks { true },
                 edits = edits(writer, toasts),
                 person = null,
                 files = photoFiles(),
                 categories = null,
+                sender = ReadSender(SenderBlocks { true }),
             )
         effects = ReadEffects(toasts, launch, NewsletterSteps())
         display =

@@ -31,6 +31,7 @@ import com.otusfoss.mail.feature.read.presentation.ReadFolders
 import com.otusfoss.mail.feature.read.presentation.ReadLoads
 import com.otusfoss.mail.feature.read.presentation.ReadPrivacy
 import com.otusfoss.mail.feature.read.presentation.ReadReplies
+import com.otusfoss.mail.feature.read.presentation.ReadSender
 import com.otusfoss.mail.feature.read.presentation.ReadServices
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOf
@@ -110,11 +111,11 @@ internal class ReadContextBuilder {
         ReadServices(
             newsletters = null,
             headers = null,
-            blocks = null,
             edits = null,
             person = null,
             files = ReadFiles(downloads = null, saved = null, printer = null),
             categories = null,
+            sender = ReadSender(blocks = null),
         )
     var effects = ReadEffects(ToastState(), launch = {}, NewsletterSteps())
     var display =
