@@ -23,6 +23,7 @@ build adds `REQUEST_INSTALL_PACKAGES` for its updater.
 | A UnifiedPush app's server | Android push with that app chosen | Off | Notifications › Off |
 | The APNs bridge and Apple | iOS push with Apple Push chosen | Off | Notifications › Off |
 | `api.github.com` and GitHub downloads | Nightly app launch and update | Nightly only | No; other builds never check |
+| A list's one-click unsubscribe address | A tap on Unsubscribe, when no mail can be sent | — | Not tapping |
 | Links the user taps | Only on a tap, in another app | — | Not tapping |
 
 ## The JMAP server
@@ -178,9 +179,31 @@ Only the Android nightly build checks for updates. Other builds never do
 Links in a message, a list's unsubscribe page, and other web addresses open outside the app on a
 tap, in whatever app handles them
 ([`ReadPageBody.kt`](../shared/src/commonMain/kotlin/com/otusfoss/mail/feature/read/presentation/components/ReadPageBody.kt)).
-Mail sends nothing to these hosts itself. Unsubscribing by mail goes through the JMAP server; Mail
-does not send RFC 8058 one-click POSTs
+Mail sends nothing to these hosts itself, except the one-click unsubscribe request below.
+
+## Unsubscribing
+
+A tap on **Unsubscribe** leaves a list by the first route that works
 ([`ListUnsubscriber.kt`](../shared/src/commonMain/kotlin/com/otusfoss/mail/feature/read/data/ListUnsubscriber.kt)).
+Mail in Spam shows no Unsubscribe.
+
+- **By mail.** A list with a `mailto:` address gets one mail through the JMAP server. The list's
+  host never sees the device.
+- **One-click request.** When no mail can be sent and the message has
+  `List-Unsubscribe-Post: List-Unsubscribe=One-Click`, Mail sends the HTTPS POST of RFC 8058 itself
+  ([`OneClickPost.kt`](../shared/src/commonMain/kotlin/com/otusfoss/mail/feature/read/data/OneClickPost.kt)).
+  - **Host:** the HTTPS address in the message's `List-Unsubscribe` header, which the sender wrote.
+    It must be on port 443 at a public name, without a user or password. Any other address gets
+    no request and opens as a web page.
+  - **When:** once the Undo toast closes after the tap. Undo sends nothing.
+  - **Sends:** the device's IP address, the address itself, which names the recipient and the list,
+    the body `List-Unsubscribe=One-Click`, and the HTTP client's default headers. No cookies or
+    credentials. Mail follows no redirect and does not read the answer's body.
+  - **Not checked:** the DKIM signature RFC 8058 asks senders for. A forged message can therefore
+    make the device send this POST, which the user does not see, to any public name on port 443
+    with a trusted certificate. A name that resolves into the user's network still passes.
+- **Web page.** A list with neither route, or one that refuses the request, opens its page in
+  another app, like any link.
 
 ## Keeping this page current
 

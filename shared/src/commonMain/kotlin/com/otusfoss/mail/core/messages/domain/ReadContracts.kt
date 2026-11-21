@@ -12,7 +12,8 @@ data class MailAttachment(
 
 /**
  * How to leave the mailing list a message came from, read from its `List-Unsubscribe` header
- * (RFC 2369). [web] is an address to open, [mail] a mailto address.
+ * (RFC 2369). [web] is an address to open, [mail] a mailto address. [oneClick] says [web] also
+ * takes the one-click POST of RFC 8058, which leaves the list without opening the page.
  * [listId] is the id inside the `List-Id` header (RFC 2919), such as `weekly.example.org`.
  * [deliveredTo] holds the addresses the mail was delivered to, from `Delivered-To` and
  * `X-Original-To`, which a mailto request should come from when the list wrote to a Bcc.
@@ -22,7 +23,11 @@ data class Unsubscribe(
     val mail: String? = null,
     val deliveredTo: List<String> = emptyList(),
     val listId: String? = null,
-)
+    val oneClick: Boolean = false,
+) {
+    /** Whether the app can ask the list itself, by mail or by POST, before it opens [web]. */
+    val takesRequest: Boolean get() = mail != null || oneClick
+}
 
 /**
  * A mailbox a message can be in, as the Read view names it: [path] runs from the top folder to this

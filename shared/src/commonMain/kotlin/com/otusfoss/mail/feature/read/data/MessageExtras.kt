@@ -1,5 +1,6 @@
 package com.otusfoss.mail.feature.read.data
 
+import com.otusfoss.core.avatar.isPublicHttpsUrl
 import com.otusfoss.mail.core.mail.EmailBodyPart
 import com.otusfoss.mail.core.mail.EmailObject
 import com.otusfoss.mail.core.messages.domain.MailAttachment
@@ -27,18 +28,22 @@ internal fun EmailObject.inlineParts(html: String?): List<EmailBodyPart> {
 }
 
 /**
- * Manual unsubscribe routes from `List-Unsubscribe`. A sender-controlled header alone cannot
- * authorize an RFC 8058 POST without trusted DKIM verification of both unsubscribe headers.
+ * The unsubscribe routes from `List-Unsubscribe`. A `List-Unsubscribe-Post` field with the RFC 8058
+ * pair marks a public HTTPS address as one-click; any other address only opens. Nothing here checks
+ * the DKIM signature section 4 asks senders for: [OneClickPost] sends only on the user's tap, only
+ * the fixed pair, and only to a public address.
  */
 internal fun EmailObject.unsubscribe(): Unsubscribe? {
     val urls = listUnsubscribe.orEmpty().map { it.trim() }
     val https = urls.firstOrNull { it.startsWith("https://", ignoreCase = true) }
+    val takesOneClick = listUnsubscribePost?.trim().equals(ONE_CLICK, ignoreCase = true)
     val found =
         Unsubscribe(
             web = https ?: urls.firstOrNull { it.startsWith("http://", ignoreCase = true) },
             mail = urls.firstOrNull { it.startsWith("mailto:", ignoreCase = true) },
             deliveredTo = deliveredAddresses,
             listId = listIdentifier(listId),
+            oneClick = https != null && takesOneClick && isPublicHttpsUrl(https),
         )
     return found.takeIf { it.web != null || it.mail != null }
 }

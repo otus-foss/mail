@@ -159,6 +159,17 @@ class ReadPageActionsTest {
     }
 
     @Test
+    fun aOneClickListWaitsForItsToastInsteadOfOpeningItsPage() {
+        compose.mainClock.autoAdvance = false
+        show(fixtures.oneClickDigest, listOf(fixtures.oneClickDigest))
+        unsubscribe()
+        assertEquals(0, unsubscribed)
+        compose.mainClock.advanceTimeBy(TOAST_GONE)
+        compose.waitForIdle()
+        assertEquals(1, unsubscribed)
+    }
+
+    @Test
     fun undoKeepsTheSubscription() {
         compose.mainClock.autoAdvance = false
         show(fixtures.digest, listOf(fixtures.digest))
