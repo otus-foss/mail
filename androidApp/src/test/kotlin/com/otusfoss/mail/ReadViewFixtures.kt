@@ -137,6 +137,9 @@ internal object ReadViewFixtures {
         message("s", sentry, "Weekly report for Otus", DIGEST, ReceivedAt("2026-10-16", "07:00"))
             .copy(to = listOf(alex))
 
+    /** The digest from a list that takes only the one-click request. */
+    val oneClickDigest = digest.copy(id = "o")
+
     val attachments =
         listOf(
             MailAttachment("Q4-plan-v3.pdf", "application/pdf", 245_760, "b1"),
@@ -147,17 +150,18 @@ internal object ReadViewFixtures {
     /** Each message's body: the digest is HTML with a remote image and a list to leave. */
     fun content(message: MailMessage): MessageContent =
         when (message.id) {
-            "s" -> digestContent()
+            "s" -> digestContent(Unsubscribe(mail = "mailto:unsubscribe@sentry.example"))
+            "o" -> digestContent(Unsubscribe(web = "https://lists.example.org/u/1", oneClick = true))
             "g" -> MessageContent(message.body, truncated = false, html = null, attachments = attachments)
             else -> MessageContent(message.body, truncated = false, html = null)
         }
 
-    private fun digestContent() =
+    private fun digestContent(unsubscribe: Unsubscribe) =
         MessageContent(
             DIGEST,
             truncated = false,
             html = MessageHtml(DIGEST_HTML, remoteContent = true),
-            unsubscribe = Unsubscribe(mail = "mailto:unsubscribe@sentry.example"),
+            unsubscribe = unsubscribe,
             listName = "Sentry weekly digest",
         )
 

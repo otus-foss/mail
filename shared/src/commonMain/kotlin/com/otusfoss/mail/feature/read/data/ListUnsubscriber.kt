@@ -14,14 +14,16 @@ import com.otusfoss.mail.core.messages.domain.sendingAs
 import com.otusfoss.mail.feature.read.domain.UnsubscribeResult
 
 /**
- * Sends to the list's `mailto:` address through the account, then falls back to its web page
- * when the address fails the checks in [mail].
- * Automatic RFC 8058 POSTs require trusted DKIM verification that the current JMAP path lacks.
+ * Leaves a list by the first route that works. Mail to its `mailto:` address goes first, because
+ * it travels through the account's server and the list never sees the device. When that address
+ * fails the checks in [mail], a list that takes the RFC 8058 one-click request gets it from the
+ * device. Any other list leaves its web page to the user.
  */
 internal class ListUnsubscriber(
     private val drafts: DraftRepository,
     private val sender: DraftSender,
     private val domains: AvatarDomainResolver,
+    private val post: OneClickPost,
 ) {
     suspend fun unsubscribe(
         message: MailMessage,
@@ -29,6 +31,7 @@ internal class ListUnsubscriber(
     ): UnsubscribeResult =
         when {
             how.mail?.let { mail(message, it, how) } == true -> UnsubscribeResult.Done
+            how.web != null && how.oneClick -> post.send(how.web)
             how.web != null -> UnsubscribeResult.OpenLink(how.web)
             else -> UnsubscribeResult.Failed
         }

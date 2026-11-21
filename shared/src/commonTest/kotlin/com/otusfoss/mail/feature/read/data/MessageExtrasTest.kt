@@ -38,15 +38,17 @@ class MessageExtrasTest {
     }
 
     @Test
-    fun anUnauthenticatedPostHeaderStillOffersOnlyManualRoutes() {
+    fun aPostHeaderMarksOnlyAPublicHttpsAddressAsOneClick() {
         val urls = listOf("<ignored>", "mailto:leave@lists.example.org?subject=bye", "https://lists.example.org/u/1")
         val plain = email.copy(listUnsubscribe = urls)
         assertEquals(
             Unsubscribe(web = "https://lists.example.org/u/1", mail = "mailto:leave@lists.example.org?subject=bye"),
             plain.unsubscribe(),
         )
-        val oneClick = plain.copy(listUnsubscribePost = "List-Unsubscribe=One-Click").unsubscribe()
-        assertEquals(plain.unsubscribe(), oneClick)
+        val oneClick = plain.copy(listUnsubscribePost = " List-Unsubscribe=One-Click ").unsubscribe()
+        assertEquals(plain.unsubscribe()?.copy(oneClick = true), oneClick)
+        val other = plain.copy(listUnsubscribePost = "List-Unsubscribe=Yes").unsubscribe()
+        assertEquals(plain.unsubscribe(), other, "Only the pair of RFC 8058 is ever sent")
         val insecure =
             email
                 .copy(
@@ -54,6 +56,9 @@ class MessageExtrasTest {
                     listUnsubscribePost = "List-Unsubscribe=One-Click",
                 ).unsubscribe()
         assertEquals(Unsubscribe(web = "http://lists.example.org/u/1"), insecure, "Plain http is only opened")
+        val local = "https://nas.lan:5001/u/1"
+        val inside = email.copy(listUnsubscribe = listOf(local), listUnsubscribePost = "List-Unsubscribe=One-Click")
+        assertEquals(Unsubscribe(web = local), inside.unsubscribe(), "A private address is only opened")
         assertNull(email.unsubscribe(), "Mail without the header cannot be left")
     }
 
