@@ -26,6 +26,9 @@ import com.otusfoss.mail.core.messages.domain.DraftFailure
 import com.otusfoss.mail.core.messages.domain.DraftRepository
 import com.otusfoss.mail.core.messages.domain.MailSender
 import com.otusfoss.mail.core.messages.domain.SendIdentity
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.NonCancellable
+import kotlinx.coroutines.withContext
 import kotlinx.serialization.SerializationException
 import kotlinx.serialization.builtins.ListSerializer
 import kotlin.uuid.ExperimentalUuidApi
@@ -92,15 +95,23 @@ internal class JmapDraftRepository(
                     // Without an answer the server may have stored the copy, so a later save removes it.
                     copies.unanswered.remember(account.login.id, messageId)
                     throw error
+                } catch (cancelled: CancellationException) {
+                    withContext(NonCancellable) { copies.unanswered.remember(account.login.id, messageId) }
+                    throw cancelled
                 }
             val failure = result.notCreated[CREATION_ID]
             if (failure != null) throw DraftException(failure.toDraftFailure())
             val id = result.createdId(CREATION_ID) ?: throw DraftException(DraftFailure.Mail(MailFailure.ServerProblem))
             // Each operation of one call succeeds or fails alone (RFC 8620, section 5.3), so the old
             // copy is destroyed only once the server has stored the new one.
-            val previous = draft.emailId
-            if (previous != null) account.destroyReplaced(previous)
-            copies.unanswered.destroy(account, drafts, kept = id)
+            try {
+                val previous = draft.emailId
+                if (previous != null) account.destroyReplaced(previous)
+                copies.unanswered.destroy(account, drafts, kept = id)
+            } catch (cancelled: CancellationException) {
+                withContext(NonCancellable) { copies.unanswered.remember(account.login.id, messageId) }
+                throw cancelled
+            }
             id
         }
 

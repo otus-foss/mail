@@ -13,7 +13,9 @@ import com.otusfoss.mail.core.messages.domain.newDeviceDraftId
 import com.otusfoss.mail.core.storage.DeviceStore
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.withContext
 import kotlin.coroutines.CoroutineContext
 import kotlin.time.Clock
 import kotlin.time.Instant
@@ -68,7 +70,7 @@ class DeviceDrafts(
                 }
 
                 result.isSuccess -> {
-                    if (waiting != null) shelf.arrive(waiting.id, result.getOrThrow())
+                    if (waiting != null) withContext(NonCancellable) { shelf.arrive(waiting.id, result.getOrThrow()) }
                     result
                 }
 
@@ -135,8 +137,13 @@ class DeviceDrafts(
                     }
                 }
             when {
-                result.isUnreachable -> return true
-                result.isSuccess || waiting.discarded -> shelf.arrive(waiting.id, result.getOrNull())
+                result.isUnreachable -> {
+                    return true
+                }
+
+                result.isSuccess || waiting.discarded -> {
+                    withContext(NonCancellable) { shelf.arrive(waiting.id, result.getOrNull()) }
+                }
             }
         }
         return false
