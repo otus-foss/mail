@@ -1,8 +1,10 @@
 package com.otusfoss.mail.feature.folders.data
 
 import com.otusfoss.core.jmap.JmapConnections
+import com.otusfoss.core.jmap.JmapErrorCategory
 import com.otusfoss.core.jmap.JmapException
 import com.otusfoss.core.jmap.SetMethod
+import com.otusfoss.core.jmap.category
 import com.otusfoss.core.jmap.isTemporary
 import com.otusfoss.core.jmap.login.LoginLifecycle
 import com.otusfoss.core.jmap.login.LoginStoreException
@@ -10,9 +12,11 @@ import com.otusfoss.mail.core.mail.MailAccount
 import com.otusfoss.mail.core.mail.MailboxType
 import com.otusfoss.mail.core.mail.mailAccount
 import com.otusfoss.mail.core.mailbox.Mailboxes
+import com.otusfoss.mail.core.messages.data.LoginLocks
 import com.otusfoss.mail.core.storage.DeviceStore
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
@@ -27,8 +31,10 @@ import kotlin.time.Instant
  * [store] as the `Mailbox/set` updates they would have sent (RFC 8621, section 2.5), in the order
  * they were made. A change shows in the folders [mailboxes] keeps at once. Sending drops each one
  * the server answered, refused or not, and has the next load read every mailbox again, so the
- * device shows what the server kept. [wake] asks the platform to send them once the network is
- * back. [store] is read and written on [io]; without a store, changes last as long as the process.
+ * device shows what the server kept. Only a server that cannot be reached, or a sign-in the user
+ * must fix, keeps a change waiting, so one bad answer never blocks the folders. [wake] asks the
+ * platform to send them once the network is back. [store] is read and written on [io]; without a
+ * store, changes last as long as the process.
  */
 class WaitingFolderChanges(
     private val connections: JmapConnections,
@@ -37,8 +43,11 @@ class WaitingFolderChanges(
     private val wake: (Instant) -> Unit = {},
     private val io: CoroutineContext = Dispatchers.IO,
 ) : LoginLifecycle {
-    // One at a time, so a waiting change is never sent twice and none is lost between a read and a write.
-    private val lock = Mutex()
+    // Each login's sends take turns, so a waiting change is never sent twice.
+    private val turns = LoginLocks()
+
+    // Every login's changes share one store value, so its read and rewrite happen one at a time.
+    private val storeLock = Mutex()
     private var memory = emptyMap<String, List<JsonObject>>()
 
     /** Keeps [update], patches by mailbox id, for [loginId]'s server and shows it in the kept folders. */
@@ -46,51 +55,60 @@ class WaitingFolderChanges(
         loginId: String,
         update: Map<String, JsonObject>,
     ) {
-        lock.withLock { write(loginId, saved()[loginId].orEmpty() + JsonObject(update)) }
+        change(loginId) { it + JsonObject(update) }
         mailboxes.patchKept(loginId, update)
         wake(Clock.System.now())
     }
 
     /**
-     * Sends [account]'s waiting changes in order. A failed request leaves the rest waiting and
-     * throws [JmapException].
+     * Sends [account]'s waiting changes in order. A server that cannot be reached, or a sign-in to
+     * fix, leaves the rest waiting and throws [JmapException].
      */
     internal suspend fun send(account: MailAccount) {
         val loginId = account.login.id
-        lock.withLock {
+        turns.of(loginId).withLock {
             val waiting = saved()[loginId].orEmpty()
-            var left = waiting
+            var sent = 0
             try {
-                while (left.isNotEmpty()) {
-                    account.sendUpdate(left.first())
-                    left = left.drop(1)
+                waiting.forEach { update ->
+                    account.sendUpdate(update)
+                    sent++
                 }
             } finally {
-                if (left.size < waiting.size) {
-                    write(loginId, left)
-                    mailboxes.rereadNext(loginId)
+                // A newer load cancels this one; what the server took must still be recorded.
+                if (sent > 0) {
+                    withContext(NonCancellable) {
+                        change(loginId) { it.drop(sent) }
+                        mailboxes.rereadNext(loginId)
+                    }
                 }
             }
         }
     }
 
-    /** Sends every login's waiting changes. True when some still wait, such as for the network. */
-    suspend fun flush(): Boolean {
-        saved().keys.forEach { loginId ->
-            try {
-                connections.mailAccount(loginId)?.let { send(it) }
-            } catch (expected: JmapException) {
-                // They go with the next load.
-            } catch (expected: LoginStoreException) {
-                // The saved logins cannot be read now; they go with the next load.
-            }
-        }
-        return saved().isNotEmpty()
-    }
+    /**
+     * Sends every login's waiting changes. True when the server could not be reached, so what is
+     * left waits for the network; a sign-in to fix waits for the user instead.
+     */
+    suspend fun flush(): Boolean =
+        saved()
+            .keys
+            .map { loginId ->
+                try {
+                    connections.mailAccount(loginId)?.let { send(it) }
+                    false
+                } catch (failure: JmapException) {
+                    failure.category == JmapErrorCategory.Offline ||
+                        (failure as? JmapException.MethodError)?.isTemporary == true
+                } catch (expected: LoginStoreException) {
+                    // The saved logins cannot be read now; they go with the next load.
+                    false
+                }
+            }.any { it }
 
     /** Drops [loginId]'s waiting changes, as the account is removed. */
     override suspend fun removing(loginId: String) {
-        lock.withLock { write(loginId, emptyList()) }
+        turns.of(loginId).withLock { change(loginId) { emptyList() } }
     }
 
     // A change queued while the login was being removed must not wait for it to come back.
@@ -98,24 +116,39 @@ class WaitingFolderChanges(
 
     private suspend fun saved(): Map<String, List<JsonObject>> = store?.let { withContext(io) { it.read() } } ?: memory
 
-    private suspend fun write(
+    /** Replaces [loginId]'s waiting changes with what [edit] makes of them. */
+    private suspend fun change(
         loginId: String,
-        changes: List<JsonObject>,
+        edit: (List<JsonObject>) -> List<JsonObject>,
     ) {
-        val all = saved() - loginId + if (changes.isEmpty()) emptyMap() else mapOf(loginId to changes)
-        memory = all
-        store?.let { saving -> withContext(io) { saving.write(all) } }
+        storeLock.withLock {
+            val saved = saved()
+            val changes = edit(saved[loginId].orEmpty())
+            val all = saved - loginId + if (changes.isEmpty()) emptyMap() else mapOf(loginId to changes)
+            memory = all
+            store?.let { saving -> withContext(io) { saving.write(all) } }
+        }
     }
 }
 
 /**
- * Sends one waiting `Mailbox/set` update. A refusal, of the call or of a mailbox, counts as
- * answered, since it would recur; a server that is down for now throws, so the change waits.
+ * Sends one waiting `Mailbox/set` update. A refusal, of the call or of a mailbox, or an answer the
+ * client cannot read counts as answered, since it would recur. A server that is down for now, or
+ * a sign-in the user must fix, throws, so the change waits.
  */
 private suspend fun MailAccount.sendUpdate(update: JsonObject) {
     try {
         connection.call(SetMethod(MailboxType, id, update = update.mapValues { (_, patch) -> patch.jsonObject }))
-    } catch (refusal: JmapException.MethodError) {
-        if (refusal.isTemporary) throw refusal
+    } catch (failure: JmapException) {
+        if (failure.waits) throw failure
     }
 }
+
+private val JmapException.waits: Boolean
+    get() =
+        when (this) {
+            is JmapException.MethodError -> isTemporary
+            else -> category in WAITING_CATEGORIES
+        }
+
+private val WAITING_CATEGORIES = setOf(JmapErrorCategory.Offline, JmapErrorCategory.Auth, JmapErrorCategory.Credentials)

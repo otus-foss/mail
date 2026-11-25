@@ -195,6 +195,7 @@ private fun HeldMail.withWaiting(
     val replaced = waiting.mapNotNull { it.draft.emailId }.map { "${list.login.id}/$it" }.toSet()
     val own =
         waiting
+            .filterNot { it.discarded }
             .map { HeldMail(mapOf(it.id to it.toEmail(list.mailbox.id)), emptyMap(), emptyMap()).row(it.id, list) }
             .filterNotNull()
             .filter { check?.invoke(it) ?: true }

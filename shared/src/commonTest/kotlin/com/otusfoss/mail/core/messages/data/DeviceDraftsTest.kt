@@ -1,9 +1,18 @@
-package com.otusfoss.mail.core.messages.domain
+package com.otusfoss.mail.core.messages.data
 
 import com.otusfoss.mail.core.mail.MailFailure
+import com.otusfoss.mail.core.messages.domain.Draft
+import com.otusfoss.mail.core.messages.domain.DraftException
+import com.otusfoss.mail.core.messages.domain.DraftFailure
+import com.otusfoss.mail.core.messages.domain.DraftRepository
+import com.otusfoss.mail.core.messages.domain.SendIdentity
+import com.otusfoss.mail.core.messages.domain.WaitingDraftStore
+import com.otusfoss.mail.core.messages.domain.isDeviceDraftId
 import com.otusfoss.mail.core.storage.DeviceStore
 import com.otusfoss.mail.testing.MemoryMapStore
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
 import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -117,11 +126,11 @@ class DeviceDraftsTest {
             drafts.save(hello.copy(accountId = "bob")).getOrThrow()
 
             assertTrue(drafts.flush())
-            assertEquals(3, server.saves.size)
+            assertEquals(4, server.saves.size, "Each login tries once")
 
             server.failure = null
             server.refused = "ada"
-            assertTrue(drafts.flush())
+            assertFalse(drafts.flush(), "A refusal is no reason to try again soon")
             assertEquals(listOf("ada"), deviceDrafts().list.waiting("ada").map { it.loginId })
             assertEquals(emptyList(), drafts.list.waiting("bob"))
         }
@@ -134,7 +143,7 @@ class DeviceDraftsTest {
             drafts.save(hello.copy(accountId = "bob")).getOrThrow()
             server.failure = null
 
-            assertTrue(drafts.flush("bob"))
+            assertFalse(drafts.flush("bob"))
 
             assertEquals(1, drafts.list.waiting("ada").size)
             assertEquals(emptyList(), drafts.list.waiting("bob"))
@@ -155,6 +164,63 @@ class DeviceDraftsTest {
 
             assertEquals(emptyList(), drafts.list.waiting("ada"))
             assertEquals(listOf("ada" to stored, "ada" to "e9"), server.discards)
+        }
+
+    @Test
+    fun anOfflineDiscardDestroysTheReplacedCopyOnceTheServerAnswers() =
+        runTest {
+            val stored = drafts.save(hello).getOrThrow()
+            server.failure = MailFailure.Unreachable
+            val id = drafts.save(hello.copy(emailId = stored)).getOrThrow()
+
+            assertTrue(drafts.discard("ada", id).isSuccess)
+            assertTrue(drafts.discard("ada", "e9").isSuccess)
+
+            assertNull(drafts.list.load(id))
+            assertEquals(
+                listOf(stored, "e9"),
+                drafts.list
+                    .waiting("ada")
+                    .filter {
+                        it.discarded
+                    }.map { it.draft.emailId }
+                    .sortedBy { it },
+            )
+            server.failure = null
+            assertFalse(drafts.flush())
+            assertEquals(listOf("ada" to stored, "ada" to "e9"), server.discards.takeLast(2))
+            assertEquals(emptyList(), drafts.list.waiting("ada"))
+        }
+
+    @Test
+    fun listsDoNotWaitForASaveThatWaitsForTheServer() =
+        runTest {
+            server.failure = MailFailure.Unreachable
+            drafts.save(hello).getOrThrow()
+            server.failure = null
+            val answer = CompletableDeferred<Unit>()
+            server.gate = answer
+
+            val saving = async { drafts.save(hello.copy(subject = "Slow")) }
+            testScheduler.runCurrent()
+
+            assertEquals(1, drafts.list.waiting("ada").size)
+            answer.complete(Unit)
+            saving.await()
+        }
+
+    @Test
+    fun aHandedOverDeviceIdStillNamesTheServersCopy() =
+        runTest {
+            val stored = drafts.save(hello).getOrThrow()
+            server.failure = MailFailure.Unreachable
+            val id = drafts.save(hello.copy(emailId = stored)).getOrThrow()
+            drafts.handOver(hello.copy(emailId = id))
+            server.failure = null
+
+            drafts.save(hello.copy(subject = "After Undo", emailId = id)).getOrThrow()
+
+            assertEquals(stored, server.saves.last().emailId)
         }
 
     @Test
@@ -212,12 +278,14 @@ class DeviceDraftsTest {
         val discards = mutableListOf<Pair<String, String>>()
         var failure: MailFailure? = null
         var refused: String? = null
+        var gate: CompletableDeferred<Unit>? = null
         private var stored = 0
 
         override suspend fun identities(accountId: String): List<SendIdentity> = emptyList()
 
         override suspend fun save(draft: Draft): Result<String> {
             saves += draft
+            gate?.await()
             val failed = failure ?: MailFailure.NotPermitted.takeIf { draft.accountId == refused }
             if (failed != null) return Result.failure(DraftException(DraftFailure.Mail(failed)))
             return Result.success("e${++stored}")
@@ -228,7 +296,8 @@ class DeviceDraftsTest {
             emailId: String,
         ): Result<Unit> {
             discards += accountId to emailId
-            return Result.success(Unit)
+            val failed = failure ?: return Result.success(Unit)
+            return Result.failure(DraftException(DraftFailure.Mail(failed)))
         }
     }
 }

@@ -9,13 +9,15 @@ import kotlin.uuid.Uuid
 
 /**
  * A draft the server could not take, kept on the device under [id] since [savedMillis] until the
- * server can be reached. Its [draft] names in `emailId` the server's copy it replaces, if any.
+ * server can be reached. Its [draft] names in `emailId` the server's copy it replaces, if any. A
+ * [discarded] one is no draft any more: it only waits to destroy that copy, which lists hide.
  */
 @Serializable
 data class WaitingDraft(
     val id: String,
     val draft: Draft,
     val savedMillis: Long,
+    val discarded: Boolean = false,
 ) {
     val loginId: String get() = draft.accountId
 }
@@ -30,7 +32,7 @@ object WaitingDraftStore : StoreSpec<String, WaitingDraft>(
 
 /** The drafts that wait on the device, for the lists that show them and the changes that drop them. */
 interface WaitingDraftList {
-    /** [loginId]'s waiting drafts, the one saved last first. */
+    /** [loginId]'s waiting drafts, the one saved last first, with the discarded ones. */
     suspend fun waiting(loginId: String): List<WaitingDraft>
 
     /** Drops the waiting draft [id], as when the user deletes it; false when none waits under it. */

@@ -5,8 +5,8 @@ import com.otusfoss.mail.core.cache.MailCache
 import com.otusfoss.mail.core.mail.MailAccount
 import com.otusfoss.mail.core.mailbox.MailboxRole
 import com.otusfoss.mail.core.mailbox.Mailboxes
+import com.otusfoss.mail.core.messages.data.DeviceDrafts
 import com.otusfoss.mail.core.messages.data.EmailChangeQueue
-import com.otusfoss.mail.core.messages.domain.DeviceDrafts
 import com.otusfoss.mail.core.messages.domain.WaitingDraft
 import com.otusfoss.mail.core.storage.DeviceStore
 import com.otusfoss.mail.feature.compose.domain.SavedDrafts

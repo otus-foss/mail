@@ -1,6 +1,6 @@
 package com.otusfoss.mail.feature.compose.data
 
-import com.otusfoss.mail.core.messages.domain.DeviceDrafts
+import com.otusfoss.mail.core.messages.data.DeviceDrafts
 import com.otusfoss.mail.core.messages.domain.Draft
 import com.otusfoss.mail.core.messages.domain.Signature
 import com.otusfoss.mail.core.messages.domain.isDeviceDraftId

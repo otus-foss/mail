@@ -31,6 +31,7 @@ class WaitingFolderChangesTest {
     private val sent = mutableListOf<String>()
     private var down = false
     private var refuseUpdates = false
+    private var garbled = false
     private var woken = 0
     private lateinit var waiting: WaitingFolderChanges
     private val repository = repository()
@@ -39,7 +40,11 @@ class WaitingFolderChangesTest {
         val api = { body: String ->
             if (down) throw IOException("The network is down")
             sent += body
-            if ("Mailbox/set" in body) setAnswer() else MAILBOXES
+            when {
+                "Mailbox/set" !in body -> MAILBOXES
+                garbled -> "<html>Bad gateway</html>"
+                else -> setAnswer()
+            }
         }
         val connections = JmapConnections(JmapClient(stalwartLike(session = STALWART_SESSION, api = api)), logins)
         val mailboxes = Mailboxes(cache)
@@ -114,6 +119,22 @@ class WaitingFolderChangesTest {
 
             assertEquals("Receipts", loaded.folder("r")?.name)
             assertFalse(waiting.flush())
+        }
+
+    @Test
+    fun anAnswerTheClientCannotReadDropsTheChangeInsteadOfBlockingTheFolders() =
+        runTest {
+            val folder = receipts()
+            down = true
+            repository.rename(folder, "Bills")
+            down = false
+            garbled = true
+
+            val loaded = repository.accounts().single()
+
+            assertEquals(null, loaded.failure)
+            assertEquals("Receipts", loaded.folder("r")?.name)
+            assertEquals(emptyMap(), map.read())
         }
 
     @Test

@@ -57,7 +57,10 @@ class JmapEmailWriter(
         val left = leaving - folderId - ""
         return when {
             left.isEmpty() -> false
-            isDeviceDraftId(message.emailId) -> drafts?.drop(message.emailId) ?: false
+
+            // A draft that waits on the device is in no folder yet, so it cannot move.
+            isDeviceDraftId(message.emailId) -> false
+
             else -> queue.updateRow(message, movePatch(left, folderId))
         }
     }

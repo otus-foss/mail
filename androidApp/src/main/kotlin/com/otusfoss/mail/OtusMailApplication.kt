@@ -50,6 +50,8 @@ open class OtusMailApplication :
     val stores: MailDeviceStores by lazy {
         // The cache of releases that kept mail unsealed. Sync fills the sealed one again.
         deleteDatabase(UNSEALED_CACHE_DATABASE)
+        // Built with the other sealed stores, so the first start takes in what an unsealed release saved.
+        pushStore
         MailDeviceStores.named(
             { name, commit -> sealedPreferences(name, commit) },
             SealedMailCache(SqlMailCache(mailCacheDriver(this, CACHE_DATABASE)), storageCipher),
@@ -60,8 +62,8 @@ open class OtusMailApplication :
     }
 
     /**
-     * The device store [name], sealed. What a release before sealing saved in it is read once and
-     * sealed.
+     * The device store [name], sealed. What a release before sealing saved in it is taken in only
+     * when the store is built on the device's first start with a key; see `SealedMapStore`.
      */
     fun sealedPreferences(
         name: String,
@@ -112,8 +114,10 @@ open class OtusMailApplication :
 
     /** One per process, so its lock covers the push service, the workers, and the settings page. */
     val push: PushSubscriptions by lazy {
-        services.pushSubscriptions(sealedPreferences("push"), deviceClientId(), MailPush.Changes)
+        services.pushSubscriptions(pushStore, deviceClientId(), MailPush.Changes)
     }
+
+    private val pushStore: StringMapStore by lazy { sealedPreferences("push") }
 
     /** Work that outlives any screen, such as cache upkeep. It ends with the process. */
     private val processScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)

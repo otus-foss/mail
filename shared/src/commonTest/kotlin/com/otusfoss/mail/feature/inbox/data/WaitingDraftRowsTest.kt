@@ -5,10 +5,10 @@ import com.otusfoss.mail.core.cache.InMemoryMailCache
 import com.otusfoss.mail.core.mail.MailFailure
 import com.otusfoss.mail.core.mailbox.MailboxRole
 import com.otusfoss.mail.core.mailbox.Mailboxes
+import com.otusfoss.mail.core.messages.data.DeviceDrafts
 import com.otusfoss.mail.core.messages.data.EmailChangeQueue
 import com.otusfoss.mail.core.messages.data.JmapEmailWriter
 import com.otusfoss.mail.core.messages.data.WaitingMail
-import com.otusfoss.mail.core.messages.domain.DeviceDrafts
 import com.otusfoss.mail.core.messages.domain.Draft
 import com.otusfoss.mail.core.messages.domain.DraftFailure
 import com.otusfoss.mail.core.messages.domain.MailScope

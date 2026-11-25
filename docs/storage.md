@@ -70,17 +70,25 @@ process serves the cache and every store.
 - A text that does not open reads as missing: a cached row is fetched again, and a store reads as
   empty. That happens when the platform's key is lost, such as after the Keystore key was
   invalidated; what waited for the server in a store is then lost with it. While the Keystore or
-  Keychain only fails to answer, the cipher uses a key for that process and leaves the saved one
-  alone.
+  Keychain only fails to answer, as on iOS before the first unlock, the cipher uses a key for that
+  process and leaves the saved one alone, and each store keeps that process's writes in memory, so
+  they never replace what waited.
 
 What is not encrypted: downloaded attachments and contact avatars, which are files (see below), the
-plain settings such as the theme, the Mail behavior, and the notification preview choices, and the
-row ids and times named above. Login secrets never go in the cache; they stay in the platform's
+plain settings such as the theme, the Mail behavior, and the notification preview choices, the
+row ids and times named above, list names, which hold their filters, and the WebView's own HTTP
+cache of remote images the user chose to load.
+
+Sealing ties a value to its store or row, not to a time. Someone who can write the app's files can
+put back an older sealed copy of a store, such as the outbox, and it opens. Sealing does not stop
+that; it stops reading and planting values. Login secrets never go in the cache; they stay in the platform's
 protected login store.
 
 A release before encryption kept the cache unsealed in `otus_mail_cache.db`. The first start
 deletes that file, on iOS from Caches, and sync fills the sealed cache again. A device store saved
-before encryption is read as it is once and sealed at that read, so nothing that waited is lost.
+before encryption is taken in and sealed when it is built on the first start with a key, which is
+the start that makes the Keystore or Keychain key; the app builds every sealed store then. On any
+later start an unsealed store reads as empty, so a store planted in the app's files is never used.
 
 ## Attachments on the device
 
@@ -168,11 +176,14 @@ with `device-draft:`, which no JMAP id can. Later saves replace the waiting copy
 or a send made with that id acts on the server's copy the draft replaces, if it has one.
 
 - The Drafts list shows each waiting draft as a row, in place of the copy it replaces, and opens
-  it from the device. Moving it out of Drafts or deleting it drops it. Other changes, such as a
-  flag, do nothing on it: the change queue never takes a device id.
-- Each inbox load first stores the login's waiting drafts on the server, oldest first, and the
-  background job that sends the outbox does the same once the network is back. A draft the server
-  refuses stays on the device for the next try.
+  it from the device. Deleting it drops it. It is in no folder yet, so it cannot be moved, and
+  other changes, such as a flag, do nothing on it: the change queue never takes a device id.
+- A discard or delete the server cannot be reached for waits too, as a discarded entry that names
+  the server's copy to destroy. The lists hide that copy meanwhile.
+- Each inbox load first sends the login's waiting drafts and discards to the server, oldest first,
+  and the background job that sends the outbox does the same once the network is back. A draft
+  the server refuses stays on the device for the next try, and does not make the job run again.
+  Each login's saves and flushes take turns; lists never wait for them.
 - While Write is open on a draft that waits, the page says so. Once the server has the draft, a
   page that still holds its device id replaces that server copy instead of adding another; this is
   remembered for the life of the process.
@@ -181,7 +192,9 @@ or a send made with that id acts on the server's copy the draft replaces, if it 
 
 Folder renames, moves, and new orders wait in `JmapFolderRepository`, in the `pending_folders`
 store, each as the `Mailbox/set` update it would have sent; see [folders](folders.md#folders).
-Removing an account drops them.
+Only a server that cannot be reached, or a sign-in the user must fix, keeps a change waiting. Any
+other answer, a refusal or one the app cannot read, drops it and has the next load read every
+folder again. Removing an account drops them.
 
 Contact changes wait in `ContactSync` the same way. A new card is kept as sent before it goes.
 When that request gets no answer, the server may have stored the card anyway, so the next try
