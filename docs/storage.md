@@ -106,14 +106,20 @@ more.
 - The waiting changes go to the server before each refresh, and after it they show again on top
   of what the server sent. A refresh holds the login's queue lock while it runs, so a mark made
   meanwhile waits for it and a confirmed mark never shows reverted.
-- After a failure, the queue wakes the background job again only when the network or the server
-  was at fault; a rejected sign-in or a missing secret waits for the next refresh.
+- After a failure, the queue wakes the background job and asks it to retry only when the network or
+  a temporary or unclear server problem was at fault. A rejected sign-in, a missing secret, or a
+  read-only account (`accountReadOnly`, RFC 8620, section 3.6.2) keeps its changes waiting for the
+  next refresh without retrying in the background.
 - The mark a send gives the message it answers, and the moves of "Move the N already here", go
   through the queue too.
-- A change the server refuses is dropped, and its email leaves the cache, so the next refresh
-  reads it again. A server that is down for now (`serverUnavailable`, `serverFail`, or
-  `serverPartialFail`, RFC 8620, section 3.6.2) refuses nothing: the change waits. So does an
-  email the server will not change for now (`rateLimit`, RFC 8620, section 5.3).
+- A change the server refuses is dropped, and its email leaves the cache, so the next refresh reads
+  it again. Only a missing connection, a sign-in or read-only block, or a server that asks to be
+  tried later (`serverUnavailable`, HTTP 408, 429, or 502 to 504, or `rateLimit` on one email)
+  keeps the queue waiting without counting tries. When a multi-email batch fails with another
+  refusal or an unclear error (`serverFail`, `serverPartialFail`, HTTP 500, or an unreadable
+  reply), the queue retries that batch one email at a time so one bad email does not block the
+  rest. An email that fails unclearly three times leaves the queue and the cache, and two unclear
+  failures in a row end the flush.
 - Every login's changes share one stored value, so one lock covers each read and rewrite of it,
   and changes made on two accounts at once both stay.
 - Android keeps the queue in the `otus_mail_pending_changes` shared preferences file, written at
