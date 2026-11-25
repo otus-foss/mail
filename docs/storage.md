@@ -181,7 +181,9 @@ or a send made with that id acts on the server's copy the draft replaces, if it 
 - A discard or delete the server cannot be reached for waits too, as a discarded entry that names
   the server's copy to destroy. The lists hide that copy meanwhile.
 - Each inbox load first sends the login's waiting drafts and discards to the server, oldest first,
-  and the background job that sends the outbox does the same once the network is back. A draft
+  and the background job that sends the outbox does the same once the network is back. When a load
+  stores or discards a waiting draft, it refreshes the Drafts list in the same sync so the cached
+  Drafts list shows the new copy. A draft
   the server refuses stays on the device for the next try, and does not make the job run again.
   Each login's saves and flushes take turns; lists never wait for them.
 - While Write is open on a draft that waits, the page says so. Once the server has the draft, a

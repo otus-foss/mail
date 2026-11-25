@@ -10,10 +10,13 @@ import com.otusfoss.mail.core.messages.data.EmailChangeQueue
 import com.otusfoss.mail.core.messages.data.JmapEmailWriter
 import com.otusfoss.mail.core.messages.data.WaitingMail
 import com.otusfoss.mail.core.messages.domain.Draft
+import com.otusfoss.mail.core.messages.domain.DraftException
 import com.otusfoss.mail.core.messages.domain.DraftFailure
+import com.otusfoss.mail.core.messages.domain.DraftRepository
 import com.otusfoss.mail.core.messages.domain.MailScope
 import com.otusfoss.mail.core.messages.domain.MailSender
 import com.otusfoss.mail.core.messages.domain.MessageFlag
+import com.otusfoss.mail.core.messages.domain.SendIdentity
 import com.otusfoss.mail.core.messages.domain.isDeviceDraftId
 import com.otusfoss.mail.feature.inbox.domain.MailQuery
 import com.otusfoss.mail.testing.ADA_LOGIN
@@ -107,6 +110,54 @@ class WaitingDraftRowsTest {
 
             assertTrue(server.calls("Email/set").isEmpty())
         }
+
+    @Test
+    fun aDraftAnInboxLoadStoredStillShowsInTheKeptDraftsList() =
+        runTest {
+            val storing = StoringDrafts(server)
+            val storedDrafts = DeviceDrafts(storing, store = null, now = { Instant.parse("2026-10-19T08:00:00Z") })
+            val mailSource =
+                JmapMailSource(
+                    connections,
+                    cache,
+                    WaitingMail(queue, storedDrafts),
+                    Mailboxes(cache),
+                    zone = { TimeZone.UTC },
+                )
+            mailSource.messages(scope)
+            storing.offline = true
+            storedDrafts.save(written.copy(emailId = "d1")).getOrThrow()
+            storing.offline = false
+
+            mailSource.messages(MailScope.Inbox)
+            server.down = true
+            val shown = mailSource.cached(scope, MailQuery()).messages.map { it.emailId }
+
+            assertEquals(listOf("d2"), shown)
+        }
+
+    /** A Drafts folder on [server]: a save adds the new copy there and destroys the one it replaces. */
+    private class StoringDrafts(
+        private val server: FakeMailServer,
+    ) : DraftRepository {
+        var offline = false
+        private var stored = 1
+
+        override suspend fun identities(accountId: String): List<SendIdentity> = emptyList()
+
+        override suspend fun save(draft: Draft): Result<String> {
+            if (offline) return Result.failure(DraftException(OFFLINE))
+            val id = "d${++stored}"
+            server.add(email(id, "d"))
+            draft.emailId?.let(server::destroy)
+            return Result.success(id)
+        }
+
+        override suspend fun discard(
+            accountId: String,
+            emailId: String,
+        ): Result<Unit> = Result.success(Unit)
+    }
 
     private companion object {
         val OFFLINE = DraftFailure.Mail(MailFailure.Unreachable)

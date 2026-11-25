@@ -9,6 +9,7 @@ import com.otusfoss.mail.core.cache.MailCache
 import com.otusfoss.mail.core.cache.withAccount
 import com.otusfoss.mail.core.mail.mailAccount
 import com.otusfoss.mail.core.mail.toMailFailure
+import com.otusfoss.mail.core.mailbox.MailboxRole
 import com.otusfoss.mail.core.mailbox.Mailboxes
 import com.otusfoss.mail.core.messages.data.EmailChangeQueue
 import com.otusfoss.mail.core.messages.data.ListingPage
@@ -59,12 +60,12 @@ class JmapMailSource(
     override suspend fun messages(
         scope: MailScope,
         query: MailQuery,
-    ): InboxSnapshot = load(scope, query) { refresh(it) }
+    ): InboxSnapshot = load(scope, query, refreshDrafts = true) { refresh(it) }
 
     override suspend fun more(
         scope: MailScope,
         query: MailQuery,
-    ): InboxSnapshot = load(scope, query) { more(it) }
+    ): InboxSnapshot = load(scope, query, refreshDrafts = false) { more(it) }
 
     override suspend fun count(
         scope: MailScope,
@@ -101,6 +102,7 @@ class JmapMailSource(
     private suspend fun load(
         scope: MailScope,
         query: MailQuery,
+        refreshDrafts: Boolean,
         sync: suspend MailAccountLists.(ListingsOf) -> Unit,
     ): InboxSnapshot =
         cacheErrors {
@@ -108,7 +110,10 @@ class JmapMailSource(
             val now = clock.now()
             val failures =
                 coroutineScope {
-                    selected.map { login -> async { syncLogin(login, scope, query, now, sync) } }.awaitAll()
+                    selected
+                        .map { login ->
+                            async { syncLogin(login, scope, query, now, refreshDrafts, sync) }
+                        }.awaitAll()
                 }
             snapshot(selected, scope, query, now, failures.filterNotNull(), sites::find)
         }
@@ -119,6 +124,7 @@ class JmapMailSource(
         scope: MailScope,
         query: MailQuery,
         now: Instant,
+        refreshDrafts: Boolean,
         sync: suspend MailAccountLists.(ListingsOf) -> Unit,
     ): UnavailableAccount? {
         val conditions = emailConditions(query, login.id, now, zone()) ?: return null
@@ -128,9 +134,21 @@ class JmapMailSource(
                     MailAccountLists(connections.mailAccount(login), mailboxes, accountCache, limit) {
                         clock.now().toEpochMilliseconds()
                     }
+                val waitingBefore = waiting.draftIds(login.id)
                 waiting.drafts?.flush(login.id)
+                val draftsFlushed =
+                    refreshDrafts && waitingBefore.isNotEmpty() &&
+                        (waitingBefore - waiting.draftIds(login.id)).isNotEmpty()
                 waiting.changes.syncing(login.id) {
-                    lists.sync { folders -> scope.listingQueries(folders, login.id, query, conditions) }
+                    lists.sync { folders ->
+                        val requested = scope.listingQueries(folders, login.id, query, conditions)
+                        if (draftsFlushed) {
+                            (requested + DRAFTS_SCOPE.listingQueries(folders, login.id, MailQuery(), emptyList()))
+                                .distinctBy { it.key }
+                        } else {
+                            requested
+                        }
+                    }
                 }
                 null
             }
@@ -194,6 +212,7 @@ class JmapMailSource(
 
     private companion object {
         const val DEFAULT_LIMIT = 50
+        val DRAFTS_SCOPE = MailScope.Role(MailboxRole.Drafts)
     }
 }
 
@@ -203,3 +222,11 @@ internal suspend fun <T> cacheErrors(operation: suspend () -> T): T =
     } catch (error: CacheStorageException) {
         throw InboxStorageException(error, InboxStorage.Cache)
     }
+
+private suspend fun WaitingMail.draftIds(loginId: String): Set<String> =
+    drafts
+        ?.list
+        ?.waiting(loginId)
+        .orEmpty()
+        .map { it.id }
+        .toSet()
