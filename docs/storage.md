@@ -168,7 +168,8 @@ with `device-draft:`, which no JMAP id can. Later saves replace the waiting copy
 or a send made with that id acts on the server's copy the draft replaces, if it has one.
 
 - The Drafts list shows each waiting draft as a row, in place of the copy it replaces, and opens
-  it from the device. Moving it out of Drafts or deleting it drops it.
+  it from the device. Moving it out of Drafts or deleting it drops it. Other changes, such as a
+  flag, do nothing on it: the change queue never takes a device id.
 - Each inbox load first stores the login's waiting drafts on the server, oldest first, and the
   background job that sends the outbox does the same once the network is back. A draft the server
   refuses stays on the device for the next try.

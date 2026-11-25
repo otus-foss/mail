@@ -13,6 +13,7 @@ import com.otusfoss.mail.core.messages.domain.Draft
 import com.otusfoss.mail.core.messages.domain.DraftFailure
 import com.otusfoss.mail.core.messages.domain.MailScope
 import com.otusfoss.mail.core.messages.domain.MailSender
+import com.otusfoss.mail.core.messages.domain.MessageFlag
 import com.otusfoss.mail.core.messages.domain.isDeviceDraftId
 import com.otusfoss.mail.feature.inbox.domain.MailQuery
 import com.otusfoss.mail.testing.ADA_LOGIN
@@ -93,6 +94,18 @@ class WaitingDraftRowsTest {
 
             assertEquals(listOf("d1"), source.cached(scope, MailQuery()).messages.map { it.emailId })
             assertTrue(drafts.list.waiting(login.id).isEmpty())
+        }
+
+    @Test
+    fun markingAWaitingDraftsRowSendsNothing() =
+        runTest {
+            drafts.save(written).getOrThrow()
+            val row = source.messages(scope).messages.first()
+            val writer = JmapEmailWriter(connections, cache, queue, drafts.list)
+
+            assertEquals(emptySet(), writer.mark(listOf(row), MessageFlag.Flagged, on = true))
+
+            assertTrue(server.calls("Email/set").isEmpty())
         }
 
     private companion object {

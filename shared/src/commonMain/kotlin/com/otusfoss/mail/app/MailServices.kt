@@ -58,7 +58,6 @@ import com.otusfoss.mail.feature.contacts.domain.MailTraceSource
 import com.otusfoss.mail.feature.folders.data.JmapFolderRepository
 import com.otusfoss.mail.feature.folders.data.JmapFolderRuleRepository
 import com.otusfoss.mail.feature.folders.data.JmapSenderHistory
-import com.otusfoss.mail.feature.folders.data.KeptFolderRules
 import com.otusfoss.mail.feature.folders.data.WaitingFolderChanges
 import com.otusfoss.mail.feature.folders.domain.FolderRepository
 import com.otusfoss.mail.feature.folders.domain.FolderRuleRepository
@@ -240,7 +239,7 @@ class MailServices(
     /** Lives as long as the process, so its lock also covers the loads of a recreated activity. */
     internal val readLater by lazy { ReadLaterFolders(folders, stores.folders.readLater) }
     internal val rules: FolderRuleRepository by lazy {
-        KeptFolderRules(JmapFolderRuleRepository(connections, mailboxes, changes), cache)
+        JmapFolderRuleRepository(connections, mailboxes, changes, cache)
     }
 
     /** Finds mail that arrived since the last check, for notifications, on a platform that keeps their state. */

@@ -6,7 +6,6 @@ import com.otusfoss.mail.core.cache.MailCache
 import com.otusfoss.mail.core.cache.withAccount
 import com.otusfoss.mail.core.mail.MailFailure
 import com.otusfoss.mail.feature.folders.domain.AccountFolderRules
-import com.otusfoss.mail.feature.folders.domain.FolderRuleRepository
 import com.otusfoss.mail.feature.folders.domain.RuleAvailability
 import com.otusfoss.mail.feature.folders.domain.RuleFailure
 import com.otusfoss.mail.feature.folders.domain.RuleScriptFacts
@@ -15,25 +14,35 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.SerializationException
 
 /**
- * Keeps each login's rules, as [server] last gave them, in [cache], so the folders show their
+ * Keeps each login's rules, as the server last gave them, in [cache], so the folders show their
  * rules while the server cannot be reached. Only a server that does not answer brings the kept
  * rules back; any other answer, such as a server without rules, shows as it is. A save still needs
  * the server, which refuses one made from rules that changed since they were kept.
  */
 internal class KeptFolderRules(
-    private val server: FolderRuleRepository,
     private val cache: MailCache,
-) : FolderRuleRepository by server {
-    override suspend fun accounts(): List<AccountFolderRules> =
-        server.accounts().map { account ->
+) {
+    /**
+     * Binds [loginId]'s cache before [fromServer] runs, so the rules of a login removed or
+     * reconnected meanwhile are not kept.
+     */
+    suspend fun load(
+        loginId: String,
+        fromServer: suspend () -> AccountFolderRules,
+    ): AccountFolderRules =
+        cache.withAccount(loginId) { held ->
+            val account = fromServer()
             when {
-                account.availability is RuleAvailability.Available -> account.also { keep(it) }
-                account.availability == UNREACHABLE -> kept(account) ?: account
+                account.availability is RuleAvailability.Available -> account.also { keep(held, it) }
+                account.availability == UNREACHABLE -> kept(held, account) ?: account
                 else -> account
             }
         }
 
-    private suspend fun keep(account: AccountFolderRules) {
+    private suspend fun keep(
+        held: MailCache,
+        account: AccountFolderRules,
+    ) {
         val support = account.support ?: return
         val script = account.script
         val text =
@@ -48,28 +57,26 @@ internal class KeptFolderRules(
                     },
                 ),
             )
-        cache.withAccount(account.accountId) { kept ->
-            try {
-                if (kept.value(account.accountId, RULES_VALUE) != text) {
-                    kept.write(account.accountId) { putValue(RULES_VALUE, text) }
-                }
-            } catch (expected: CacheStorageException) {
-                // The rules loaded; only their offline copy is missing.
+        try {
+            if (held.value(account.accountId, RULES_VALUE) != text) {
+                held.write(account.accountId) { putValue(RULES_VALUE, text) }
             }
+        } catch (expected: CacheStorageException) {
+            // The rules loaded; only their offline copy is missing.
         }
     }
 
-    private suspend fun kept(account: AccountFolderRules): AccountFolderRules? {
-        val loginId = account.accountId
+    private suspend fun kept(
+        held: MailCache,
+        account: AccountFolderRules,
+    ): AccountFolderRules? {
         val kept =
-            cache.withAccount(loginId) { held ->
-                try {
-                    held.value(loginId, RULES_VALUE)?.let { JmapJson.decodeFromString(Kept.serializer(), it) }
-                } catch (expected: CacheStorageException) {
-                    null
-                } catch (expected: SerializationException) {
-                    null
-                }
+            try {
+                held.value(account.accountId, RULES_VALUE)?.let { JmapJson.decodeFromString(Kept.serializer(), it) }
+            } catch (expected: CacheStorageException) {
+                null
+            } catch (expected: SerializationException) {
+                null
             }
         val block = kept?.let { parseBlockJson(it.rules) }
         return block?.let {

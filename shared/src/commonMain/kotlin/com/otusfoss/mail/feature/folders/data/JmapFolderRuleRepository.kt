@@ -6,6 +6,7 @@ import com.otusfoss.core.jmap.JmapConnections
 import com.otusfoss.core.jmap.JmapException
 import com.otusfoss.core.jmap.login.JmapLogin
 import com.otusfoss.core.jmap.login.LoginStore
+import com.otusfoss.mail.core.cache.MailCache
 import com.otusfoss.mail.core.mail.MailAccount
 import com.otusfoss.mail.core.mail.MailFailure
 import com.otusfoss.mail.core.mail.mailAccount
@@ -37,23 +38,27 @@ class JmapFolderRuleRepository(
     private val connections: JmapConnections,
     private val mailboxes: Mailboxes,
     changes: EmailChangeQueue,
+    cache: MailCache,
     /** The UTC offset, such as `+0200`, that day and time conditions are written in. */
     private val zone: () -> String = ::deviceZone,
 ) : FolderRuleRepository {
     private val existing = ExistingMail(connections, mailboxes, changes)
+    private val kept = KeptFolderRules(cache)
 
     override suspend fun accounts(): List<AccountFolderRules> =
         coroutineScope { folderStorage { connections.savedLogins() }.map { async { load(it) } }.awaitAll() }
 
     private suspend fun load(login: JmapLogin): AccountFolderRules =
-        try {
-            val account = connections.mailAccount(login)
-            when (val availability = availability(account)) {
-                is RuleAvailability.Available -> loadRules(account, availability)
-                else -> AccountFolderRules(login.id, login.name, availability)
+        kept.load(login.id) {
+            try {
+                val account = connections.mailAccount(login)
+                when (val availability = availability(account)) {
+                    is RuleAvailability.Available -> loadRules(account, availability)
+                    else -> AccountFolderRules(login.id, login.name, availability)
+                }
+            } catch (error: JmapException) {
+                AccountFolderRules(login.id, login.name, RuleAvailability.Failed(error.toRuleFailure()))
             }
-        } catch (error: JmapException) {
-            AccountFolderRules(login.id, login.name, RuleAvailability.Failed(error.toRuleFailure()))
         }
 
     private suspend fun loadRules(

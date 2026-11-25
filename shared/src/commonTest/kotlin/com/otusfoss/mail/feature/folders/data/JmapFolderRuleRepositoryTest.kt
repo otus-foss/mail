@@ -92,6 +92,7 @@ class JmapFolderRuleRepositoryTest {
             connections,
             Mailboxes(cache),
             EmailChangeQueue(connections, cache, store = null),
+            cache,
         ) { "+0200" }
     }
 
@@ -234,6 +235,7 @@ class JmapFolderRuleRepositoryTest {
             connections,
             Mailboxes(cache),
             EmailChangeQueue(connections, cache, store = null),
+            cache,
         ) { "+0200" }
     }
 
