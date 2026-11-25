@@ -10,8 +10,9 @@ strings. It knows nothing of JMAP; the callers encode and decode the objects.
 - Mailboxes, with their counts.
 - Emails with the properties a list row shows, and the smaller member emails a conversation counts.
 - Threads, as lists of email ids.
-- Bodies of opened messages: their text and HTML body values. The Inbox also saves the bodies of
-  its first 20 rows ahead, each up to 256 kB, so they open without a download. Settings › Mail
+- Bodies of opened messages: their text and HTML body values. The Inbox and each opened folder
+  page also save the bodies of their first 20 rows ahead, each up to 256 kB, so they open without a
+  download and offline. Settings › Mail
   behavior › **Download mail ahead** limits that to networks that are not metered or turns it off,
   and Android's Data Saver stops it whatever the setting.
 - Address books and contact cards of every account the login reaches, by account and id.
@@ -19,6 +20,12 @@ strings. It knows nothing of JMAP; the callers encode and decode the objects.
   each contacts account's name, sharing, and `AddressBook` and `ContactCard` states.
 - The Inbox category of each listed email, with its reasons and the classifier's version; see
   [categories](categories.md).
+- Each login's identities with their signatures, so Write offers the From addresses and signs a
+  message offline, and Settings › Signatures lists them. A load that the server answers replaces
+  them; one it does not answer returns the kept ones.
+- Each login's folder rules as the server last gave them, with what its server can run and the
+  script's state. `KeptFolderRules` returns them only when the server cannot be reached, so the
+  folders show their rules offline. Saving a rule still needs the server.
 
 ## Where it lives
 
@@ -26,11 +33,12 @@ strings. It knows nothing of JMAP; the callers encode and decode the objects.
 `shared/src/commonMain/sqldelight/com/otusfoss/mail/core/cache/`. Every read and write runs on
 `Dispatchers.IO`, and each `write {}` is one transaction, so a failed write saves nothing.
 
-- Android opens `otus_mail_cache.db` in the app's private databases folder. The manifest sets
-  `allowBackup="false"` and its backup and data extraction rules exclude every domain, so neither
-  cloud backup nor device transfer copies the file.
-- iOS opens `otus_mail_cache.db` in the app's Caches directory. iOS leaves that directory out of
-  backups and may empty it when the device runs low on space; Mail then loads from the server again.
+- Android opens `otus_mail_sealed_cache.db` in the app's private databases folder. The manifest
+  sets `allowBackup="false"` and its backup and data extraction rules exclude every domain, so
+  neither cloud backup nor device transfer copies the file.
+- iOS opens `otus_mail_sealed_cache.db` in `Application Support/cache`, which is marked to stay
+  out of backups. iOS does not empty that folder when space runs low, so the mail kept for offline
+  use stays.
 - Tests, previews, and any platform without a driver use `InMemoryMailCache`.
 
 The device stores beside the cache, such as the outbox, waiting mail and contact changes, and
@@ -40,8 +48,39 @@ That folder is marked to stay out of backups and its files take the protection c
 `NSFileProtectionCompleteUntilFirstUserAuthentication`. User defaults would be backed up, so the
 first launch with the files moves each store's values out of user defaults and empties them there.
 
-The file is not encrypted. Only the app-private storage of each platform protects it. Login
-secrets never go in it; they stay in the platform's protected login store.
+## Encryption
+
+The cache and the device stores are encrypted on the device, on top of each platform's app-private
+storage. Core's `TextCipher` (`com.otusfoss.core:storage`) seals each text, and one cipher per
+process serves the cache and every store.
+
+- `SealedMailCache` wraps the database's cache. It seals every object's JSON and every named value
+  before it is written, and opens them when they are read. Logins, kinds, ids, and received times
+  stay readable, because the database finds and trims rows by them; subjects, addresses, bodies,
+  contacts, sync states, and list contents do not. Each text is tied to its login, kind, and id, so
+  a row copied over another does not open.
+- `SealedMapStore` wraps each device store: the outbox, the waiting changes and drafts, waiting
+  contact changes, folder settings, address pins, mail states, and push subscriptions. A store is
+  kept as one sealed value, so its keys are hidden too.
+- Android's `KeystoreTextCipher` uses AES-256-GCM with a random storage key. The key is kept in
+  the `otus_storage_key` preferences, wrapped by a key that never leaves the Android Keystore.
+- iOS's `KeychainTextCipher` uses AES-256-CBC with an HMAC-SHA-256 over the context, nonce, and
+  sealed bytes, checked before anything is decrypted. Its keys are one Keychain item, on this
+  device only and readable after the first unlock, like the login secrets.
+- A text that does not open reads as missing: a cached row is fetched again, and a store reads as
+  empty. That happens when the platform's key is lost, such as after the Keystore key was
+  invalidated; what waited for the server in a store is then lost with it. While the Keystore or
+  Keychain only fails to answer, the cipher uses a key for that process and leaves the saved one
+  alone.
+
+What is not encrypted: downloaded attachments and contact avatars, which are files (see below), the
+plain settings such as the theme, the Mail behavior, and the notification preview choices, and the
+row ids and times named above. Login secrets never go in the cache; they stay in the platform's
+protected login store.
+
+A release before encryption kept the cache unsealed in `otus_mail_cache.db`. The first start
+deletes that file, on iOS from Caches, and sync fills the sealed cache again. A device store saved
+before encryption is read as it is once and sealed at that read, so nothing that waited is lost.
 
 ## Attachments on the device
 
@@ -122,6 +161,26 @@ more.
 - Removing an account drops its changes, before its login is deleted and again after, so a change
   made in between does not wait for the same account to be added again. Deleting, muting, and
   newsletter cleanup still need the server at once.
+
+A draft waits too. `DeviceDrafts` wraps the server's drafts: a save the server cannot be reached
+for keeps the draft in the `waiting_drafts` store and counts as made, under a device id that starts
+with `device-draft:`, which no JMAP id can. Later saves replace the waiting copy; a save, a discard,
+or a send made with that id acts on the server's copy the draft replaces, if it has one.
+
+- The Drafts list shows each waiting draft as a row, in place of the copy it replaces, and opens
+  it from the device. Moving it out of Drafts or deleting it drops it.
+- Each inbox load first stores the login's waiting drafts on the server, oldest first, and the
+  background job that sends the outbox does the same once the network is back. A draft the server
+  refuses stays on the device for the next try.
+- While Write is open on a draft that waits, the page says so. Once the server has the draft, a
+  page that still holds its device id replaces that server copy instead of adding another; this is
+  remembered for the life of the process.
+- Files attached while offline are not uploaded, so they are not part of the waiting draft.
+- Removing an account drops its waiting drafts.
+
+Folder renames, moves, and new orders wait in `JmapFolderRepository`, in the `pending_folders`
+store, each as the `Mailbox/set` update it would have sent; see [folders](folders.md#folders).
+Removing an account drops them.
 
 Contact changes wait in `ContactSync` the same way. A new card is kept as sent before it goes.
 When that request gets no answer, the server may have stored the card anyway, so the next try

@@ -29,7 +29,8 @@ import kotlin.uuid.Uuid
  * a dropped connection loses none. Each gets its own Message-ID, so after a send whose answer was
  * lost, [checker] can find out whether it went before it goes again. [wake] asks the platform to
  * run [resume] at a time even if the app is closed by then. [store] is read and written on [io].
- * Without a store, messages last as long as the process.
+ * Without a store, messages last as long as the process. [handOver] gives each draft as it goes:
+ * one saved on the device comes back naming the server's copy it replaces.
  */
 class MailOutbox(
     store: DeviceStore<String, String>?,
@@ -38,6 +39,7 @@ class MailOutbox(
     private val wake: (Instant) -> Unit = {},
     private val now: () -> Instant = { Clock.System.now() },
     io: CoroutineContext = Dispatchers.IO,
+    private val handOver: suspend (Draft) -> Draft = { it },
 ) {
     // One send at a time, so Undo, a retry, and a background run never send the same message twice.
     private val lock = Mutex()
@@ -54,7 +56,7 @@ class MailOutbox(
         val entry =
             OutboxEntry(
                 id,
-                draft.copy(messageId = "$id@otus.mail"),
+                handOver(draft).copy(messageId = "$id@otus.mail"),
                 answered,
                 due.toEpochMilliseconds(),
                 sendAt?.toEpochMilliseconds(),

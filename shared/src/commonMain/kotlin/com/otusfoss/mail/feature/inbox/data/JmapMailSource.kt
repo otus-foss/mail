@@ -13,6 +13,7 @@ import com.otusfoss.mail.core.mailbox.Mailboxes
 import com.otusfoss.mail.core.messages.data.EmailChangeQueue
 import com.otusfoss.mail.core.messages.data.ListingPage
 import com.otusfoss.mail.core.messages.data.ServerSites
+import com.otusfoss.mail.core.messages.data.WaitingMail
 import com.otusfoss.mail.core.messages.data.merged
 import com.otusfoss.mail.core.messages.data.mergedByThread
 import com.otusfoss.mail.core.messages.data.receivedAt
@@ -37,13 +38,14 @@ import kotlin.time.Instant
  * the cache holds. Each list loads [limit] conversations at a time. [sites] holds each login's
  * server domain, which a sender's DMARC result must come from to show a brand logo; a load finds
  * it, and the cached list reads only what is already known. Each load of a login runs inside
- * [queue]'s sync of it (see [EmailChangeQueue.syncing]), so waiting marks and moves go first and
- * still show after it. The lists read the folders [mailboxes] keeps.
+ * the change queue's sync of it (see [EmailChangeQueue.syncing]), so [waiting] marks and moves go
+ * first and still show after it. The lists read the folders [mailboxes] keeps. The drafts that
+ * wait on the device show in each login's Drafts list, and a load first stores them on the server.
  */
 class JmapMailSource(
     private val connections: JmapConnections,
     private val cache: MailCache,
-    private val queue: EmailChangeQueue,
+    private val waiting: WaitingMail,
     private val mailboxes: Mailboxes,
     private val limit: Int = DEFAULT_LIMIT,
     private val zone: () -> TimeZone = { TimeZone.currentSystemDefault() },
@@ -126,7 +128,8 @@ class JmapMailSource(
                     MailAccountLists(connections.mailAccount(login), mailboxes, accountCache, limit) {
                         clock.now().toEpochMilliseconds()
                     }
-                queue.syncing(login.id) {
+                waiting.drafts?.flush(login.id)
+                waiting.changes.syncing(login.id) {
                     lists.sync { folders -> scope.listingQueries(folders, login.id, query, conditions) }
                 }
                 null
@@ -179,7 +182,14 @@ class JmapMailSource(
     ): List<ListingPage<ListedRow>> {
         val folders = mailboxes.cached(login.id)
         val site = siteOf(login)
-        return cache.withAccount(login.id) { kept -> kept.cachedPages(login, folders, scope, query, now, zone, site) }
+        val drafts =
+            waiting.drafts
+                ?.list
+                ?.waiting(login.id)
+                .orEmpty()
+        return cache.withAccount(login.id) { kept ->
+            kept.cachedPages(login, folders, scope, query, CachedView(now, zone, site), drafts)
+        }
     }
 
     private companion object {
