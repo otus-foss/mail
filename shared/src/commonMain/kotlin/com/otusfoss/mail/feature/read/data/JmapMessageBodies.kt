@@ -27,6 +27,7 @@ import com.otusfoss.mail.core.messages.data.receivedMillis
 import com.otusfoss.mail.core.messages.domain.MailMessage
 import com.otusfoss.mail.core.messages.domain.MessageBodies
 import com.otusfoss.mail.core.messages.domain.MessageContent
+import com.otusfoss.mail.core.messages.domain.isDeviceDraftId
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -72,7 +73,7 @@ class JmapMessageBodies(
 
     override suspend fun prefetch(messages: List<MailMessage>) {
         messages
-            .filter { it.emailId.isNotEmpty() }
+            .filter { it.emailId.isNotEmpty() && !isDeviceDraftId(it.emailId) }
             .groupBy({ it.location.accountId }, { it.emailId })
             .forEach { (loginId, emailIds) ->
                 try {

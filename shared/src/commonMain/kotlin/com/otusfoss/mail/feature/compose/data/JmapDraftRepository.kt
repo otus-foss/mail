@@ -4,6 +4,7 @@ import com.otusfoss.core.jmap.GetMethod
 import com.otusfoss.core.jmap.JmapCapability
 import com.otusfoss.core.jmap.JmapConnections
 import com.otusfoss.core.jmap.JmapException
+import com.otusfoss.core.jmap.JmapIds
 import com.otusfoss.core.jmap.JmapJson
 import com.otusfoss.core.jmap.SetError
 import com.otusfoss.core.jmap.SetMethod
@@ -14,6 +15,7 @@ import com.otusfoss.mail.core.cache.MailCache
 import com.otusfoss.mail.core.cache.withAccount
 import com.otusfoss.mail.core.mail.EmailType
 import com.otusfoss.mail.core.mail.IdentityType
+import com.otusfoss.mail.core.mail.Keywords
 import com.otusfoss.mail.core.mail.MailAccount
 import com.otusfoss.mail.core.mail.MailFailure
 import com.otusfoss.mail.core.mail.mailAccount
@@ -100,6 +102,17 @@ internal class JmapDraftRepository(
             if (previous != null) account.destroyReplaced(previous)
             copies.unanswered.destroy(account, drafts, kept = id)
             id
+        }
+
+    override suspend fun isDraft(
+        accountId: String,
+        emailId: String,
+    ): Result<Boolean> =
+        attempt(accountId) { account ->
+            account.connection
+                .call(GetMethod(EmailType, account.id, JmapIds.Of(listOf(emailId)), KEYWORD_PROPERTIES))
+                .list
+                .any { Keywords.DRAFT in it.keywords }
         }
 
     override suspend fun discard(

@@ -224,6 +224,25 @@ class DeviceDraftsTest {
         }
 
     @Test
+    fun aCopyAnotherClientSentWhileOfflineIsNeitherReplacedNorDestroyed() =
+        runTest {
+            val stored = drafts.save(hello).getOrThrow()
+            server.failure = MailFailure.Unreachable
+            val edited = drafts.save(hello.copy(subject = "Edited", emailId = stored)).getOrThrow()
+            val dropped = drafts.save(hello.copy(subject = "Dropped", emailId = "e8")).getOrThrow()
+            drafts.discard("ada", dropped)
+            server.sent = setOf(stored, "e8")
+            server.failure = null
+
+            assertFalse(drafts.flush())
+
+            assertEquals(null, server.saves.last { it.subject == "Edited" }.emailId)
+            assertEquals(emptyList(), server.discards)
+            assertEquals(emptyList(), drafts.list.waiting("ada"))
+            assertNull(drafts.list.load(edited))
+        }
+
+    @Test
     fun droppingAListedDraftRemovesItOnce() =
         runTest {
             server.failure = MailFailure.Unreachable
@@ -279,9 +298,18 @@ class DeviceDraftsTest {
         var failure: MailFailure? = null
         var refused: String? = null
         var gate: CompletableDeferred<Unit>? = null
+        var sent = emptySet<String>()
         private var stored = 0
 
         override suspend fun identities(accountId: String): List<SendIdentity> = emptyList()
+
+        override suspend fun isDraft(
+            accountId: String,
+            emailId: String,
+        ): Result<Boolean> {
+            val failed = failure ?: return Result.success(emailId !in sent)
+            return Result.failure(DraftException(DraftFailure.Mail(failed)))
+        }
 
         override suspend fun save(draft: Draft): Result<String> {
             saves += draft

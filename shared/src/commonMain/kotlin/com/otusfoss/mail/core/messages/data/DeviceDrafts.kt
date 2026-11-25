@@ -47,11 +47,21 @@ class DeviceDrafts(
 
     override suspend fun identities(accountId: String): List<SendIdentity> = server.identities(accountId)
 
+    override suspend fun isDraft(
+        accountId: String,
+        emailId: String,
+    ): Result<Boolean> = server.isDraft(accountId, emailId)
+
     override suspend fun save(draft: Draft): Result<String> =
         turns.of(draft.accountId).withLock {
             val waiting = draft.emailId?.let { shelf.all()[it] }?.takeUnless { it.discarded }
             val copy = draft.copy(emailId = shelf.serverCopy(draft.emailId, waiting))
-            val result = server.save(copy)
+            val result =
+                replacedCopy(
+                    draft.accountId,
+                    copy.emailId,
+                    waiting,
+                ).then { server.save(copy.copy(emailId = it)) }
             when {
                 result.isUnreachable -> {
                     Result.success(shelf.keep(waiting?.id ?: newId(), copy))
@@ -116,12 +126,13 @@ class DeviceDrafts(
         for (listed in due) {
             // A page may have saved or discarded it while this flush waited for its turn.
             val waiting = shelf.all()[listed.id] ?: continue
-            val replaced = waiting.draft.emailId
             val result =
-                when {
-                    !waiting.discarded -> server.save(waiting.draft)
-                    replaced != null -> server.discard(waiting.loginId, replaced).map { null }
-                    else -> Result.success(null)
+                replacedCopy(waiting.loginId, waiting.draft.emailId, waiting).then { replaced ->
+                    when {
+                        !waiting.discarded -> server.save(waiting.draft.copy(emailId = replaced))
+                        replaced != null -> server.discard(waiting.loginId, replaced).map { null }
+                        else -> Result.success(null)
+                    }
                 }
             when {
                 result.isUnreachable -> return true
@@ -142,7 +153,10 @@ class DeviceDrafts(
     ): Result<Unit> {
         val replaced = shelf.serverCopy(id, waiting)
         if (waiting != null) shelf.change { it - id }
-        val result = replaced?.let { server.discard(loginId, it) } ?: Result.success(Unit)
+        val result =
+            replacedCopy(loginId, replaced, waiting).then { copy ->
+                copy?.let { server.discard(loginId, it) } ?: Result.success(Unit)
+            }
         if (replaced != null && result.isUnreachable) {
             shelf.keep(waiting?.id ?: newId(), Draft(loginId, emailId = replaced), discarded = true)
             return Result.success(Unit)
@@ -150,6 +164,24 @@ class DeviceDrafts(
         return result
     }
 }
+
+/**
+ * [replaced] when the server still holds it as a draft; null when it is gone or another client sent
+ * it, which keeps its id (RFC 8621, section 7.5), so it must not be destroyed. Only a copy a
+ * [waiting] draft named before time offline is looked up; a page's own recent copy is not.
+ */
+private suspend fun DeviceDrafts.replacedCopy(
+    loginId: String,
+    replaced: String?,
+    waiting: WaitingDraft?,
+): Result<String?> =
+    if (waiting == null || replaced == null) {
+        Result.success(replaced)
+    } else {
+        isDraft(loginId, replaced).map { draft -> replaced.takeIf { draft } }
+    }
+
+private inline fun <T, R> Result<T>.then(next: (T) -> Result<R>): Result<R> = fold(next) { Result.failure(it) }
 
 /** What [DeviceDrafts] keeps on the device, as the lists that show it and the pages that open it read it. */
 class DeviceDraftList internal constructor(
