@@ -48,6 +48,11 @@ Copy puts the code on the clipboard without its spaces, marked sensitive, and th
 "Copied" with **Delete**, which runs the bar's Delete. An alert finds its code in the subject and
 the preview alone, since it has no body.
 
+A row in a mail list finds its code the same way, from the subject and the preview, and ends its
+second line with the code as Core's `MailboxQuickUse`, in place of its marks and folder glyphs,
+so the row keeps its height under every row setting. A tap copies the code, marks the mail read as the
+alert's Copy code does, and says "Copied" for two seconds.
+
 ## Not done yet
 
 - A test set of real mail, to measure how many codes the rules catch and how many they invent.

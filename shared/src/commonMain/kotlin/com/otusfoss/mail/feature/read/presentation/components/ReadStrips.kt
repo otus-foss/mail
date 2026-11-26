@@ -19,6 +19,7 @@ import com.otusfoss.core.designsystem.shared.controls.elements.UiAction
 import com.otusfoss.core.designsystem.shared.feedback.components.InfoStrip
 import com.otusfoss.core.designsystem.shared.rows.components.Unfold
 import com.otusfoss.mail.core.codes.domain.SignInCode
+import com.otusfoss.mail.core.codes.presentation.ONE_TIME_CODE
 import com.otusfoss.mail.core.messages.domain.MailAttachment
 import com.otusfoss.mail.core.messages.presentation.AttachmentKindName
 import com.otusfoss.mail.core.messages.presentation.attachmentSummary
@@ -136,6 +137,4 @@ private val AttachmentKindName.shown: AttachmentKind
 
 private const val UNSUBSCRIBED = "Unsubscribed"
 
-/** What a code is called on its strip and on the clipboard. */
-internal const val ONE_TIME_CODE = "One-time code"
 private const val TAKES = "Takes up to 2 days"

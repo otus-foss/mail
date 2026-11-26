@@ -13,6 +13,9 @@ import com.otusfoss.core.designsystem.resources.Res
 import com.otusfoss.core.designsystem.resources.symbol_inbox
 import com.otusfoss.core.designsystem.resources.symbol_reply
 import com.otusfoss.core.designsystem.theme.colors.FolderColor
+import com.otusfoss.mail.core.codes.domain.CodeMail
+import com.otusfoss.mail.core.codes.domain.SignInCode
+import com.otusfoss.mail.core.codes.domain.findSignInCode
 import com.otusfoss.mail.core.mail.EmailAddressKey
 import com.otusfoss.mail.core.messages.domain.FolderKind
 import com.otusfoss.mail.core.messages.domain.MailMessage
@@ -41,12 +44,13 @@ data class RowLook(
 /**
  * One conversation row, worked out before composition so scrolling only draws. [read] rows dim
  * unless they are selected. [badge] is the address the conversation came to, shown only
- * when the list mixes addresses.
+ * when the list mixes addresses. [code] is the one-time code its subject and preview give.
  */
 data class ConversationRowModel(
     val text: CompactRowText,
     val read: Boolean,
     val badge: ResolvedAvatar?,
+    val code: SignInCode? = null,
 )
 
 /**
@@ -128,6 +132,7 @@ private fun MailMessage.rowModel(
                 look.ownAvatars[location.accountId to EmailAddressKey(it)]
                     ?: ResolvedAvatar(generatedAvatar(location.account, it))
             },
+        code = findSignInCode(CodeMail(subject, listOf(previewText))),
     )
 }
 
