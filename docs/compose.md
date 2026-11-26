@@ -269,7 +269,7 @@ Where the server cannot hold mail that long, the device holds it instead, and Un
 draft again as it was. If the hold request got no answer, the device takes over the hold, since
 the server may or may not have it. Undo then asks the server at once: `JmapSendChecker` looks the
 message up, cancels a hold the server has, and destroys its copy, and the draft opens as it was.
-While the server cannot be reached the draft opens all the same. The message stays in the outbox
+The draft opens after half a second at most, also while the server is slow or out of reach. The message stays in the outbox
 as withdrawn, never goes from the device, and Mail asks again after 5 seconds, doubling the wait
 up to a minute, and from the background job. If the server sent it before a cancel arrived,
 nothing can bring it back, and a toast says "Already sent" while the app runs. Undo of a hold the

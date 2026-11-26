@@ -8,11 +8,13 @@ import com.otusfoss.mail.core.storage.DeviceStore
 import com.otusfoss.mail.feature.compose.domain.MailOutbox
 import com.otusfoss.mail.feature.compose.domain.OutboxStore
 import com.otusfoss.mail.feature.compose.domain.SendCheck
+import com.otusfoss.mail.feature.compose.domain.SendChecker
 import com.otusfoss.mail.feature.compose.presentation.OutgoingMail
 import com.otusfoss.mail.testing.DAY_FIRST
 import com.otusfoss.mail.testing.MemoryMapStore
 import com.otusfoss.mail.testing.OutgoingMailFixture
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
@@ -68,6 +70,30 @@ internal class OfflineUndoTest : OutgoingMailFixture() {
             runCurrent()
             assertEquals(listOf(true, true), checks, "The server is asked again while the app runs")
             assertEquals(listOf("Already sent"), toasts.messages.map { it.text })
+        }
+
+    @Test
+    fun undoOpensTheDraftWithoutWaitingForASlowServer() =
+        runTest {
+            val slow =
+                SendChecker { _, _, _ ->
+                    delay(SLOW_ANSWER)
+                    SendCheck.Sent
+                }
+            val now = { NOW + testScheduler.currentTime.milliseconds }
+            val outbox = MailOutbox(null, sender, slow, scheduled, now = now)
+            serverDelaySeconds = 60
+            failure = SendFailure.Mail(MailFailure.Unreachable)
+            OutgoingMail(backgroundScope, toasts, scheduled, outbox, { DAY_FIRST }, now) { hold }.send(message)
+            runCurrent()
+            assertNotNull(toasts.messages.single().action).onClick()
+            advanceTimeBy(OPEN_WAIT)
+            runCurrent()
+            assertEquals(listOf<ComposeRequest>(message.reopen), opened, "Undo does not hang on the request")
+
+            advanceTimeBy(SLOW_ANSWER)
+            runCurrent()
+            assertEquals(listOf("Already sent"), toasts.messages.map { it.text }, "The answer still shows")
         }
 
     @Test
@@ -168,5 +194,7 @@ internal class OfflineUndoTest : OutgoingMailFixture() {
 
     private companion object {
         const val RETRY_WAIT = 5_001L
+        const val OPEN_WAIT = 501L
+        const val SLOW_ANSWER = 10_000L
     }
 }
