@@ -4,7 +4,6 @@ import com.otusfoss.mail.core.mailbox.MailboxRole
 import com.otusfoss.mail.core.messages.domain.DateFilter
 import com.otusfoss.mail.core.messages.domain.FilterSort
 import com.otusfoss.mail.core.messages.domain.FolderRef
-import com.otusfoss.mail.core.messages.domain.ListFilter
 import com.otusfoss.mail.core.messages.domain.MailMessage
 import com.otusfoss.mail.core.messages.domain.OwnAddress
 import com.otusfoss.mail.core.messages.domain.QuickFacet
@@ -99,25 +98,6 @@ data class InboxFilters(
         field: RecipientField,
         on: Boolean,
     ): InboxFilters = copy(receivedIn = (if (on) receivedIn + field else receivedIn - field).ifEmpty { receivedIn })
-
-    /** Whether a bar button's [filter] is on. */
-    fun has(filter: ListFilter): Boolean =
-        when (filter) {
-            ListFilter.Unread -> status == ReadStatus.Unread
-            is ListFilter.Quick -> has(filter.facet)
-            is ListFilter.Type -> has(filter.facet)
-        }
-
-    /** These filters with a bar button's [filter] on or off; the others stay as they are. */
-    fun with(
-        filter: ListFilter,
-        on: Boolean,
-    ): InboxFilters =
-        when (filter) {
-            ListFilter.Unread -> copy(status = if (on) ReadStatus.Unread else ReadStatus.All)
-            is ListFilter.Quick -> with(filter.facet, on)
-            is ListFilter.Type -> with(filter.facet, on)
-        }
 
     /** Whether the row pill's filter is on: Unread is the status, the others quick filters. */
     fun has(pill: InboxPill.Filter): Boolean = pill.quick?.let(::has) ?: (status == ReadStatus.Unread)

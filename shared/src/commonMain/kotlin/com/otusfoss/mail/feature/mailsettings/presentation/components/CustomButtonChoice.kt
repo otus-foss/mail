@@ -24,15 +24,6 @@ import com.otusfoss.mail.core.messages.presentation.icon
 import com.otusfoss.mail.core.messages.presentation.label
 
 /**
- * How a kind's options read in its sheet: [hidden] leaves one out, such as a folder that already
- * has a button, and [note] says more under one, such as the slot it would trade places with.
- */
-internal class OptionLook(
-    val hidden: (BarButton) -> Boolean = { false },
-    val note: (BarButton) -> String? = { null },
-)
-
-/**
  * The row of [kind] in [slot]'s picker. While the slot holds a button of that kind, the row shows
  * the user's choice in a [ValuePicker], or says its folder is gone. Otherwise it shows the kind's
  * prompt. Either way a tap opens the kind's sheet, and what the user picks there becomes the

@@ -99,14 +99,14 @@ internal class MessageFiling(
         feed: EditedList,
         message: MailMessage,
         target: MoveTarget,
-    ) = edits.moveWithUndo(feed, message, target, leaving(message, target.shortcut))
+    ) = edits.moveWithUndo(feed, message, target, folders.leaving(message, target.shortcut))
 
     /** Undoes a move of [message] to [target]; see [MailEdits.moveBack]. */
     suspend fun moveBack(
         feed: EditedList,
         message: MailMessage,
         target: MoveTarget,
-    ) = edits.moveBack(feed, message, target, leaving(message, target.shortcut))
+    ) = edits.moveBack(feed, message, target, folders.leaving(message, target.shortcut))
 
     /** Read later for a loaded message shown in [feed]; supplied messages have no server id. */
     fun readLater(
@@ -167,17 +167,7 @@ internal class MessageFiling(
         message: MailMessage,
         target: MoveTarget,
     ) {
-        edits.move(feed, message, target, leaving(message, target.shortcut))
-    }
-
-    private fun leaving(
-        message: MailMessage,
-        shortcut: MailboxRole?,
-    ): Set<String> {
-        val account = folders.account(message.location.accountId)
-        return message.leavingFolders(shortcut, account?.inbox?.id) { folderId ->
-            folders.folder(message.location.accountId, folderId)?.role
-        }
+        edits.move(feed, message, target, folders.leaving(message, target.shortcut))
     }
 }
 
@@ -215,6 +205,15 @@ internal fun FoldersState.mayMark(
             MessageFlag.Read -> rightsOf(message).maySetSeen
             MessageFlag.Flagged -> rightsOf(message).maySetKeywords
         }
+
+/** The folders [message] leaves when filed by [shortcut]; see [leavingFolders]. */
+private fun FoldersState.leaving(
+    message: MailMessage,
+    shortcut: MailboxRole?,
+): Set<String> =
+    message.leavingFolders(shortcut, account(message.location.accountId)?.inbox?.id) { folderId ->
+        folder(message.location.accountId, folderId)?.role
+    }
 
 /** The system folders one action files a message into. */
 private val SHORTCUTS = setOf(MailboxRole.Inbox, MailboxRole.Archive, MailboxRole.Junk, MailboxRole.Trash)

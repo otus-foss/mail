@@ -121,8 +121,7 @@ fun InboxScreen(
         ) {
             page.readView.Show(OpenedMessage(it, status.notice, state.mixesFolders(filters, page), rows.close))
         }
-        InboxLayers(page, panelHeight, headerActions.overlays)
-        messageActions?.let { rows.moveChoice.Sheet(it) }
+        InboxLayers(page, panelHeight, headerActions.overlays, rows.moveChoice, messageActions)
     }
 }
 

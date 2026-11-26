@@ -42,8 +42,9 @@ internal fun ReadParts.pageExtras(
  * goes back, with a toast, when the server refuses.
  */
 private fun ReadParts.muteSwitch(): ActionSwitch? {
-    val edits = read.services.edits ?: return null
-    val muted = state.muted ?: return null
+    val edits = read.services.edits
+    val muted = state.muted
+    if (edits == null || muted == null) return null
     return ActionSwitch(muted) { on ->
         state.muted = on
         read.effects.launch {
@@ -57,8 +58,8 @@ private fun ReadParts.muteSwitch(): ActionSwitch? {
 
 /** Sends mail from [page]'s sender to Spam from now on, and says how it went; null for the user's own message. */
 private fun ReadParts.blockSender(page: MailMessage): (() -> Unit)? {
-    val blocks = read.services.sender.blocks ?: return null
-    if (page.isOwn(read.replies.own, page.sender)) return null
+    val blocks = read.services.sender.blocks
+    if (blocks == null || page.isOwn(read.replies.own, page.sender)) return null
     return {
         val name = page.sender.shownName
         read.effects.launch {
@@ -79,8 +80,8 @@ private fun ReadParts.unsubscribe(
     look: ReadPageLook,
     strips: ReadStripActions,
 ): (() -> Unit)? {
-    val content = content(page) ?: return null
-    val how = content.unsubscribe?.takeUnless { inJunk(page.location.mailboxIds, look.folders) } ?: return null
-    if (strips.step(page) != NewsletterStep.Subscribed) return null
+    val content = content(page)
+    val how = content?.unsubscribe?.takeUnless { inJunk(page.location.mailboxIds, look.folders) }
+    if (how == null || strips.step(page) != NewsletterStep.Subscribed) return null
     return { strips.unsubscribe(page, how, content.listName ?: page.sender.shownName) }
 }

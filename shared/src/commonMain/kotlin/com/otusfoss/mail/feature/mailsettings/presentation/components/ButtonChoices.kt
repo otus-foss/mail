@@ -36,6 +36,25 @@ internal class ButtonChoices(
 }
 
 /**
+ * What a slot's picker offers: the plain [actions], the [kinds] of button the user completes with
+ * a choice of their own, and what those choose [from].
+ */
+internal class PickerChoices(
+    val actions: List<MailAction>,
+    val kinds: List<CustomKind>,
+    val from: ButtonChoices,
+)
+
+/**
+ * How a kind's options read in its sheet: [hidden] leaves one out, such as a folder that already
+ * has a button, and [note] says more under one, such as the slot it would trade places with.
+ */
+internal class OptionLook(
+    val hidden: (BarButton) -> Boolean = { false },
+    val note: (BarButton) -> String? = { null },
+)
+
+/**
  * A kind of button the user completes with a choice of their own, such as the folder of a Move
  * to button. [prompt] is its row in a picker, [title] names its choice, and [target] is the group
  * it belongs to.

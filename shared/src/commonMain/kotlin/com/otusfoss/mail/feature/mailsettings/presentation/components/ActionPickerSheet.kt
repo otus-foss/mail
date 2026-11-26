@@ -33,16 +33,6 @@ import com.otusfoss.mail.core.settings.presentation.icon
 import com.otusfoss.mail.core.settings.presentation.label
 
 /**
- * What a slot's picker offers: the plain [actions], the [kinds] of button the user completes with
- * a choice of their own, and what those choose [from].
- */
-internal class PickerChoices(
-    val actions: List<MailAction>,
-    val kinds: List<CustomKind>,
-    val from: ButtonChoices,
-)
-
-/**
  * Picks the action for [slot] of [layout] from [choices], grouped by what each acts on and narrowed
  * by search. Picking applies at once and moves the check; an action already elsewhere in the bar
  * says it will trade places. Each group ends with its [CustomButtonChoice] rows, such as Move to

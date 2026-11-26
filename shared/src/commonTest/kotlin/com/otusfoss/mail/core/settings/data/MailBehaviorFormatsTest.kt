@@ -177,7 +177,7 @@ class MailBehaviorFormatsTest {
     fun unknownSwipesAndBarsReadAsTheirDefaults() {
         val actions =
             read(
-                "swipe_start_to_end" to "spam",
+                "swipe_start_to_end" to "not_spam",
                 "swipe_end_to_start" to "snooze",
                 "action_bar_selection" to "reply|archive",
                 "action_bar_mode" to "bogus",
