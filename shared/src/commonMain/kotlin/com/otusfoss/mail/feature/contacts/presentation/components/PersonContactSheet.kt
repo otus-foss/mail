@@ -23,6 +23,7 @@ import com.otusfoss.core.designsystem.shared.controls.elements.IconButton
 import com.otusfoss.core.designsystem.shared.controls.elements.IconButtonLook
 import com.otusfoss.core.designsystem.shared.controls.elements.Symbol
 import com.otusfoss.core.designsystem.shared.overlays.components.SheetFrame
+import com.otusfoss.core.designsystem.shared.overlays.components.SheetHeading
 import com.otusfoss.core.designsystem.shared.overlays.elements.sheetInset
 import com.otusfoss.core.designsystem.shared.people.components.ChipAvatar
 import com.otusfoss.core.designsystem.shared.people.components.PersonAvatar
@@ -81,16 +82,19 @@ internal fun PersonContactSheet(
         onDismiss,
         done = null,
         closeButton = true,
-        titleLeading = {
-            if (onShared) {
-                IconButton("Back", back, look = IconButtonLook.Plain) {
-                    Symbol(Res.drawable.symbol_chevron_left, mirrorInRtl = true)
-                }
-            } else {
-                PersonAvatar(avatar, AvatarTokens.size)
-            }
-        },
-        subtitle = if (onShared) alsoTakePart(shared.size) else person.address,
+        heading =
+            SheetHeading(
+                subtitle = if (onShared) alsoTakePart(shared.size) else person.address,
+                leading = {
+                    if (onShared) {
+                        IconButton("Back", back, look = IconButtonLook.Plain) {
+                            Symbol(Res.drawable.symbol_chevron_left, mirrorInRtl = true)
+                        }
+                    } else {
+                        PersonAvatar(avatar, AvatarTokens.size)
+                    }
+                },
+            ),
     ) {
         Column(
             Modifier
