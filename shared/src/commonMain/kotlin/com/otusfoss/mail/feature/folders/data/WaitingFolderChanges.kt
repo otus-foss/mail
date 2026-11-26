@@ -50,6 +50,9 @@ class WaitingFolderChanges(
     private val storeLock = Mutex()
     private var memory = emptyMap<String, List<JsonObject>>()
 
+    // How often each login's first waiting change failed without a clear answer in this process.
+    private var tries = emptyMap<String, Int>()
+
     /** Keeps [update], patches by mailbox id, for [loginId]'s server and shows it in the kept folders. */
     internal suspend fun keep(
         loginId: String,
@@ -71,7 +74,7 @@ class WaitingFolderChanges(
             var sent = 0
             try {
                 waiting.forEach { update ->
-                    account.sendUpdate(update)
+                    sendOne(account, update)
                     sent++
                 }
             } finally {
@@ -84,6 +87,29 @@ class WaitingFolderChanges(
                 }
             }
         }
+    }
+
+    /**
+     * Sends one waiting change. It keeps waiting, and this throws, while the server cannot take it
+     * now, and for [MAX_TRIES] failures that say nothing clear; a refusal counts as answered.
+     */
+    private suspend fun sendOne(
+        account: MailAccount,
+        update: JsonObject,
+    ) {
+        val loginId = account.login.id
+        try {
+            account.sendUpdate(update)
+        } catch (failure: JmapException) {
+            val tried =
+                storeLock.withLock {
+                    val count = (tries[loginId] ?: 0) + 1
+                    tries = tries + (loginId to count)
+                    count
+                }
+            if (failure.waits || tried < MAX_TRIES) throw failure
+        }
+        storeLock.withLock { tries = tries - loginId }
     }
 
     /**
@@ -132,30 +158,45 @@ class WaitingFolderChanges(
 }
 
 /**
- * Sends one waiting `Mailbox/set` update. A refusal, of the call or of a mailbox, or an answer the
- * client cannot read counts as answered, since it would recur. A server that is down for now, or
- * a sign-in the user must fix, throws, so the change waits.
+ * Sends one waiting `Mailbox/set` update. A refusal, of the call or of a mailbox, counts as
+ * answered, since it would recur. Any other failure throws: one the server says to wait out, or
+ * one that says nothing clear, such as HTTP 500 or `serverFail`.
  */
 private suspend fun MailAccount.sendUpdate(update: JsonObject) {
     try {
         connection.call(SetMethod(MailboxType, id, update = update.mapValues { (_, patch) -> patch.jsonObject }))
     } catch (failure: JmapException) {
-        if (failure.waits) throw failure
+        if (failure.waits || failure.unclear) throw failure
     }
 }
 
+/**
+ * A failure to wait out: the server is away or busy, a gateway or captive portal is in the way, or
+ * the user must sign in.
+ */
 private val JmapException.waits: Boolean
     get() =
         when (this) {
-            is JmapException.MethodError -> isTemporary
-
-            // A server that asks to be tried later, or a gateway or captive portal in the way.
-            is JmapException.RequestFailed -> status in TRY_LATER_STATUSES
-
+            is JmapException.MethodError -> type == SERVER_UNAVAILABLE
+            is JmapException.RequestFailed -> status in TRY_LATER_STATUSES || limit == MAX_CONCURRENT_REQUESTS
             is JmapException.NotJmap -> true
-
             else -> category in WAITING_CATEGORIES
         }
+
+/** A failure that says nothing clear about the change, which it survives for a few tries. */
+private val JmapException.unclear: Boolean
+    get() =
+        when (this) {
+            is JmapException.MethodError -> isTemporary
+            is JmapException.RequestFailed -> status >= SERVER_ERROR
+            is JmapException.ResponseTooLarge -> true
+            else -> false
+        }
+
+private const val MAX_TRIES = 3
+private const val SERVER_ERROR = 500
+private const val SERVER_UNAVAILABLE = "serverUnavailable"
+private const val MAX_CONCURRENT_REQUESTS = "maxConcurrentRequests"
 
 private const val REQUEST_TIMEOUT = 408
 private const val TOO_MANY_REQUESTS = 429

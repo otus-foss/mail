@@ -197,8 +197,9 @@ Folder renames, moves, and new orders wait in `JmapFolderRepository`, in the `pe
 store, each as the `Mailbox/set` update it would have sent; see [folders](folders.md#folders).
 A server that cannot be reached or asks to be tried later (HTTP 408, 429, 502 to 504), a page
 that is not JMAP, such as a captive portal's, or a sign-in the user must fix keeps a change
-waiting. Any other answer, such as a refusal or HTTP 500, drops it and has the next load read
-every folder again. Removing an account drops them.
+waiting, as does a `maxConcurrentRequests` limit. An answer that says nothing clear, such as
+HTTP 500 or `serverFail`, keeps it for three tries in a process. A refusal drops it, and so does
+the third unclear failure; either way the next load reads every folder again. Removing an account drops them.
 
 Contact changes wait in `ContactSync` the same way. A new card is kept as sent before it goes.
 When that request gets no answer, the server may have stored the card anyway, so the next try
