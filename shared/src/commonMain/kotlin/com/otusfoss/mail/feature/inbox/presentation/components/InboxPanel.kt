@@ -230,10 +230,10 @@ data class PanelLook(
     val filters: ActiveFilters = ActiveFilters(),
     val categories: CategoryTabs? = null,
     val selecting: PanelSelection? = null,
+    val minHeight: Dp = 0.dp,
     val searchFocused: Boolean = false,
     val expansion: PanelExpansion? = null,
     val expanded: @Composable () -> Unit = {},
-    val minHeight: Dp = 0.dp,
 )
 
 /**
