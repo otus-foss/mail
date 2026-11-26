@@ -24,7 +24,6 @@ import com.otusfoss.core.designsystem.resources.symbol_filter_list
 import com.otusfoss.core.designsystem.shared.controls.elements.IconButton
 import com.otusfoss.core.designsystem.shared.controls.elements.IconButtonLook
 import com.otusfoss.core.designsystem.shared.controls.elements.Symbol
-import com.otusfoss.core.designsystem.shared.overlays.components.SheetHeaderAction
 import com.otusfoss.core.designsystem.shared.panels.components.AccountStack
 import com.otusfoss.core.designsystem.shared.panels.components.ChipPlacement
 import com.otusfoss.core.designsystem.shared.panels.components.ContextPanel
@@ -34,6 +33,7 @@ import com.otusfoss.core.designsystem.shared.panels.components.PanelSearchPill
 import com.otusfoss.core.designsystem.shared.panels.components.PillSearch
 import com.otusfoss.core.designsystem.shared.panels.elements.PanelNavigation
 import com.otusfoss.core.designsystem.shared.panels.elements.PanelNavigationIcon
+import com.otusfoss.core.designsystem.shared.panels.elements.PanelTextAction
 import com.otusfoss.core.designsystem.shared.panels.elements.PanelTitle
 import com.otusfoss.core.designsystem.theme.tokens.layout.PanelTokens
 import com.otusfoss.mail.core.messages.presentation.components.MailScopeSwitch
@@ -58,14 +58,14 @@ fun InboxPanel(
     selection: FilterSelection = FilterSelection(),
     look: PanelLook = PanelLook(),
 ) {
-    val selecting = look.selecting
-    if (selecting != null) {
-        SelectionPanel(selecting)
-        return
-    }
     // While the panel grows a search room it keeps its pills; the search's own chips come with the results.
     val searchChips = searching && look.expansion == null
     val railShown = searchChips || context.pills.shown.isNotEmpty()
+    val selecting = look.selecting
+    if (selecting != null) {
+        SelectionPanel(selecting, railShown, look.collapse)
+        return
+    }
     val scope = context.scope
     ContextPanel(
         // Without pills, the filter button moves into the header and the list gets the row's space.
@@ -156,18 +156,25 @@ private fun InboxAccountStack(
     AccountStack(header.avatars, "Showing mail from ${header.title}. Change", onOpen, collapse = collapse)
 }
 
-/** The panel while rows are selected: ✕ to stop, the count, and Select all. */
+/**
+ * The panel while rows are selected: ✕ to stop and the count. Where the page shows pills
+ * ([railShown]), selection pills take their place, so the panel keeps its shape; otherwise Select
+ * all sits at the header's end.
+ */
 @Composable
-private fun SelectionPanel(selecting: PanelSelection) {
+private fun SelectionPanel(
+    selecting: PanelSelection,
+    railShown: Boolean,
+    collapse: () -> Float,
+) {
     ContextPanel(
-        placement = ChipPlacement.None,
+        placement = if (railShown) ChipPlacement.Overlapping else ChipPlacement.None,
         navigation = { PanelNavigation("Stop selecting", selecting.onClear, icon = PanelNavigationIcon.Close) },
-    ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            PanelTitle("${selecting.count} selected", Modifier.weight(1f).padding(start = PanelTokens.titleStart))
-            SheetHeaderAction("Select all", selecting.onSelectAll)
-        }
-    }
+        // With pills, a trailing action would join the rail as an empty cutout.
+        trailingAction = if (railShown) null else ({ PanelTextAction("Select all", selecting.onSelectAll) }),
+        chips = { if (railShown) SelectionPickChips(selecting.picks) },
+        motion = PanelMotion(collapse),
+    ) { PanelTitle("${selecting.count} selected", Modifier.padding(start = PanelTokens.titleStart)) }
 }
 
 @Composable
@@ -242,9 +249,10 @@ fun PanelLook.grownWith(
     searchFocused: Boolean,
 ): PanelLook = copy(searchFocused = searchFocused, expansion = expansion, expanded = expanded)
 
-/** The selected rows' [count], with what ✕ and Select all do. */
+/** The selected rows' [count], what ✕ and Select all do, and the [picks] that select rows by kind. */
 class PanelSelection(
     val count: Int,
     val onClear: () -> Unit,
     val onSelectAll: () -> Unit,
+    val picks: List<ShownPick>,
 )
