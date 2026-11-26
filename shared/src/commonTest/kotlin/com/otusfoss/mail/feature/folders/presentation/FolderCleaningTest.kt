@@ -63,7 +63,14 @@ class FolderCleaningTest {
         "Subject",
         "Body",
         ReceivedAt("2026-10-01", "12:00"),
-        MailLocation("Mailbox", "Ada", "ada", mailboxId = folder, mailboxIds = setOf(folder)),
+        MailLocation(
+            "Mailbox",
+            "Ada",
+            "ada",
+            mailboxId = folder,
+            mailboxIds = setOf(folder),
+            mailboxRole = account.folders.firstOrNull { it.id == folder }?.role,
+        ),
         emailId = id,
     )
 

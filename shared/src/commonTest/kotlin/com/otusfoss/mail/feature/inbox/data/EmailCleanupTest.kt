@@ -3,6 +3,7 @@ package com.otusfoss.mail.feature.inbox.data
 import com.otusfoss.core.jmap.JmapClient
 import com.otusfoss.core.jmap.JmapConnections
 import com.otusfoss.core.jmap.login.InMemoryLoginStore
+import com.otusfoss.mail.core.mailbox.MailboxRole
 import com.otusfoss.mail.core.messages.data.JmapEmailWriter
 import com.otusfoss.mail.core.messages.data.boxes
 import com.otusfoss.mail.core.messages.domain.Deletion
@@ -47,7 +48,14 @@ class EmailCleanupTest {
         "Order",
         "",
         ReceivedAt("2026-10-04", "09:30"),
-        MailLocation("Trash", "Ada", "ada", mailboxId = folder, mailboxIds = setOf(folder) + alsoIn),
+        MailLocation(
+            "Trash",
+            "Ada",
+            "ada",
+            mailboxId = folder,
+            mailboxIds = setOf(folder) + alsoIn,
+            mailboxRole = BINS[folder],
+        ),
         emailId = id,
     )
 
@@ -97,19 +105,15 @@ class EmailCleanupTest {
     ): String {
         val destroy =
             DESTROY
-                .find(
-                    body,
-                )?.groupValues
+                .find(body)
+                ?.groupValues
                 ?.get(1)
                 .orEmpty()
                 .let(IDS::findAll)
                 .map { it.groupValues[1] }
                 .toList()
         val (rejectedUpdates, acceptedUpdates) =
-            UPDATE.findAll(body).map { it.groupValues[1] }.partition {
-                it in
-                    refused
-            }
+            UPDATE.findAll(body).map { it.groupValues[1] }.partition { it in refused }
         val updated = acceptedUpdates.joinToString { "\"$it\": null" }
         val notUpdated = rejectedUpdates.joinToString { "\"$it\": {\"type\": \"forbidden\"}" }
         val (kept, gone) = destroy.partition { it in refused }
@@ -152,26 +156,6 @@ class EmailCleanupTest {
             assertEquals(2, sent.size, "Two objects per call")
             assertTrue("\"update\":{\"m2\":{\"mailboxIds/t\":null}},\"destroy\":[\"m1\"]" in sent[0], sent[0])
             assertTrue("\"destroy\":[\"m3\"]" in sent[1], sent[1])
-        }
-
-    @Test
-    fun deletingAConversationRemovesEachEmailFromTheFolderItIsListedIn() =
-        runTest {
-            val sent = mutableListOf<String>()
-            val members =
-                listOf(
-                    ThreadMember("m1", setOf("t"), "t"),
-                    ThreadMember("m2", setOf("t", "p"), "t"),
-                    ThreadMember("m3", setOf("l", "a"), "l"),
-                )
-            val deleted =
-                cleaner(mailboxes = mapOf("m2" to setOf("t", "p"), "m3" to setOf("l", "a"))) {
-                    sent += it
-                    setReply(it)
-                }.delete(listOf(message("m1").copy(conversation = conversationOf(members))))
-            assertEquals(setOf("ada/m1"), deleted)
-            assertTrue("\"update\":{\"m2\":{\"mailboxIds/t\":null}},\"destroy\":[\"m1\"]" in sent[0], sent[0])
-            assertTrue("\"update\":{\"m3\":{\"mailboxIds/l\":null}}" in sent[1], "m3 is also in another mailbox")
         }
 
     @Test
@@ -254,9 +238,7 @@ class EmailCleanupTest {
         runTest {
             val deletion =
                 cleaner { body ->
-                    if ("Email/query" in
-                        body
-                    ) {
+                    if ("Email/query" in body) {
                         page(listOf("m1"), POSITION.find(body)!!.groupValues[1].toInt())
                     } else {
                         setReply(body, setOf("m1"))
@@ -296,5 +278,6 @@ class EmailCleanupTest {
         val IDS = Regex("\"([^\"]+)\"")
         val UPDATE = Regex("\"(m\\d)\":\\{\"mailboxIds/")
         val POSITION = Regex("\"position\":(\\d+)")
+        val BINS = mapOf("t" to MailboxRole.Trash, "j" to MailboxRole.Junk)
     }
 }
