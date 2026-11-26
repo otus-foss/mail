@@ -18,8 +18,9 @@ one, after removing copies of the same code.
    preview line in `display:none`.
 3. **Shapes.** 4 to 8 digits; two groups of three ("482 913", "482-913"); digits a space apart,
    as separate table cells come out ("4 8 2 9 1 3"); `G-` before digits, which Google writes; and
-   5 to 10 letters and digits mixed ("K7M2QX", "tt226-5398x"), or two groups of capitals
-   ("DJZ-TLX"). Years, prices, decimals, times, dates, phone numbers, hashes (`#482913`), and
+   5 to 10 letters and digits mixed ("K7M2QX", "tt226-5398x"), two groups of capitals
+   ("DJZ-TLX"), or 6 to 10 capitals ("ZKSRHMMHZO"), which count only alone on their line, since
+   "Use code SUMMER" is a promotion. Years, prices, decimals, times, dates, phone numbers, hashes (`#482913`), and
    words with three lowercase letters in a row, such as commit hashes, are not codes.
 4. **Places.** A shape counts only beside a word that names a code: up to four words after it
    ("Your verification code is 482913"), up to five before it ("482913 is your Facebook code"),

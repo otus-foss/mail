@@ -27,6 +27,12 @@ class SignInCodeFalseAlarmsTest {
     }
 
     @Test
+    fun capitalsBesideTheWordCodeAreAPromotion() {
+        assertEquals(null, codeIn("Sale", "Use code SUMMER for 20% off your next order."))
+        assertEquals(null, codeIn("Sale", "Your code is SUMMERSALE"))
+    }
+
+    @Test
     fun aBookingReferenceIsNoCode() {
         assertEquals(null, codeIn("Your flight", "Confirmation code: ABC123"))
         assertEquals(null, codeIn("Your trip", "Booking code ABC123"))

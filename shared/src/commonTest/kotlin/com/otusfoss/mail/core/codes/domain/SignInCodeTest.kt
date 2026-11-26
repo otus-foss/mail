@@ -42,6 +42,12 @@ class SignInCodeTest {
     }
 
     @Test
+    fun aCodeOfCapitalsAloneOnItsLineCounts() {
+        val porkbun = "Hello there,\n\nYour 2FA code is:\n\nZKSRHMMHZO\n\nThank you,\nThe Porkbun Team"
+        assertEquals("ZKSRHMMHZO", codeIn("porkbun.com | 2FA Code", porkbun))
+    }
+
+    @Test
     fun googleCodesLoseTheirPrefix() {
         assertEquals("482913", codeIn("G-482913 is your Google verification code"))
     }

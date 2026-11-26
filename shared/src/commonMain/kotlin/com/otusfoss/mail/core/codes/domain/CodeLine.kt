@@ -1,11 +1,17 @@
 package com.otusfoss.mail.core.codes.domain
 
-/** A token that looks like a code: its [value] to type, where it stands on its line, and whether it has [letters]. */
+/**
+ * A token that looks like a code: its [value] to type, where it stands on its line, and whether it
+ * has [letters]. A code of capitals alone counts only on a line of its own, since "Use code SUMMER"
+ * beside a word is a promotion.
+ */
 internal class Candidate(
     val value: String,
     val range: IntRange,
     val letters: Boolean,
-)
+) {
+    val ownLine: Boolean get() = value.all { it in 'A'..'Z' }
+}
 
 /** One non-empty line of a message, with its [words] and the [candidates] that look like codes. */
 internal class CodeLine(
@@ -34,26 +40,27 @@ internal fun codeLines(text: String): List<CodeLine> =
  * letters needs a word that names a code; "Enter ABC123" can be a booking.
  */
 internal fun CodeLine.besideLabel(code: Candidate): Boolean =
-    words.any { word ->
-        val names = if (code.letters) word.namesLetterCode else word.names
-        when {
-            names && word.range.last < code.range.first -> {
-                clearBetween(word.range.last + 1, code.range.first, LABEL_GAP)
-            }
+    !code.ownLine &&
+        words.any { word ->
+            val names = if (code.letters) word.namesLetterCode else word.names
+            when {
+                names && word.range.last < code.range.first -> {
+                    clearBetween(word.range.last + 1, code.range.first, LABEL_GAP)
+                }
 
-            names -> {
-                clearBetween(code.range.last + 1, word.range.first, LABEL_AFTER_GAP)
-            }
+                names -> {
+                    clearBetween(code.range.last + 1, word.range.first, LABEL_AFTER_GAP)
+                }
 
-            word.command && !code.letters && word.range.last < code.range.first -> {
-                clearBetween(word.range.last + 1, code.range.first, COMMAND_GAP)
-            }
+                word.command && !code.letters && word.range.last < code.range.first -> {
+                    clearBetween(word.range.last + 1, code.range.first, COMMAND_GAP)
+                }
 
-            else -> {
-                false
+                else -> {
+                    false
+                }
             }
         }
-    }
 
 /**
  * Whether [code] stands alone on the line at [index], with the nearest of the two lines above or
@@ -162,15 +169,20 @@ private fun shape(token: MatchResult): Candidate? {
     }
 }
 
-/** A code of letters and digits such as "K7M2QX" or "DJZ-TLX"; never a word, a model name, or a commit hash. */
+/**
+ * A code of letters such as "K7M2QX", "DJZ-TLX", or "ZKSRHMMHZO": letters and digits mixed, two
+ * groups of capitals, or 6 to 10 capitals; never a word in lowercase, a model name, or a commit hash.
+ */
 private fun letterCode(
     text: String,
     parts: List<String>,
 ): String? {
     val plain = text.filter { it.isLetterOrDigit() }
     val upperPair = parts.size == 2 && parts.all { part -> part.length in UPPER_GROUP && part.all { it in 'A'..'Z' } }
+    val capitals = parts.size == 1 && plain.length in CAPITALS && plain.all { it in 'A'..'Z' }
+    val mixed = plain.any { it.isDigit() } && plain.any { it.isLetter() }
     val fits = plain.length in LETTER_CODE && parts.size <= 2 && !LOWER_RUN.containsMatchIn(text)
-    return text.takeIf { fits && ((plain.any { it.isDigit() } && plain.any { it.isLetter() }) || upperPair) }
+    return text.takeIf { fits && (mixed || upperPair || capitals) }
 }
 
 private fun String.isDigits(): Boolean = isNotEmpty() && all { it in '0'..'9' }
@@ -198,6 +210,7 @@ private val DIGITS = 4..8
 private val SPACED_DIGITS = 4..8
 private val LETTER_CODE = 5..10
 private val UPPER_GROUP = 3..4
+private val CAPITALS = 6..10
 
 private val TOKEN = Regex("""[A-Za-z0-9]+(?:-[A-Za-z0-9]+)*""")
 private val URL = Regex("""(?:https?://|www\.)\S+""", RegexOption.IGNORE_CASE)
