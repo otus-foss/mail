@@ -7,11 +7,14 @@ import com.otusfoss.mail.core.files.DownloadFolder
 import com.otusfoss.mail.core.files.InMemoryDownloadFolder
 import com.otusfoss.mail.core.mailbox.FolderKey
 import com.otusfoss.mail.core.messages.domain.EmailChangeStore
+import com.otusfoss.mail.core.messages.domain.WaitingDraft
+import com.otusfoss.mail.core.messages.domain.WaitingDraftStore
 import com.otusfoss.mail.core.settings.domain.AddressPinStore
 import com.otusfoss.mail.core.storage.DeviceStore
 import com.otusfoss.mail.core.storage.StoreSpec
 import com.otusfoss.mail.feature.compose.domain.OutboxStore
 import com.otusfoss.mail.feature.contacts.domain.ContactStore
+import com.otusfoss.mail.feature.folders.domain.FolderChangeStore
 import com.otusfoss.mail.feature.folders.domain.FolderColorStore
 import com.otusfoss.mail.feature.folders.domain.FolderNudgeStore
 import com.otusfoss.mail.feature.folders.domain.ReadLaterStore
@@ -36,8 +39,9 @@ class MailDeviceStores(
 ) {
     /**
      * What each store keeps of one login, dropped when its account is removed. Every store that
-     * keeps something per login is here; the outbox and waiting changes forget theirs with the
-     * outbox and the change queue.
+     * keeps something per login is here; the outbox, the waiting changes, and the waiting drafts
+     * forget theirs with the outbox, the change queue, and the device drafts, and the waiting folder changes with the
+     * folder repository.
      */
     private val loginScoped: List<(String) -> Unit> =
         listOfNotNull(
@@ -66,12 +70,17 @@ class MailDeviceStores(
         ): MailDeviceStores {
             fun <K, V> opened(spec: StoreSpec<K, V>) = DeviceStore(open(spec.name, spec.commit), spec)
             return MailDeviceStores(
-                FolderStores(opened(ReadLaterStore), opened(FolderColorStore), opened(FolderNudgeStore)),
+                FolderStores(
+                    opened(ReadLaterStore),
+                    opened(FolderColorStore),
+                    opened(FolderNudgeStore),
+                    opened(FolderChangeStore),
+                ),
                 opened(AddressPinStore),
                 cache,
                 AlertStores(notificationPreviews, opened(MailStateStore)),
                 opened(ContactStore),
-                WaitingStores(opened(OutboxStore), opened(EmailChangeStore)),
+                WaitingStores(opened(OutboxStore), opened(EmailChangeStore), opened(WaitingDraftStore)),
                 downloads,
             )
         }
@@ -82,11 +91,15 @@ class MailDeviceStores(
 private fun <K, V> DeviceStore<K, V>.forgetting(loginOf: (K) -> String): (String) -> Unit =
     { loginId -> update { saved -> saved.filterKeys { loginOf(it) != loginId } } }
 
-/** Each folder's Read later role, color, and the nudges shown about it. */
+/**
+ * Each folder's Read later role, color, and the nudges shown about it, and in [waiting] the folder
+ * renames and moves that wait for the server.
+ */
 class FolderStores(
     val readLater: DeviceStore<String, String>? = null,
     val colors: DeviceStore<FolderKey, String>? = null,
     val nudges: DeviceStore<String, List<String>>? = null,
+    val waiting: DeviceStore<String, List<JsonObject>>? = null,
 )
 
 /**
@@ -98,8 +111,12 @@ class AlertStores(
     val mailStates: DeviceStore<String, String>? = null,
 )
 
-/** What waits on the device until the server has it: messages in [outbox], marks and moves in [changes]. */
+/**
+ * What waits on the device until the server has it: messages in [outbox], marks and moves in
+ * [changes], and drafts written while the server could not be reached in [drafts].
+ */
 class WaitingStores(
     val outbox: DeviceStore<String, String>? = null,
     val changes: DeviceStore<String, Map<String, JsonObject>>? = null,
+    val drafts: DeviceStore<String, WaitingDraft>? = null,
 )

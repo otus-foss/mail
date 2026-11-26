@@ -5,6 +5,7 @@ import com.otusfoss.core.jmap.JmapIds
 import com.otusfoss.core.jmap.SetMethod
 import com.otusfoss.core.jmap.jmapCallOr
 import com.otusfoss.mail.core.mail.EmailType
+import com.otusfoss.mail.core.mail.Keywords
 import com.otusfoss.mail.core.mail.MailAccount
 import com.otusfoss.mail.core.mail.keywordPatch
 import com.otusfoss.mail.core.messages.data.EmailChangeQueue
@@ -22,10 +23,22 @@ internal suspend fun MailAccount.tidySent(
     changes: EmailChangeQueue,
 ) {
     // The message is already sent, so a leftover draft is not a failure; the next save or send of
-    // a draft does not see it either, and the user can delete it.
-    if (draftId != null) jmapCallOr(Unit) { connection.call(SetMethod(EmailType, id, destroy = listOf(draftId))) }
+    // a draft does not see it either, and the user can delete it. Another client may have sent
+    // that copy itself, which keeps its id (RFC 8621, section 7.5), so only a draft is destroyed.
+    if (draftId != null && isStillDraft(draftId)) {
+        jmapCallOr(Unit) { connection.call(SetMethod(EmailType, id, destroy = listOf(draftId))) }
+    }
     if (answered != null) changes.mark(login.id, answered, on = true)
 }
+
+/** Whether [emailId] is still a draft on the server; false when it is gone or the server cannot say. */
+private suspend fun MailAccount.isStillDraft(emailId: String): Boolean =
+    jmapCallOr(false) {
+        connection
+            .call(GetMethod(EmailType, id, JmapIds.Of(listOf(emailId)), KEYWORD_PROPERTIES))
+            .list
+            .any { Keywords.DRAFT in it.keywords }
+    }
 
 /** Sets or clears the mark of the message a send [answered]. */
 internal suspend fun EmailChangeQueue.mark(

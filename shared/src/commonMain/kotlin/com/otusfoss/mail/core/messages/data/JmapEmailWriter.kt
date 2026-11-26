@@ -13,6 +13,8 @@ import com.otusfoss.mail.core.messages.domain.Deletion
 import com.otusfoss.mail.core.messages.domain.EmailWriter
 import com.otusfoss.mail.core.messages.domain.MailMessage
 import com.otusfoss.mail.core.messages.domain.MessageFlag
+import com.otusfoss.mail.core.messages.domain.WaitingDraftList
+import com.otusfoss.mail.core.messages.domain.isDeviceDraftId
 import com.otusfoss.mail.core.messages.domain.memberMailboxes
 import kotlinx.serialization.json.JsonPrimitive
 
@@ -22,12 +24,15 @@ import kotlinx.serialization.json.JsonPrimitive
  * keyword; a cleared keyword is removed, because keyword values must be true. Moves name only the
  * mailboxes that change, so a message keeps any other mailbox it is in. Deleting for good first
  * sends the waiting changes and stops while any still wait, so it never destroys a message the
- * user moved out of the folder offline, then goes straight to the server; see [EmailRemoval].
+ * user moved out of the folder offline, then goes straight to the server; see [EmailRemoval]. A
+ * draft that waits on the device in [drafts] is no Email yet: moving it out of Drafts or deleting
+ * it drops it there.
  */
 class JmapEmailWriter(
     connections: JmapConnections,
     cache: MailCache,
     private val queue: EmailChangeQueue,
+    private val drafts: WaitingDraftList? = null,
 ) : EmailWriter {
     private val removal = EmailRemoval(connections, cache)
     private val muting = ConversationMuting(connections, cache)
@@ -48,14 +53,26 @@ class JmapEmailWriter(
         leaving: Set<String>,
     ): Boolean {
         val left = leaving - folderId - ""
-        if (left.isEmpty() || message.emailId.isEmpty()) return false
-        val patches =
-            message.memberMailboxes
-                .mapNotNull { (emailId, before) ->
-                    val removed = if (before.isEmpty()) left else left.intersect(before)
-                    removed.takeIf { it.isNotEmpty() }?.let { emailId to movePatch(it, folderId) }
-                }.toMap()
-        return patches.isNotEmpty() && queue.update(message.location.accountId, patches).containsAll(patches.keys)
+        return when {
+            left.isEmpty() || message.emailId.isEmpty() -> {
+                false
+            }
+
+            // A draft that waits on the device is in no folder yet, so it cannot move.
+            isDeviceDraftId(message.emailId) -> {
+                false
+            }
+
+            else -> {
+                val patches =
+                    message.memberMailboxes
+                        .mapNotNull { (emailId, before) ->
+                            val removed = if (before.isEmpty()) left else left.intersect(before)
+                            removed.takeIf { it.isNotEmpty() }?.let { emailId to movePatch(it, folderId) }
+                        }.toMap()
+                patches.isNotEmpty() && queue.update(message.location.accountId, patches).containsAll(patches.keys)
+            }
+        }
     }
 
     /**
@@ -137,6 +154,7 @@ class JmapEmailWriter(
     override suspend fun delete(messages: List<MailMessage>): Set<String> =
         messages
             .filter { it.emailId.isNotEmpty() && it.location.mailboxId.isNotEmpty() }
+            .filterNot { isDeviceDraftId(it.emailId) }
             .groupBy { it.location.accountId }
             .flatMap { (loginId, group) ->
                 val targets = group.associateWith { row -> row.listedMembers().filter { it.folderRole?.isBin == true } }
@@ -151,7 +169,7 @@ class JmapEmailWriter(
                         }.keys
                         .map { it.id }
                 }
-            }.toSet()
+            }.toSet() + drafts.dropped(messages)
 
     override suspend fun empty(
         accountId: String,
@@ -178,3 +196,10 @@ internal val MessageFlag.keyword: String
             MessageFlag.Read -> Keywords.SEEN
             MessageFlag.Flagged -> Keywords.FLAGGED
         }
+
+/** The rows of [messages] that were drafts waiting on the device, which are dropped there. */
+private suspend fun WaitingDraftList?.dropped(messages: List<MailMessage>): Set<String> =
+    messages
+        .filter { isDeviceDraftId(it.emailId) && this?.drop(it.emailId) == true }
+        .map { it.id }
+        .toSet()

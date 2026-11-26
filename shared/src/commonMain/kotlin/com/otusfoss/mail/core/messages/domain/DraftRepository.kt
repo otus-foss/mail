@@ -11,6 +11,15 @@ interface DraftRepository {
      */
     suspend fun save(draft: Draft): Result<String>
 
+    /**
+     * Whether [emailId] is still a draft: another client may have sent it since, which keeps its id
+     * (RFC 8621, section 7.5). False when it is gone. A failed result holds a [DraftException].
+     */
+    suspend fun isDraft(
+        accountId: String,
+        emailId: String,
+    ): Result<Boolean> = Result.success(true)
+
     /** Destroys the saved copy [emailId] of a draft. A failed result holds a [DraftException]. */
     suspend fun discard(
         accountId: String,

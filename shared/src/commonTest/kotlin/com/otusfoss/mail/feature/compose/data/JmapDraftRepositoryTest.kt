@@ -3,7 +3,9 @@ package com.otusfoss.mail.feature.compose.data
 import com.otusfoss.core.jmap.JmapClient
 import com.otusfoss.core.jmap.JmapConnections
 import com.otusfoss.core.jmap.login.InMemoryLoginStore
+import com.otusfoss.mail.core.cache.InMemoryMailCache
 import com.otusfoss.mail.core.mail.MailFailure
+import com.otusfoss.mail.core.mailbox.Mailboxes
 import com.otusfoss.mail.core.messages.domain.Draft
 import com.otusfoss.mail.core.messages.domain.DraftException
 import com.otusfoss.mail.core.messages.domain.DraftFailure
@@ -14,7 +16,6 @@ import com.otusfoss.mail.testing.ADA_LOGIN
 import com.otusfoss.mail.testing.CONTACTS_ONLY_SESSION
 import com.otusfoss.mail.testing.STALWART_SESSION
 import com.otusfoss.mail.testing.SUBMISSION_SESSION
-import com.otusfoss.mail.testing.composeMail
 import com.otusfoss.mail.testing.ids
 import com.otusfoss.mail.testing.stalwartLike
 import kotlinx.coroutines.test.runTest
@@ -42,7 +43,12 @@ class JmapDraftRepositoryTest {
                 calls += body
                 api(body)
             }
-        return composeMail(JmapConnections(JmapClient(engine), store)) { "m${++saves}@otus.mail" }.drafts
+        val cache = InMemoryMailCache()
+        return JmapDraftRepository(
+            JmapConnections(JmapClient(engine), store),
+            DraftCopies(Mailboxes(cache)),
+            cache,
+        ) { "m${++saves}@otus.mail" }
     }
 
     private var saves = 0

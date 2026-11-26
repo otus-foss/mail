@@ -48,7 +48,7 @@ internal class ListStates(
         )
 
     init {
-        scope.launch { prefetchInbox() }
+        scope.launch { prefetch(feed) }
     }
 
     /** The feeds of the list pages open now, besides the Inbox's [feed]. */
@@ -81,12 +81,13 @@ internal class ListStates(
     }
 
     /**
-     * Brings the bodies of the Inbox's first rows to the device as it shows them, where the
-     * setting and the network allow, so they open without a download. Rows must hold still for
-     * [PREFETCH_DELAY] first, so a run of edits fetches once. Only the Inbox's own mail counts,
-     * not what a search or a filter shows in its place.
+     * Brings the bodies of [feed]'s first rows to the device as it shows them, where the setting
+     * and the network allow, so they open without a download and offline. The Inbox and every
+     * opened list page do. Rows must hold still for [PREFETCH_DELAY] first, so a run of edits
+     * fetches once. Only the page's own mail counts, not what a search or a filter shows in its
+     * place.
      */
-    private suspend fun prefetchInbox() {
+    private suspend fun prefetch(feed: InboxFeedState) {
         snapshotFlow {
             feed.messages
                 .take(PREFETCH_ROWS)
@@ -105,6 +106,7 @@ internal class ListStates(
     ) {
         pageFeeds += feed
         pageScope.coroutineContext.job.invokeOnCompletion { pageFeeds -= feed }
+        pageScope.launch { prefetch(feed) }
     }
 
     /** Loads the open list pages again, apart from the Inbox; [keepReport] keeps a failed action's notice. */

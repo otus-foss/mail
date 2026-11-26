@@ -71,6 +71,11 @@ class JmapSendCheckerTest {
                                     """["$method", {"queryState": "q", "ids": [], "position": 0}"""
                                 }
 
+                                // The draft copy a send tidies up is still a draft.
+                                method == "Email/get" && "\"d1\"" in arguments.toString() -> {
+                                    """["$method", {"state": "e", "list": [{"id": "d1", $RECEIVED, "keywords": {"${'$'}draft": true}}], "notFound": []}"""
+                                }
+
                                 method == "Email/get" -> {
                                     """["$method", {"state": "e", "list": [$found], "notFound": []}"""
                                 }
