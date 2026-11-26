@@ -82,4 +82,18 @@ class HtmlTextTest {
     private companion object {
         const val REPEATS = 100_000
     }
+
+    @Test
+    fun hiddenElementsAndTheirNestedContentGo() {
+        val html =
+            "<div style=\"display: none; max-height: 0\">Preview <div>text</div> here</div>" +
+                "<p>Shown</p><span hidden>Secret</span><div style=\"VISIBILITY:hidden\">Gone</div>After"
+        assertEquals("Shown\n\nAfter", html.htmlToText())
+    }
+
+    @Test
+    fun hidingAnEmptyElementHidesNothingAfterIt() {
+        assertEquals("Shown", "<img style=\"display:none\" src=\"x\">Shown".htmlToText())
+        assertEquals("Shown", "<div style=\"display:none\"/>Shown".htmlToText())
+    }
 }

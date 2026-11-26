@@ -16,6 +16,7 @@ import com.otusfoss.core.jmap.login.LoginStoreException
 import com.otusfoss.mail.core.mail.DELIVERED_TO_PROPERTY
 import com.otusfoss.mail.core.mail.EmailObject
 import com.otusfoss.mail.core.mail.EmailType
+import com.otusfoss.mail.core.mail.LIST_ID_PROPERTY
 import com.otusfoss.mail.core.mail.MailAccount
 import com.otusfoss.mail.core.mail.ORIGINAL_TO_PROPERTY
 import com.otusfoss.mail.core.mail.ThreadType
@@ -263,6 +264,7 @@ class JmapNewMailChecker(
                 "receivedAt",
                 DELIVERED_TO_PROPERTY,
                 ORIGINAL_TO_PROPERTY,
+                LIST_ID_PROPERTY,
             )
         val MEMBER_PROPERTIES = listOf("id", "threadId", "keywords", "receivedAt")
         val ALERTED_PROPERTIES = listOf("id", "mailboxIds", "keywords", "receivedAt")

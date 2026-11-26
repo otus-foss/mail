@@ -189,6 +189,7 @@ class JmapMessageBodies(
             listOf(
                 "id",
                 "receivedAt",
+                "subject",
                 "textBody",
                 "htmlBody",
                 "bodyValues",

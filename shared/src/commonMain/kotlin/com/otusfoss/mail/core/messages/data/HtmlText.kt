@@ -2,9 +2,9 @@ package com.otusfoss.mail.core.messages.data
 
 /**
  * Readable plain text from an HTML body part, which the app shows and quotes as text and never
- * renders. Drops what a browser does not show: comments, declarations, and the content of script,
- * style, template, and title elements, which leaves nothing of the head. Blocks and `<br>` break
- * lines, other tags go, and character references are decoded. It reads the markup once, so
+ * renders. Drops what a browser does not show: comments, declarations, the content of script,
+ * style, template, and title elements, which leaves nothing of the head, and elements a tag hides.
+ * Blocks and `<br>` break lines, other tags go, and character references are decoded. It reads the markup once, so
  * malformed or cut-off markup costs no more than its length; a tag left open at the end is dropped.
  */
 internal fun String.htmlToText(): String {
@@ -27,7 +27,10 @@ internal fun String.htmlToText(): String {
 private fun String.opensTag(index: Int): Boolean =
     getOrNull(index)?.let { it in 'a'..'z' || it in 'A'..'Z' || it in "/!?" } == true
 
-/** Lays out the tag at [start] and returns where text resumes, after the content of a hidden element. */
+/**
+ * Lays out the tag at [start] and returns where text resumes, after the content of an element a
+ * browser never shows, or one the tag hides.
+ */
 private fun String.tag(
     start: Int,
     text: PlainText,
@@ -43,11 +46,17 @@ private fun String.tag(
         in LINES -> text.line()
         in CELLS -> text.space()
     }
-    return if (!closing && name in HIDDEN) hiddenContentEnd(end, name) else end
+    val attributes = substring(nameEnd, maxOf(nameEnd, end - 1))
+    return when {
+        closing -> end
+        name in HIDDEN -> hiddenContentEnd(end, name)
+        name !in VOID && !attributes.endsWith('/') && hidesElement(attributes) -> hiddenElementEnd(end, name)
+        else -> end
+    }
 }
 
 /** The index after the `>` that closes a tag, skipping quoted attribute values; the end when none does. */
-private fun String.tagEnd(from: Int): Int {
+internal fun String.tagEnd(from: Int): Int {
     var quote: Char? = null
     var valueStarts = false
     for (index in from until length) {
@@ -196,6 +205,9 @@ private val LINES =
         "section",
         "tr",
     )
+
+/** Elements that never have content, so hiding one hides nothing after it. */
+private val VOID = setOf("area", "br", "col", "embed", "hr", "img", "input", "link", "meta", "source", "track", "wbr")
 
 /** Table cells, kept apart by a space. */
 private val CELLS = setOf("td", "th")

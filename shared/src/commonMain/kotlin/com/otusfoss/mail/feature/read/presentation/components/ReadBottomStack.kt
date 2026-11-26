@@ -10,11 +10,14 @@ import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.platform.LocalClipboard
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -23,6 +26,7 @@ import com.otusfoss.core.designsystem.shared.rows.components.rememberUnfold
 import com.otusfoss.core.designsystem.theme.tokens.content.ReadTokens
 import com.otusfoss.core.designsystem.theme.tokens.layout.PageTokens
 import com.otusfoss.core.settings.presentation.components.LocalDateFormatter
+import com.otusfoss.mail.core.codes.domain.SignInCode
 import com.otusfoss.mail.core.messages.domain.MailAttachment
 import com.otusfoss.mail.core.messages.domain.MailMessage
 import com.otusfoss.mail.core.messages.domain.MailingList
@@ -31,14 +35,17 @@ import com.otusfoss.mail.core.messages.domain.folderHint
 import com.otusfoss.mail.core.messages.domain.inJunk
 import com.otusfoss.mail.core.messages.domain.shownName
 import com.otusfoss.mail.core.messages.presentation.shortLabel
+import com.otusfoss.mail.core.text.presentation.plainTextClip
 import com.otusfoss.mail.feature.read.presentation.PageBody
 import com.otusfoss.mail.feature.read.presentation.ReadSheet
 import com.otusfoss.mail.feature.read.presentation.ReadState
 import com.otusfoss.mail.feature.read.presentation.subtitle
+import kotlinx.coroutines.launch
 
 /**
  * The strips above the action bar, from the bottom up: one context strip, then the page's files.
- * A conversation shows its thread strip; a single message its newsletter strip when it can be left
+ * A page with a one-time code shows its code strip, whose Delete runs [onDelete]. Otherwise a
+ * conversation shows its thread strip; a single message its newsletter strip when it can be left
  * and is not spam, else the folders it is also in, else nothing. Until the pages load, the row's
  * message count tells a conversation from a single message, so the strip does not change kind.
  * The thread strip follows the pages as [slide] turns them, and a drag on it turns them too. A
@@ -53,6 +60,7 @@ internal fun ReadBottomStack(
     source: ReadStripSource,
     actions: ReadStripActions,
     slide: StripGestures,
+    onDelete: (() -> Unit)?,
     modifier: Modifier = Modifier,
     onFoldedHeight: (Dp) -> Unit = {},
 ) {
@@ -72,7 +80,12 @@ internal fun ReadBottomStack(
                 key(page.id) { FilesStrip(state, page, it, actions) }
             }
         }
-        ContextStrip(state, current, source, content, actions, slide)
+        val code = content?.signInCode
+        if (code != null) {
+            CodeStrip(page, code, onDelete)
+        } else {
+            ContextStrip(state, current, source, content, actions, slide)
+        }
     }
 }
 
@@ -114,6 +127,23 @@ private fun ContextStrip(
             }
         }
     }
+}
+
+/** The [page]'s one-time [code], copied without its spaces and kept out of the system's copy preview. */
+@Composable
+private fun CodeStrip(
+    page: MailMessage,
+    code: SignInCode,
+    onDelete: (() -> Unit)?,
+) {
+    val clipboard = LocalClipboard.current
+    val scope = rememberCoroutineScope()
+    var copied by remember(page.id) { mutableStateOf(false) }
+    val copy: () -> Unit = {
+        copied = true
+        scope.launch { clipboard.setClipEntry(plainTextClip(ONE_TIME_CODE, code.value, sensitive = true)) }
+    }
+    ReadCodeStrip(code, copied, copy, onDelete)
 }
 
 /** The page's files, which a tap or a drag unfolds; the drag moves them with the finger. */

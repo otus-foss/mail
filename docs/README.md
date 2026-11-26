@@ -108,7 +108,8 @@ See [First run](onboarding.md) for the setup a new device opens on,
 [Compose](compose.md) for new messages, replies, forwards, and drafts, and
 [Context panel](context-panel.md) for the reusable API and component test playground, and
 [Sidebar](sidebar.md) for page navigation, [Notifications](notifications.md) for instant
-delivery and the new-mail check, and [Settings](settings.md) for subpages and
+delivery and the new-mail check, [One-time codes](codes.md) for finding and copying sign-in
+codes, and [Settings](settings.md) for subpages and
 JMAP account setup, and [JMAP](jmap.md) for the protocol client.
 
 See [sender and attendee avatars](avatars.md) for the reusable contact-photo, optional domain-icon,

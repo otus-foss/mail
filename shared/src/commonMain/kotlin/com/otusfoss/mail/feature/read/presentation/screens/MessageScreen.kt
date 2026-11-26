@@ -40,9 +40,11 @@ import com.otusfoss.core.designsystem.theme.motion.MotionSpeed
 import com.otusfoss.core.designsystem.theme.motion.motionTween
 import com.otusfoss.core.designsystem.theme.tokens.layout.PageTokens
 import com.otusfoss.core.settings.presentation.components.LocalDateFormatter
+import com.otusfoss.mail.core.messages.domain.MailAction
 import com.otusfoss.mail.core.messages.domain.MailMessage
 import com.otusfoss.mail.core.messages.domain.withContent
 import com.otusfoss.mail.core.messages.presentation.MessageActions
+import com.otusfoss.mail.core.messages.presentation.actions.offer
 import com.otusfoss.mail.core.messages.presentation.components.rememberMoveChoice
 import com.otusfoss.mail.core.messages.presentation.shortLabel
 import com.otusfoss.mail.feature.read.presentation.ReadContext
@@ -129,6 +131,10 @@ fun MessageScreen(
     val turn = motionTween<Float>(MotionSpeed.Normal, MotionCurve.Enter)
     val folds = rememberStripFolds(state)
     val source = ReadStripSource(parts.row, look.folders, cameFrom, today)
+    val delete =
+        readActions.subject.offer(MailAction.Trash)?.let { action ->
+            { confirmation.run(action.confirm) { parts.perform(action) } }
+        }
     PageSurface {
         ActionBarHost(
             bar = readActions.bar?.let { bar -> { ReadActionBar(bar, page, parts::perform) } },
@@ -136,7 +142,7 @@ fun MessageScreen(
             Modifier.belowControlPanel(),
         ) { padding ->
             SideEffect { barPadding = padding }
-            ReadLayout(parts, ReadLayoutState(pager, index, look, menu, today, folds, source), notice, padding)
+            ReadLayout(parts, ReadLayoutState(pager, index, look, menu, today, folds, source, delete), notice, padding)
         }
         // Over the bar too, which dims with the page while the grown list sits above it.
         if (!read.display.zen()) {
@@ -153,8 +159,8 @@ fun MessageScreen(
 
 /**
  * Where the Read view's layout stands: the [pager] on the page at [index], how pages [look], the ⋯
- * [menu], the [today] dates are shown against, how the bottom strips [folds] open, and what they
- * show from [source].
+ * [menu], the [today] dates are shown against, how the bottom strips [folds] open, what they
+ * show from [source], and how a code strip's Delete [delete]s the conversation, where it can.
  */
 private class ReadLayoutState(
     val pager: PagerState,
@@ -164,6 +170,7 @@ private class ReadLayoutState(
     val today: LocalDate,
     val folds: StripFolds,
     val source: ReadStripSource,
+    val delete: (() -> Unit)?,
 )
 
 /**
@@ -221,6 +228,7 @@ private fun ReadLayout(
             layout.source,
             strips,
             slide,
+            layout.delete,
             Modifier
                 .align(Alignment.BottomCenter)
                 .padding(padding)

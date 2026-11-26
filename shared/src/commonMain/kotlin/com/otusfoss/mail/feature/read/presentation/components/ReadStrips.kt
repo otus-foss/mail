@@ -9,11 +9,16 @@ import com.otusfoss.core.designsystem.mail.attachments.components.AttachmentKind
 import com.otusfoss.core.designsystem.mail.attachments.components.AttachmentStrip
 import com.otusfoss.core.designsystem.resources.Res
 import com.otusfoss.core.designsystem.resources.symbol_archive
+import com.otusfoss.core.designsystem.resources.symbol_check
+import com.otusfoss.core.designsystem.resources.symbol_content_copy
+import com.otusfoss.core.designsystem.resources.symbol_delete
+import com.otusfoss.core.designsystem.resources.symbol_key
 import com.otusfoss.core.designsystem.resources.symbol_newspaper
 import com.otusfoss.core.designsystem.resources.symbol_unsubscribe
 import com.otusfoss.core.designsystem.shared.controls.elements.UiAction
 import com.otusfoss.core.designsystem.shared.feedback.components.InfoStrip
 import com.otusfoss.core.designsystem.shared.rows.components.Unfold
+import com.otusfoss.mail.core.codes.domain.SignInCode
 import com.otusfoss.mail.core.messages.domain.MailAttachment
 import com.otusfoss.mail.core.messages.presentation.AttachmentKindName
 import com.otusfoss.mail.core.messages.presentation.attachmentSummary
@@ -91,6 +96,27 @@ internal fun MailAttachment.shown(
     thumbnail: ImageBitmap?,
 ): AttachmentFile = AttachmentFile(name, detail(kept), kind().shown, thumbnail, typeLabel())
 
+/**
+ * A one-time [code]'s strip: the code with Copy, then, once [copied], the code under "Copied" with
+ * Delete, since the message has done its job. [onDelete] is null where the message cannot go.
+ */
+@Composable
+internal fun ReadCodeStrip(
+    code: SignInCode,
+    copied: Boolean,
+    onCopy: () -> Unit,
+    onDelete: (() -> Unit)?,
+    modifier: Modifier = Modifier,
+) {
+    if (copied) {
+        val delete = onDelete?.let { UiAction("Delete", Res.drawable.symbol_delete, onClick = it) }
+        InfoStrip(Res.drawable.symbol_check, "Copied", code.shown, delete, modifier)
+    } else {
+        val copy = UiAction("Copy", Res.drawable.symbol_content_copy, onClick = onCopy)
+        InfoStrip(Res.drawable.symbol_key, code.shown, ONE_TIME_CODE, copy, modifier)
+    }
+}
+
 private val AttachmentKindName.shown: AttachmentKind
     get() =
         when (this) {
@@ -109,4 +135,7 @@ private val AttachmentKindName.shown: AttachmentKind
         }
 
 private const val UNSUBSCRIBED = "Unsubscribed"
+
+/** What a code is called on its strip and on the clipboard. */
+internal const val ONE_TIME_CODE = "One-time code"
 private const val TAKES = "Takes up to 2 days"
