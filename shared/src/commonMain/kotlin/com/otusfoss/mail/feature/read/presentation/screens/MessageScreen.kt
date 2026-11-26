@@ -131,7 +131,7 @@ fun MessageScreen(
     val source = ReadStripSource(parts.row, look.folders, cameFrom, today)
     PageSurface {
         ActionBarHost(
-            bar = readActions.bar?.let { bar -> { ReadActionBar(bar, page, parts::perform) } },
+            bar = readActions.bar?.let { bar -> { ReadActionBar(bar, page, read.replies.own, parts::perform) } },
             // The control panel draws behind the status bar and pads itself.
             Modifier.belowControlPanel(),
         ) { padding ->

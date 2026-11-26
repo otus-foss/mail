@@ -18,12 +18,13 @@ import com.otusfoss.mail.core.messages.presentation.components.MoveChoice
 import com.otusfoss.mail.core.messages.presentation.components.rememberSuggestedMove
 import com.otusfoss.mail.core.messages.presentation.components.replyContext
 
-/** The [bar], with the big button saying who the reply to the [page] goes to. */
+/** The [bar], with the big button saying who the reply to the [page] goes to, leaving out the [own] addresses. */
 @Composable
 internal fun ReadActionBar(
     bar: MailBar,
     page: MailMessage,
+    own: OwnAddresses,
     onAction: (OfferedAction) -> Unit,
 ) {
-    MailActionBar(bar, onAction, context = replyContext(page, bar.layout.primary))
+    MailActionBar(bar, onAction, context = replyContext(page, bar.layout.primary, own))
 }
