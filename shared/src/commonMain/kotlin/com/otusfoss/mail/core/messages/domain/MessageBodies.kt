@@ -1,5 +1,6 @@
 package com.otusfoss.mail.core.messages.domain
 
+import com.otusfoss.mail.core.codes.domain.SignInCode
 import kotlinx.coroutines.flow.Flow
 
 /**
@@ -17,6 +18,7 @@ data class MessageHtml(
  * no plain part; [truncated] when the server sent only its start. [html] is null for plain mail.
  * [attachments] are its files, without the images its HTML shows inline. [unsubscribe] is set for
  * mail from a list that can be left, and [listName] names that list when its header does.
+ * [signInCode] is the one-time code the message gives, if any.
  */
 data class MessageContent(
     val text: String,
@@ -25,6 +27,7 @@ data class MessageContent(
     val attachments: List<MailAttachment> = emptyList(),
     val unsubscribe: Unsubscribe? = null,
     val listName: String? = null,
+    val signInCode: SignInCode? = null,
 )
 
 /** Loads the full body of an open message, since the list loads only previews. */

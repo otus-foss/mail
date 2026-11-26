@@ -5,25 +5,31 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.os.Build
+import com.otusfoss.mail.core.messages.domain.MailAction
 import com.otusfoss.mail.feature.notifications.domain.AlertedMail
 import com.otusfoss.mail.feature.notifications.presentation.opensMailFromAlert
 
 /**
  * Hears an alert's button that changes its message without opening Mail: the alert goes at once,
- * with its account's summary when it was the last, and [AlertActionWorker] tells the server.
+ * with its account's summary when it was the last, and [AlertActionWorker] tells the server. Copy
+ * code puts the code on the clipboard first and marks the message read.
  */
 class AlertActionReceiver : BroadcastReceiver() {
     override fun onReceive(
         context: Context,
         intent: Intent,
     ) {
-        val action = alertButton(intent.action)?.takeIf { !it.opensMailFromAlert } ?: return
+        val copy = intent.action == COPY_CODE
+        val button = if (copy) MailAction.Read else alertButton(intent.action)
+        val action = button?.takeIf { !it.opensMailFromAlert } ?: return
         val keyguard = context.getSystemService(KeyguardManager::class.java)
         val mail =
             intent
                 .mail()
                 ?.takeUnless { waitsForUnlock(Build.VERSION.SDK_INT) { keyguard.isDeviceLocked } }
                 ?: return
+        val code = mail.code
+        if (copy && code != null) context.copyCode(code)
         MailNotifications(context).clear(listOf(AlertedMail(mail.loginId, mail.emailId)))
         AlertActionWorker.enqueue(context, action, mail)
     }

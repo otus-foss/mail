@@ -1,5 +1,8 @@
 package com.otusfoss.mail.feature.read.data
 
+import com.otusfoss.mail.core.codes.domain.CodeMail
+import com.otusfoss.mail.core.codes.domain.SignInCode
+import com.otusfoss.mail.core.codes.domain.findSignInCode
 import com.otusfoss.mail.core.mail.EmailBodyValue
 import com.otusfoss.mail.core.mail.EmailObject
 import com.otusfoss.mail.core.messages.data.htmlToText
@@ -21,14 +24,28 @@ internal fun EmailObject.toMessageContent(): MessageContent {
             if (part.isTruncated && index < lastText) "${part.value}\n$GAP_NOTE" else part.value
         }
     val html = toMessageHtml()
+    val shown = text.displayText()
     return MessageContent(
-        text = text.displayText(),
+        text = shown,
         truncated = values.drop(maxOf(lastText, 0)).any { it.isTruncated },
         html = html,
         attachments = files(html?.html),
         unsubscribe = unsubscribe(),
         listName = listName(listId),
+        signInCode = signInCode(shown, html?.html),
     )
+}
+
+/**
+ * The one-time code the message gives, from its subject, its text, and its HTML read as text, each
+ * checked on its own. The HTML is read again only when the text is not already it.
+ */
+private fun EmailObject.signInCode(
+    text: String,
+    html: String?,
+): SignInCode? {
+    val htmlText = html?.takeUnless { textBody.orEmpty().any { it.isHtml } }?.htmlToText()
+    return findSignInCode(CodeMail(subject.orEmpty(), listOfNotNull(text, htmlText), fromList = listId != null))
 }
 
 /**

@@ -202,14 +202,16 @@ internal class ReadHeaderActions(
 
 /**
  * Where the Read view's strips come from: the [row] the list shows, every folder of its account by
- * id, the folders the list the user [cameFrom] shows it from, and [today], which each page's short
- * date is shown against.
+ * id, the folders the list the user [cameFrom] shows it from, [today], which each page's short
+ * date is shown against, and how a code strip's Delete deletes the conversation ([onDelete]),
+ * null where it cannot.
  */
 internal class ReadStripSource(
     val row: MailMessage,
     val folders: Map<String, MessageFolder>,
     val cameFrom: Set<String>,
     val today: LocalDate,
+    val onDelete: (() -> Unit)? = null,
 )
 
 /** Where the thread strip stands: [page], at [current] of [count] messages, received on [date]. */

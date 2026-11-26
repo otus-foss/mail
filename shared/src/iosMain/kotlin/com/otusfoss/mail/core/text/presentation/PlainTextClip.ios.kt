@@ -1,4 +1,4 @@
-package com.otusfoss.mail.feature.contacts.presentation
+package com.otusfoss.mail.core.text.presentation
 
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.platform.ClipEntry
@@ -7,4 +7,5 @@ import androidx.compose.ui.platform.ClipEntry
 internal actual fun plainTextClip(
     label: String,
     text: String,
+    sensitive: Boolean,
 ): ClipEntry = ClipEntry.withPlainText(text)

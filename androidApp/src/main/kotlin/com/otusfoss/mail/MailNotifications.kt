@@ -12,6 +12,7 @@ import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
 import androidx.work.ForegroundInfo
 import com.otusfoss.mail.core.messages.domain.MailAction
+import com.otusfoss.mail.core.settings.domain.NOTIFICATION_ACTION_LIMIT
 import com.otusfoss.mail.feature.notifications.domain.AlertedMail
 import com.otusfoss.mail.feature.notifications.domain.MailAlerts
 import com.otusfoss.mail.feature.notifications.domain.NewMail
@@ -182,15 +183,24 @@ private fun Context.detailedMessage(
 /** "New mail" alone: a hidden alert, and what a locked device shows when it hides details. */
 private fun Context.newMail(mail: NewMail) = mailAlert(mail).setContentTitle(getString(R.string.notification_new_mail))
 
-/** The [chosen] buttons that [mail]'s account can run, in order. */
+/**
+ * The [chosen] buttons that [mail]'s account can run, in order, after Copy code when [mail] gives a
+ * code. Copy code marks it read too, so Mark read makes room for the others then.
+ */
 private fun NotificationCompat.Builder.addButtons(
     context: Context,
     mail: NewMail,
     chosen: List<MailAction>,
 ): NotificationCompat.Builder {
-    chosen
-        .alertButtons(AlertAccount(mail.mailboxRoles, mail.canSend))
-        .forEach { addAction(context.alertAction(mail, it)) }
+    val copy = context.copyCodeAction(mail)
+    val picked =
+        chosen
+            .alertButtons(AlertAccount(mail.mailboxRoles, mail.canSend))
+            .filterNot { copy != null && it == MailAction.Read }
+            .map { context.alertAction(mail, it) }
+    (listOfNotNull(copy) + picked)
+        .take(NOTIFICATION_ACTION_LIMIT)
+        .forEach(::addAction)
     return this
 }
 

@@ -1,5 +1,7 @@
 package com.otusfoss.mail.feature.notifications.data
 
+import com.otusfoss.mail.core.codes.domain.CodeMail
+import com.otusfoss.mail.core.codes.domain.findSignInCode
 import com.otusfoss.mail.core.mail.EmailObject
 import com.otusfoss.mail.core.mail.MailAccount
 import com.otusfoss.mail.core.mail.isDraft
@@ -40,6 +42,7 @@ internal fun EmailObject.toNewMail(account: MailAccount): NewMail {
             ),
         subject = subject.orEmpty().displayLine(),
         preview = preview.displayText(),
+        code = findSignInCode(CodeMail(subject.orEmpty(), listOf(preview), fromList = listId != null))?.value,
         // One malformed date must not stop every later check.
         receivedAt = received ?: Clock.System.now(),
         recipients = (to.orEmpty() + cc.orEmpty()).map { it.email } + deliveredAddresses,

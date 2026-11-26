@@ -40,9 +40,11 @@ import com.otusfoss.core.designsystem.theme.motion.MotionSpeed
 import com.otusfoss.core.designsystem.theme.motion.motionTween
 import com.otusfoss.core.designsystem.theme.tokens.layout.PageTokens
 import com.otusfoss.core.settings.presentation.components.LocalDateFormatter
+import com.otusfoss.mail.core.messages.domain.MailAction
 import com.otusfoss.mail.core.messages.domain.MailMessage
 import com.otusfoss.mail.core.messages.domain.withContent
 import com.otusfoss.mail.core.messages.presentation.MessageActions
+import com.otusfoss.mail.core.messages.presentation.actions.offer
 import com.otusfoss.mail.core.messages.presentation.components.rememberMoveChoice
 import com.otusfoss.mail.core.messages.presentation.shortLabel
 import com.otusfoss.mail.feature.read.presentation.ReadContext
@@ -128,7 +130,11 @@ fun MessageScreen(
     // A tapped message's page arrives like a swiped one, on the design system's easing.
     val turn = motionTween<Float>(MotionSpeed.Normal, MotionCurve.Enter)
     val folds = rememberStripFolds(state)
-    val source = ReadStripSource(parts.row, look.folders, cameFrom, today)
+    val delete =
+        readActions.subject.offer(MailAction.Trash)?.let { action ->
+            { confirmation.run(action.confirm) { parts.perform(action) } }
+        }
+    val source = ReadStripSource(parts.row, look.folders, cameFrom, today, delete)
     PageSurface {
         ActionBarHost(
             bar = readActions.bar?.let { bar -> { ReadActionBar(bar, page, read.replies.own, parts::perform) } },
