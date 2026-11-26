@@ -1,4 +1,4 @@
-package com.otusfoss.mail.core.codes.presentation
+package com.otusfoss.mail.core.codes.presentation.components
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember

@@ -25,7 +25,7 @@ import com.otusfoss.core.designsystem.theme.tokens.content.ReadTokens
 import com.otusfoss.core.designsystem.theme.tokens.layout.PageTokens
 import com.otusfoss.core.settings.presentation.components.LocalDateFormatter
 import com.otusfoss.mail.core.codes.domain.SignInCode
-import com.otusfoss.mail.core.codes.presentation.rememberCodeCopy
+import com.otusfoss.mail.core.codes.presentation.components.rememberCodeCopy
 import com.otusfoss.mail.core.messages.domain.MailAttachment
 import com.otusfoss.mail.core.messages.domain.MailMessage
 import com.otusfoss.mail.core.messages.domain.MailingList

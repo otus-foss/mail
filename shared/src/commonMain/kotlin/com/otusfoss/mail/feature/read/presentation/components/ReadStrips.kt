@@ -19,7 +19,7 @@ import com.otusfoss.core.designsystem.shared.controls.elements.UiAction
 import com.otusfoss.core.designsystem.shared.feedback.components.InfoStrip
 import com.otusfoss.core.designsystem.shared.rows.components.Unfold
 import com.otusfoss.mail.core.codes.domain.SignInCode
-import com.otusfoss.mail.core.codes.presentation.ONE_TIME_CODE
+import com.otusfoss.mail.core.codes.presentation.components.ONE_TIME_CODE
 import com.otusfoss.mail.core.messages.domain.MailAttachment
 import com.otusfoss.mail.core.messages.presentation.AttachmentKindName
 import com.otusfoss.mail.core.messages.presentation.attachmentSummary

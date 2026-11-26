@@ -158,7 +158,7 @@ private fun SearchMail(
             }
             items(hits, key = { it.id }) { message ->
                 rows[message.id]?.let {
-                    ConversationRow(message, it) {
+                    ConversationRow(message, it, onCodeCopied = { room.gestures.codeCopied(message, it.read) }) {
                         // The message opens over the room, without the keyboard.
                         focus.clearFocus()
                         room.gestures.tap(message)
