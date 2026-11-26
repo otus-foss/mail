@@ -51,8 +51,9 @@ left, the control on the right, and large section titles. Search covers every pa
     Convos, **Contacts**, a combined system folder like Sent, or one of the user's folders shared
     across accounts. **Sidebar** and **Filter panel** open their pages. The sidebar is a way
     around Mail, not a look, so it lives here rather than on Appearance.
-  - **Actions**: **Swipe right** and **Swipe left** open a `ChoiceSheet` of message actions, and
-    **Action bar** opens its page.
+  - **Actions**: **Swipe right** and **Swipe left** open a `ChoiceSheet` of message actions, whose
+    **Move to folder…**, **Label as folder…**, and **Chain of actions…** rows each open a second
+    sheet, and **Action bar** opens its page.
   - **Reading**: **Mark as read when opened**, **Show quoted text**, and the Read view's
     **Quick view**, which opens an ordered sheet.
   - **Writing**: **Undo send** opens a `ChoiceSheet`, and **Signatures** opens its page, which

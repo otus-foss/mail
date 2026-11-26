@@ -19,7 +19,6 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.navigationevent.NavigationEventInfo
@@ -62,7 +61,7 @@ import com.otusfoss.mail.feature.read.presentation.components.ReadTop
 import com.otusfoss.mail.feature.read.presentation.components.ReadTopText
 import com.otusfoss.mail.feature.read.presentation.components.StripFolds
 import com.otusfoss.mail.feature.read.presentation.components.StripGestures
-import com.otusfoss.mail.feature.read.presentation.components.openLink
+import com.otusfoss.mail.feature.read.presentation.components.pageExtras
 import com.otusfoss.mail.feature.read.presentation.components.readDetailsHeight
 import com.otusfoss.mail.feature.read.presentation.components.rememberFoldSwipe
 import com.otusfoss.mail.feature.read.presentation.components.rememberPageLook
@@ -70,6 +69,7 @@ import com.otusfoss.mail.feature.read.presentation.components.rememberReadAction
 import com.otusfoss.mail.feature.read.presentation.components.rememberReadExpansion
 import com.otusfoss.mail.feature.read.presentation.components.rememberReadMenu
 import com.otusfoss.mail.feature.read.presentation.components.rememberReadSwipes
+import com.otusfoss.mail.feature.read.presentation.components.rememberStripActions
 import com.otusfoss.mail.feature.read.presentation.components.rememberStripFolds
 import com.otusfoss.mail.feature.read.presentation.components.rememberUnfoldDrag
 import kotlinx.coroutines.launch
@@ -116,7 +116,9 @@ fun MessageScreen(
     val page = state.pages[index].withContent(parts.content(state.pages[index]))
     SideEffect { state.shownId = page.id }
     val look = rememberPageLook(parts)
-    val readActions = rememberReadActions(message, page, read.replies, actions, moveChoice)
+    val strips = rememberStripActions(read)
+    val readActions =
+        rememberReadActions(message, page, read.replies, actions, moveChoice, parts.pageExtras(page, look, strips))
     val confirmation = rememberConfirmation()
     val menu =
         rememberReadMenu(parts, look, readActions, page, index) { action ->
@@ -136,7 +138,7 @@ fun MessageScreen(
             Modifier.belowControlPanel(),
         ) { padding ->
             SideEffect { barPadding = padding }
-            ReadLayout(parts, ReadLayoutState(pager, index, look, menu, today, folds, source), notice, padding)
+            ReadLayout(parts, ReadLayoutState(pager, index, look, menu, today, folds, source), strips, notice, padding)
         }
         // Over the bar too, which dims with the page while the grown list sits above it.
         if (!read.display.zen()) {
@@ -168,21 +170,20 @@ private class ReadLayoutState(
 
 /**
  * The pages over the whole screen, with the header floating over their top and the strips over
- * their bottom, above the bar's [padding]. A page leaves room for them around its text, so it
+ * their bottom, which run [strips], above the bar's [padding]. A page leaves room for them around its text, so it
  * scrolls clear of them while using the space around them.
  */
 @Composable
 private fun ReadLayout(
     parts: ReadParts,
     layout: ReadLayoutState,
+    strips: ReadStripActions,
     notice: String?,
     padding: PaddingValues,
 ) {
     val state = parts.state
     val read = parts.read
     val page = state.pages[layout.index]
-    val uriHandler = LocalUriHandler.current
-    val strips = remember(read) { ReadStripActions(read) { openLink(uriHandler::openUri, it) } }
     val date = LocalDateFormatter.current.shortLabel(page.received, layout.today)
     val zen = read.display.zen()
     var stripsHeight by remember { mutableStateOf(0.dp) }

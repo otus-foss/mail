@@ -53,6 +53,8 @@ private val MailAction.semantic: Int
 
             MailAction.Read -> NotificationCompat.Action.SEMANTIC_ACTION_MARK_AS_READ
 
+            MailAction.Mute -> NotificationCompat.Action.SEMANTIC_ACTION_MUTE
+
             // Not SEMANTIC_ACTION_REPLY for Reply: that promises an inline reply, and this one opens the composer.
             else -> NotificationCompat.Action.SEMANTIC_ACTION_NONE
         }

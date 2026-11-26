@@ -7,6 +7,7 @@ import com.otusfoss.mail.core.messages.domain.MailMessage
 import com.otusfoss.mail.core.messages.domain.MailSender
 import com.otusfoss.mail.core.messages.domain.MessageFlag
 import com.otusfoss.mail.core.messages.domain.ReceivedAt
+import com.otusfoss.mail.core.messages.presentation.LabelChange
 import com.otusfoss.mail.core.messages.presentation.MessageActions
 import com.otusfoss.mail.core.messages.presentation.MessageMarks
 import com.otusfoss.mail.core.messages.presentation.MessageMoves
@@ -20,8 +21,16 @@ internal fun offerActions(
     onMove: (MailMessage, MoveTarget) -> Unit = { _, _ -> },
     canMark: (MailMessage, MessageFlag) -> Boolean = { _, _ -> true },
     onMark: (List<MailMessage>, MessageFlag, Boolean) -> Unit = { _, _, _ -> },
+    label: (MailMessage, MoveTarget) -> LabelChange? = { _, _ -> null },
 ) = MessageActions(
-    moves = MessageMoves(targets = targets, onMove = onMove, suggested = { null }, futureSorting = { null }),
+    moves =
+        MessageMoves(
+            targets = targets,
+            onMove = onMove,
+            suggested = { null },
+            futureSorting = { null },
+            label = label,
+        ),
     marks = MessageMarks(can = canMark, set = onMark),
     ruleForSender = { null },
     readLater = { null },

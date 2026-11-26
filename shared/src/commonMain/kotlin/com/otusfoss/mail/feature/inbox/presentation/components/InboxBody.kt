@@ -33,6 +33,7 @@ import com.otusfoss.core.designsystem.theme.tokens.rows.EntryTokens
 import com.otusfoss.core.designsystem.theme.tokens.rows.InboxTokens
 import com.otusfoss.mail.core.messages.domain.MailMessage
 import com.otusfoss.mail.core.messages.presentation.actions.ActionSubject
+import com.otusfoss.mail.core.messages.presentation.actions.MoveOptions
 import com.otusfoss.mail.core.messages.presentation.actions.swipe
 import com.otusfoss.mail.core.messages.presentation.components.mailToday
 import com.otusfoss.mail.core.messages.presentation.icon
@@ -147,7 +148,7 @@ private fun LazyItemScope.ConversationItem(
     val selection = rowSelection(ids, index, gestures.selectedIds)
     val actions = gestures.actions
     val swipes = actions?.saved?.invoke()
-    val subject = ActionSubject(actions, listOf(message))
+    val subject = ActionSubject(actions, listOf(message), moves = MoveOptions(gestures.chooseFolder))
     SwipeActions(
         startToEnd = swipes?.let { subject.swipe(it.startToEnd) },
         endToStart = swipes?.let { subject.swipe(it.endToStart) },

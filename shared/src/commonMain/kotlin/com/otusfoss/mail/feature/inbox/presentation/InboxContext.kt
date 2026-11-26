@@ -49,6 +49,8 @@ data class InboxContext(
     val categories: InboxCategories?,
     /** The folder pill the screen shows in place of the page's own mail; none until the user picks one. */
     val folderPill: FolderPillOption? = null,
+    /** Opens the page of the shared folder at a lower-case path; null while no account has that folder. */
+    val folderPage: (key: List<String>) -> (() -> Unit)? = { null },
 ) {
     val searchPrompt: String
         get() = "Search $title"

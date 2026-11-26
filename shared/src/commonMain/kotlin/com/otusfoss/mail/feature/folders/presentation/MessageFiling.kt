@@ -11,6 +11,7 @@ import com.otusfoss.mail.core.messages.domain.MailMessage
 import com.otusfoss.mail.core.messages.domain.MessageFlag
 import com.otusfoss.mail.core.messages.domain.RowFolder
 import com.otusfoss.mail.core.messages.presentation.EditedList
+import com.otusfoss.mail.core.messages.presentation.LabelChange
 import com.otusfoss.mail.core.messages.presentation.MailEdits
 import com.otusfoss.mail.core.messages.presentation.MoveTarget
 import com.otusfoss.mail.core.messages.presentation.ReadLaterChange
@@ -124,6 +125,30 @@ internal class MessageFiling(
             ReadLaterStep.Remove -> ReadLaterChange(saves = false, leaves = leaves, apply = remove)
             null -> null
         }
+    }
+
+    /**
+     * [target] as a label of a loaded message shown in [feed]: the message gains the folder and
+     * keeps its others, or loses it. It gains none once the server's limit of folders for one
+     * message is reached, and keeps its last folder (RFC 8621, section 4.1.1).
+     */
+    fun label(
+        feed: EditedList,
+        message: MailMessage,
+        target: MoveTarget,
+    ): LabelChange? {
+        val account = folders.account(message.location.accountId)
+        if (account == null || message.emailId.isEmpty()) return null
+        val shown = message.location.mailboxId
+        val folderIds = message.location.mailboxIds.ifEmpty { setOf(shown) }
+        val labeled = target.folderId in folderIds
+        val leaves = labeled && shown == target.folderId
+        val removable = account.folder(target.folderId)?.rights?.mayRemoveItems != false
+        val room = account.limits.maxFoldersPerMessage?.let { folderIds.size < it } ?: true
+        val allowed = if (labeled) removable && (folderIds - target.folderId).isNotEmpty() else room
+        return LabelChange(adds = !labeled, leaves) {
+            edits.setInFolder(feed, message, target.folderId, target.name, saved = !labeled, leaves)
+        }.takeIf { allowed }
     }
 
     private fun setReadLater(

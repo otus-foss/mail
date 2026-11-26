@@ -18,26 +18,22 @@ import com.otusfoss.mail.core.settings.domain.ActionBehavior
 import com.otusfoss.mail.feature.compose.presentation.recipients
 
 /**
- * The compose page's bar as [actions] lays it out. Send runs [onSend], and stays disabled while that is null;
- * Attach runs [onAttach], disabled while that is null, and actions for messages, which Fixed mode may
- * place here, do not apply. The main button reads Send to, or Sends to with the schedule-send
- * symbol while [scheduled], and names the draft's recipients once it has any. A minimized bar
- * shows only the main button.
+ * The compose page's bar as [actions] lays it out, with each button as [subject] offers it: Send,
+ * Attach, and Schedule send stay disabled while it has none, and actions for messages, which
+ * Fixed mode may place here, do not apply. The main button reads Send to, or Sends to with the
+ * schedule-send symbol while a time is chosen, and names the draft's recipients once it has any.
+ * A minimized bar shows only the main button.
  */
 @Composable
 internal fun ComposeBar(
     actions: ActionBehavior,
     draft: Draft,
-    onSend: (() -> Unit)?,
-    onAttach: (() -> Unit)?,
-    onDiscard: () -> Unit,
-    scheduled: Boolean = false,
+    subject: DraftSubject,
 ) {
-    val subject = ActionSubject(actions = null, draft = DraftSubject(onSend, onAttach, onDiscard, scheduled))
     MailActionBar(
-        actions.barFor(ActionBarPlace.Compose, role = null, subject::offer),
+        actions.barFor(ActionBarPlace.Compose, role = null, ActionSubject(actions = null, draft = subject)::offer),
         onAction = { it.run() },
-        context = draft.recipients.barContext(if (scheduled) "Sends to" else "Send to"),
+        context = draft.recipients.barContext(if (subject.scheduled) "Sends to" else "Send to"),
     )
 }
 

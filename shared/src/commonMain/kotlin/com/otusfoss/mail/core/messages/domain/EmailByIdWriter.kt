@@ -35,4 +35,10 @@ interface EmailByIdWriter {
         loginId: String,
         emailId: String,
     ): Boolean
+
+    /** Mutes the email's conversation, so its next mail brings no alert. */
+    suspend fun mute(
+        loginId: String,
+        emailId: String,
+    ): Boolean
 }

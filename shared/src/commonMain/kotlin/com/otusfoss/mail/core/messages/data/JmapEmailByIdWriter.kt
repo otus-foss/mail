@@ -2,6 +2,7 @@ package com.otusfoss.mail.core.messages.data
 
 import com.otusfoss.core.jmap.JmapConnections
 import com.otusfoss.core.jmap.JmapException
+import com.otusfoss.core.jmap.jmapCallOr
 import com.otusfoss.core.jmap.jmapPatch
 import com.otusfoss.core.jmap.login.LoginStoreException
 import com.otusfoss.mail.core.cache.CacheStorageException
@@ -61,6 +62,24 @@ class JmapEmailByIdWriter(
         loginId: String,
         emailId: String,
     ): Boolean = discard(loginId, emailId, MailboxRole.Junk)
+
+    /**
+     * Marks every email of the thread, as the Read view's Mute does. While the server cannot list
+     * them, it marks the email alone, so the change still waits in the queue.
+     */
+    override suspend fun mute(
+        loginId: String,
+        emailId: String,
+    ): Boolean {
+        val ids = threadIds(loginId, emailId).ifEmpty { listOf(emailId) }
+        val patch = keywordPatch(Keywords.MUTED, true)
+        return queue.update(loginId, ids.associateWith { patch }).containsAll(ids)
+    }
+
+    private suspend fun threadIds(
+        loginId: String,
+        emailId: String,
+    ): List<String> = jmapCallOr(emptyList()) { connections.mailAccount(loginId)?.threadEmailIds(emailId).orEmpty() }
 
     /**
      * Puts the email in the account's mailbox with [role] alone, as the list's Delete and Spam do:

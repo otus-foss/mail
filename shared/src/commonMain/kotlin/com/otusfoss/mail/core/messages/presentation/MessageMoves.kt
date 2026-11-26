@@ -16,6 +16,18 @@ class MessageMoves(
     val suggested: suspend (MailMessage) -> MoveTarget?,
     /** Rules that can also sort future mail like the message; null when its account has no rules. */
     val futureSorting: (MailMessage) -> FutureSorting?,
+    /** The folder as a label of the message, which keeps its other folders; null where it cannot change. */
+    val label: (MailMessage, MoveTarget) -> LabelChange? = { _, _ -> null },
+)
+
+/**
+ * A folder as a label of one message: [apply] [adds] the folder and keeps the others, or takes it
+ * off. The message [leaves] the list it is shown in when the folder taken off is the list's own.
+ */
+class LabelChange(
+    val adds: Boolean,
+    val leaves: Boolean,
+    val apply: () -> Unit,
 )
 
 /**

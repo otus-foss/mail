@@ -156,6 +156,7 @@ The sheet offers every action that can run from an alert without seeing the mess
 | Mark read | `Read` | Adds `$seen` | Nothing |
 | Flag | `Flag` | Adds `$flagged` | Nothing |
 | Spam | `Spam` | Moves the email out of every mailbox into Spam, as the list's Spam does | A `junk` mailbox |
+| Mute | `Mute` | Mutes the email's conversation, so its next mail brings no alert. It marks every email of the thread, or the email alone while the server cannot list them | Nothing |
 | Reply | `Reply` | Opens Mail on a reply to the message | Submission (RFC 8621, section 7) |
 
 Mark unread is left out, since alerts are about unread mail. Reply all, Forward, Move, and

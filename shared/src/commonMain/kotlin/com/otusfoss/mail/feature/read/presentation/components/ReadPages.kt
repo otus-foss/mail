@@ -33,6 +33,7 @@ import com.otusfoss.mail.core.messages.domain.RemoteImages
 import com.otusfoss.mail.core.messages.domain.inJunk
 import com.otusfoss.mail.core.messages.domain.orderedFolders
 import com.otusfoss.mail.core.messages.domain.showsRemoteImages
+import com.otusfoss.mail.core.messages.presentation.actions.ActionSwitch
 import com.otusfoss.mail.core.messages.presentation.fullLabel
 import com.otusfoss.mail.feature.read.presentation.PageBody
 import com.otusfoss.mail.feature.read.presentation.ReadContext
@@ -74,6 +75,21 @@ internal class ReadPageLook(
         val load = allowed(page) == true || state.bodies.imagesShown(page)
         val onShow = { state.bodies.showImages(page) }.takeIf { !load && hasRemote(body) && allowed(page) != null }
         return PageImages(load, onShow)
+    }
+
+    /**
+     * Showing [page]'s blocked remote images this time, or hiding them again, as the banner does;
+     * null while it has none or its sender may show them.
+     */
+    fun imagesSwitch(
+        page: MailMessage,
+        body: PageBody,
+    ): ActionSwitch? {
+        if (!blocked(page, body)) return null
+        val bodies = state.bodies
+        return ActionSwitch(bodies.imagesShown(page)) { show ->
+            if (show) bodies.showImages(page) else bodies.hideImages(page)
+        }
     }
 
     /**

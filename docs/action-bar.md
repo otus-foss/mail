@@ -33,6 +33,12 @@ search field is open.
 - **Mark all read** marks every unread message in the current results read, where the account
   allows it, in as few `Email/set` calls as each server allows. It is disabled when there is
   nothing to mark.
+- A **Filter** button turns one filter of the page on or off, as its quick pill or the filter
+  panel does; see [buttons with a choice](#buttons-with-a-choice).
+- A **Go to** button opens one folder's page, and a **Write to** button starts a draft to
+  addresses the user saved; see the same section.
+- **Select all** selects every message in the current results, so the **Selected messages** bar
+  takes over. It is disabled while the list is empty.
 
 Actions that need a message, such as Archive in **Same everywhere** mode, are disabled here.
 
@@ -50,7 +56,9 @@ The bar shows the **Open message** layout. **More actions** opens a menu in sect
 the page's own message (the other reply, Forward, Mark read or unread, Flag, View details, Print),
 the sender (Add to contacts, Block sender, Spam), and the whole conversation (Move, Mute, Delete).
 Its last section lists every other action the bar leaves out, such as Read later, Archive, or Rule
-for sender, so each action of the open message is on the bar or in the menu. Mail's actions in the
+for sender, so each action of the open message is on the bar or in the menu. Block sender and Mute
+are bar actions too, so the menu's own entries stand for them and the last section does not repeat
+them. A single message has no conversation section, so its Mute is in the last section. Mail's actions in the
 menu carry the same labels and symbols as on the bar, and one that asks to be confirmed, such as
 Delete forever, asks there too. An action that takes the message out of the list, such as
 Archive, closes the page first. Marks keep the page open and show their new state on the button.
@@ -92,11 +100,11 @@ offer it:
 
 | Target | Actions | Offered on |
 | --- | --- | --- |
-| Messages | Read, Flag, Read later, Archive, Trash, Spam, Not spam, Restore, Delete forever, Move, Suggested move, Move to | Open message, selected messages |
-| One message | Rule for sender, Reply, Reply all, Forward, Follow up | Open message |
-| List | Search, Filters, Mark all read, Empty spam or trash | Message list |
-| Draft | Send, Attach, Discard | Writing |
-| Anywhere | New mail | Message list, open message |
+| Messages | Read, Flag, Read later, Archive, Trash, Spam, Not spam, Restore, Delete forever, Move, Suggested move, Move to, Label as, Chain | Open message, selected messages |
+| One message | Rule for sender, Reply, Reply all, Forward, Follow up, Unsubscribe, Mute, Block sender, Show images | Open message |
+| List | Search, Filters, Filter, Go to, Mark all read, Select all, Empty spam or trash | Message list |
+| Draft | Send, Schedule send, Attach, Discard | Writing |
+| Anywhere | New mail, Write to | Message list, open message |
 
 The **Every screen** bar can hold any of them. For messages, `offer` turns an action into a button
 for one message or a selection, with a label for their current state, or returns nothing when
@@ -115,8 +123,56 @@ none of them can take it.
   sheet offers the folders every selected message can move to, whether the rows were selected by
   long press, tap, or drag.
 - **Rule for sender** needs exactly one message, so the selection bar never offers it.
+- **Unsubscribe**, **Mute**, **Block sender**, and **Show images** come from the Read view
+  (`PageExtras`), so only the open message's bar offers them, and each is disabled where the page
+  cannot take it.
+  - **Unsubscribe** leaves the mailing list the page came from, as the newsletter strip does, with
+    the same Undo toast. It also works on a page of a conversation, which shows no newsletter
+    strip. It is disabled for mail from no list, mail in Spam, and a list already left.
+  - **Mute** stops alerts for the conversation, and reads **Unmute conversation** while it is
+    muted. It is disabled until the page knows whether the conversation is muted.
+  - **Block sender** sends the sender's mail to Spam from now on. The user's own message has none.
+  - **Show images** shows the page's blocked remote images this time, as the banner's Show does,
+    and reads **Hide images** once they show. It is disabled when the page has no remote images or
+    its sender may already show them.
+- **Schedule send** opens the Send later sheet, and reads **Change send time** once a time is
+  chosen. It is disabled where the account cannot delay a send; see
+  [Schedule send](compose.md#schedule-send).
 - **Not spam**, **Restore**, **Delete forever**, **Empty spam or trash**, and **Follow up** work
   only in some folders; see [folder bars](#folder-bars).
+
+### Buttons with a choice
+
+Six kinds of button carry a choice of the user's own, so a bar can hold several of one kind, such
+as a Move to button for Receipts and another for Travel. `BarButton` models them beside the plain
+`MailAction`s, and each saves its choice in the bar: `move_to:Clients/Acme`, `label:Receipts`,
+`go_to:Travel`, `filter:unread`, `write_to:ada@example.org`, and `chain:` with a name and steps.
+
+| Button | On | What it does |
+| --- | --- | --- |
+| Move to a folder | Messages | Moves the messages to the folder; see [Move to a folder](#move-to-a-folder). |
+| Label as a folder | Messages | Adds the messages to the folder and keeps them where they are. Once every message has the label, the button reads **Remove label** and takes it off. |
+| Chain of actions | Messages | Runs several steps as one button with the user's name for it. |
+| Filter | Message list | Turns one filter on or off: Unread, any quick filter, Newsletters, or Calendar invites. |
+| Go to a folder | Message list | Opens the folder's page, as its sidebar entry does. |
+| Write to | Message list, open message | Starts a draft to the saved addresses, from the list's or the message's account. |
+
+- **Label as** uses folders as labels, as Read later does: the message gains the folder through
+  `MailEdits.setInFolder` and keeps its others. It is disabled where the account has no folder at
+  that path, where the server's `maxMailboxesPerEmail` is reached, and for a label that is the
+  message's last folder, since an email must stay in one (RFC 8621, section 4.1.1).
+- A **chain** only turns things on, so pressing it twice does no harm. It can mark the messages
+  read, flag them, add one label, and then file them once with Archive, Delete, Spam, or a move to
+  a folder. Steps a message already has are skipped, and the button is disabled when no step is
+  left to run. The steps go to the server as separate changes, in order.
+- A **Filter** button reads, for example, "Apply unread filter" and shows the filter's symbol.
+  While the filter is on it reads "Clear unread filter" and shows the filter-off symbol. It changes
+  only its own filter.
+- **Go to** finds the folder by its path across accounts, as Move to does, and is disabled while
+  no account has it.
+- **Write to** takes one address or several with commas between them.
+
+A swipe can be a Move to button, a Label as button, or a chain.
 
 ### Move to a folder
 
@@ -145,7 +201,8 @@ menu does not offer it otherwise.
 Actions follow the same folder rights as before; see
 [folder pages and message actions](inbox.md#folder-pages-and-message-actions). An action the
 current messages cannot take stays in its slot, disabled with a `text3` icon, so the buttons never
-move. A swipe can be any action except Spam, Move, Rule for sender, and the folder actions.
+move. A swipe can be Read, Flag, Read later, Archive, Delete, Spam, Move, a Move to or Label as
+button for one folder, or a chain; see [swipe actions](inbox.md#swipe-actions).
 
 **All actions**, under **Anywhere** in the picker, fits every bar. It shows a ⋯ icon, and tapping it
 opens a Core `ContextMenu` above the button with every action the screen offers, including those
@@ -180,16 +237,21 @@ screen reader label is **Add action**. Tapping a button, or the empty slot, open
 - Picking an action applies at once and keeps the picker open. **Remove from bar** empties a
   filled secondary slot and closes the picker; later buttons move up. The main button cannot be
   removed, only replaced.
-- Where messages can move, the **Messages** group ends with **Move to folder…**. It opens a
-  `ChoiceSheet` of the user's folders across all accounts, and the picked folder becomes a Move to
-  button in the slot. Each slot can hold a Move to button for a different folder. An empty slot
-  lists only folders without a button; a filled slot lists all of them, and a folder in another
-  slot says it will swap.
-- While the slot holds a Move to button, that row is **Move to** with the folder in Core's
-  `ValuePicker`, with the folder symbol and the folder's path as the value. Screen readers hear,
-  for example, "Travel, change". Tapping it opens the same folder sheet, so the folder changes
-  without removing the button. When no account has the folder any more, the row says "Folder not
-  found. Pick another."
+- Each group ends with the rows of its [buttons with a choice](#buttons-with-a-choice)
+  (`CustomButtonChoice`): **Move to folder…**, **Label as folder…**, and **Chain of actions…**
+  under Messages, **Filter…** and **Go to folder…** under Message list, and **Write to…** under
+  Anywhere. A row that picks a folder shows only while the accounts have folders of their own.
+- The folder rows open a `ChoiceSheet` of the user's folders across all accounts, and the picked
+  folder becomes the slot's button. Each slot can hold a button for a different folder. An empty
+  slot lists only folders without a button of that kind; a filled slot lists all of them, and a
+  folder in another slot says it will swap. **Filter…** lists the filters the same way.
+- **Write to…** opens a sheet with one field for the addresses. **Chain of actions…** opens the
+  chain's sheet (`ChainSheet`): its name, switches for Mark read and Flag, the label it adds, and
+  what it does last.
+- While the slot holds one of these buttons, its row names the kind, such as **Move to**, with the
+  user's choice in Core's `ValuePicker`. Screen readers hear, for example, "Travel, change".
+  Tapping it opens the same sheet, so the choice changes without removing the button. When no
+  account has a button's folder any more, the row says "Folder not found. Pick another."
 - Each change is saved at once.
 
 The editor's copy button opens **Copy to** (`ActionBarCopySheet`), which lists the other places to

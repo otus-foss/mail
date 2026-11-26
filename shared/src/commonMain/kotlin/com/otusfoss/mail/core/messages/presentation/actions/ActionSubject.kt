@@ -7,8 +7,8 @@ import com.otusfoss.mail.core.messages.domain.BarButton
 import com.otusfoss.mail.core.messages.domain.ComposeRequest
 import com.otusfoss.mail.core.messages.domain.MailAction
 import com.otusfoss.mail.core.messages.domain.MailMessage
+import com.otusfoss.mail.core.messages.domain.MailSender
 import com.otusfoss.mail.core.messages.domain.MessageFlag
-import com.otusfoss.mail.core.messages.domain.original
 import com.otusfoss.mail.core.messages.presentation.MessageActions
 import com.otusfoss.mail.core.messages.presentation.MessageMarks
 import com.otusfoss.mail.core.messages.presentation.MoveTarget
@@ -39,18 +39,21 @@ internal class MoveOptions(
 
 /**
  * The open [message] replies answer, in a folder of [role]; drafts start through [onCompose], and
- * a message in Scheduled is edited or sent through [scheduled].
+ * a message in Scheduled is edited or sent through [scheduled]. [extras] is what only its screen
+ * can do with it, such as muting its conversation.
  */
 internal class PageSubject(
     val message: MailMessage,
     val role: MailboxRole?,
     val onCompose: (ComposeRequest) -> Unit,
     val scheduled: ScheduledActions? = null,
+    val extras: PageExtras = PageExtras(),
 )
 
 /**
  * The message list with nothing selected: Mark all read marks the unread [results] on screen, and
- * New mail starts through [onCompose] from [accountId] when the list shows one account.
+ * New mail starts through [onCompose] from [accountId] when the list shows one account. [extras]
+ * is what only its screen can do, such as flipping a filter.
  */
 internal class ListSubject(
     val results: List<MailMessage>,
@@ -58,14 +61,19 @@ internal class ListSubject(
     val onSearch: () -> Unit,
     val onFilters: () -> Unit,
     val onCompose: (ComposeRequest) -> Unit = {},
+    val extras: ListExtras = ListExtras(),
 )
 
-/** The draft being written: Send and Attach stay unavailable while theirs are null. */
+/**
+ * The draft being written: Send, Attach, and Schedule send stay unavailable while theirs are null.
+ * [onSchedule] opens the choice of a send time, and [scheduled] says one is chosen.
+ */
 internal class DraftSubject(
     val onSend: (() -> Unit)?,
     val onAttach: (() -> Unit)?,
     val onDiscard: () -> Unit,
     val scheduled: Boolean,
+    val onSchedule: (() -> Unit)? = null,
 )
 
 /**
@@ -76,9 +84,18 @@ internal class DraftSubject(
  */
 internal fun ActionSubject.offer(button: BarButton): OfferedAction? =
     when (button) {
-        is BarButton.MoveTo -> actions?.offerMoveTo(messages, button)
+        is BarButton.MoveTo -> actions?.takeUnless { holdsScheduled }?.offerMoveTo(messages, button)
+        is BarButton.LabelAs -> actions?.takeUnless { holdsScheduled }?.offerLabel(messages, button)
+        is BarButton.Chain -> offerChain(button).takeUnless { holdsScheduled }
+        is BarButton.GoTo -> list?.offerGoTo(button)
+        is BarButton.Filter -> list?.extras?.filters?.offer(button)
+        is BarButton.WriteTo -> newMail(button, button.addresses.map { MailSender(name = "", address = it) })
         is MailAction -> offer(button)
     }
+
+/** Whether a message here waits in Scheduled. Filing it would leave its send running; Edit and Send now handle it. */
+private val ActionSubject.holdsScheduled: Boolean
+    get() = messages.any { it.location.mailboxRole == MailboxRole.Scheduled }
 
 private fun ActionSubject.offer(action: MailAction): OfferedAction? =
     when (action) {
@@ -86,11 +103,12 @@ private fun ActionSubject.offer(action: MailAction): OfferedAction? =
         MailAction.Spam, MailAction.NotSpam, MailAction.Restore, MailAction.DeleteForever, MailAction.Move,
         MailAction.SuggestedMove, MailAction.RuleForSender,
         -> {
-            // Filing scheduled mail would leave its send running; Edit and Send now handle it.
-            if (messages.any { it.location.mailboxRole == MailboxRole.Scheduled }) null else offerOnMessages(action)
+            if (holdsScheduled) null else offerOnMessages(action)
         }
 
-        MailAction.Reply, MailAction.ReplyAll, MailAction.Forward, MailAction.FollowUp -> {
+        MailAction.Reply, MailAction.ReplyAll, MailAction.Forward, MailAction.FollowUp, MailAction.Unsubscribe,
+        MailAction.Mute, MailAction.BlockSender, MailAction.ShowImages,
+        -> {
             page?.offer(action)
         }
 
@@ -98,11 +116,11 @@ private fun ActionSubject.offer(action: MailAction): OfferedAction? =
             newMail(action)
         }
 
-        MailAction.Search, MailAction.Filters, MailAction.MarkAllRead, MailAction.EmptyFolder -> {
+        MailAction.Search, MailAction.Filters, MailAction.MarkAllRead, MailAction.SelectAll, MailAction.EmptyFolder -> {
             list?.let { offerOnList(it, action) }
         }
 
-        MailAction.Send, MailAction.Attach, MailAction.Discard -> {
+        MailAction.Send, MailAction.ScheduleSend, MailAction.Attach, MailAction.Discard -> {
             draft?.offer(action)
         }
 
@@ -171,38 +189,17 @@ private fun filingRole(action: MailAction): MailboxRole =
         else -> MailboxRole.Archive
     }
 
-/** Replies and forwards of the open page, which [offer] routes here. */
-private fun PageSubject.offer(action: MailAction): OfferedAction? {
-    val request =
-        when (action) {
-            MailAction.Reply -> ComposeRequest.Reply(message.original(), all = false)
-            MailAction.ReplyAll -> ComposeRequest.Reply(message.original(), all = true)
-            MailAction.Forward -> ComposeRequest.Forward(message.original())
-            MailAction.FollowUp -> ComposeRequest.FollowUp(message.original()).takeIf { role == MailboxRole.Sent }
-            else -> null
-        }
-    return request?.let { plainOffer(action) { onCompose(it) } }
-}
-
-/** The list's own actions, which [offer] routes here. */
-private fun ActionSubject.offerOnList(
-    list: ListSubject,
-    action: MailAction,
-): OfferedAction? =
-    when (action) {
-        MailAction.Search -> plainOffer(action, list.onSearch)
-        MailAction.Filters -> plainOffer(action, list.onFilters)
-        MailAction.MarkAllRead -> offerMarkAllRead(list)
-        MailAction.EmptyFolder -> actions?.offerEmpty()
-        else -> null
-    }
-
 /** The draft's actions, which [offer] routes here. */
 private fun DraftSubject.offer(action: MailAction): OfferedAction? =
     when (action) {
         MailAction.Send -> {
             val symbol = if (scheduled) Res.drawable.symbol_schedule_send else action.symbol
             onSend?.let { draftOffer(action, it, symbol) }
+        }
+
+        MailAction.ScheduleSend -> {
+            val label = scheduleLabel(scheduled)
+            onSchedule?.let { OfferedAction(label, action.symbol, leaves = false, asks = true, run = it) }
         }
 
         MailAction.Attach -> {
@@ -218,21 +215,19 @@ private fun DraftSubject.offer(action: MailAction): OfferedAction? =
         }
     }
 
-/** New mail from the open message's account, or the list's; a list of all accounts lets compose pick. */
-private fun ActionSubject.newMail(button: BarButton): OfferedAction? =
+/**
+ * New mail [to] these people from the open message's account, or the list's; a list of all
+ * accounts lets compose pick.
+ */
+private fun ActionSubject.newMail(
+    button: BarButton,
+    to: List<MailSender> = emptyList(),
+): OfferedAction? =
     when {
-        page != null -> plainOffer(button) { page.onCompose(ComposeRequest.New(page.message.location.accountId)) }
-        list != null -> plainOffer(button) { list.onCompose(ComposeRequest.New(list.accountId)) }
+        page != null -> plainOffer(button) { page.onCompose(ComposeRequest.New(page.message.location.accountId, to)) }
+        list != null -> plainOffer(button) { list.onCompose(ComposeRequest.New(list.accountId, to)) }
         else -> null
     }
-
-private fun ActionSubject.offerMarkAllRead(list: ListSubject): OfferedAction? {
-    val marks = marks ?: return null
-    val unread = list.results.filter { it.attributes.unread && marks.can(it, MessageFlag.Read) }
-    return unread.takeIf { it.isNotEmpty() }?.let {
-        plainOffer(MailAction.MarkAllRead) { marks.set(unread, MessageFlag.Read, true) }
-    }
-}
 
 /** A draft's action, which leaves the compose page. */
 private fun draftOffer(

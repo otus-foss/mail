@@ -275,8 +275,19 @@ the name.
 
 Each inbox and folder row is wrapped in Core's `SwipeActions`. Mail behavior chooses what
 a swipe right and a swipe left do: **Read / unread**, **Flag / unflag**, **Read later** (while it
-is on), **Archive**, **Delete**, or **Nothing**. Delete moves the message to Trash. The defaults
-are mark read or unread on a swipe right and delete on a swipe left. Right-to-left layouts mirror the directions.
+is on), **Archive**, **Delete**, **Spam**, **Move**, **Move to folder…**, **Label as folder…**,
+**Chain of actions…**, or **Nothing**. Delete moves the message to Trash. The defaults are mark read or unread on a swipe right and delete on a
+swipe left. Right-to-left layouts mirror the directions.
+
+- **Move** springs the row back and opens the Move to sheet for that message.
+- **Move to folder…** opens a sheet of the user's folders across all accounts. The picked folder
+  becomes a [Move to button](action-bar.md#move-to-a-folder) as the swipe, and the choice then
+  names it, such as "Move to Receipts". The swipe moves the message to the folder at that path in
+  its own account. A row whose account has no such folder does not move in that direction.
+- **Label as folder…** and **Chain of actions…** work the same way: the choice opens the sheet
+  the action bar's picker uses, and the swipe then runs that
+  [button](action-bar.md#buttons-with-a-choice). A label swipe keeps the row in the list, and a
+  chain swipe takes it away only when the chain files the message.
 
 - A swipe runs the same action as the open message's button, with the same folder rights and role
   checks. A row whose message cannot take the chosen action does not move in that direction.

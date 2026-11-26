@@ -80,7 +80,7 @@ fun InboxScreen(
             Modifier.fillMaxSize(),
             base = {
                 ActionBarHost(
-                    bar = inboxBar(sorted.listed, state, rows, messageActions, context.onCompose, headerActions),
+                    bar = inboxBar(sorted.listed, state, rows, messageActions, context, headerActions),
                     Modifier
                         .fillMaxSize()
                         // The control panel draws behind the status bar and pads itself.
@@ -122,6 +122,7 @@ fun InboxScreen(
             page.readView.Show(OpenedMessage(it, status.notice, state.mixesFolders(filters, page), rows.close))
         }
         InboxLayers(page, panelHeight, headerActions.overlays)
+        messageActions?.let { rows.moveChoice.Sheet(it) }
     }
 }
 

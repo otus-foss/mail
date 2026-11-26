@@ -41,6 +41,12 @@ class AlertButtonsTest {
     }
 
     @Test
+    fun muteNeedsNoFolder() {
+        val inboxOnly = AlertAccount(setOf(MailboxRole.Inbox), canSend = false)
+        assertEquals(listOf(MailAction.Mute), listOf(MailAction.Archive, MailAction.Mute).alertButtons(inboxOnly))
+    }
+
+    @Test
     fun noChoiceShowsNoButtons() {
         assertEquals(emptyList(), emptyList<MailAction>().alertButtons(everything))
     }

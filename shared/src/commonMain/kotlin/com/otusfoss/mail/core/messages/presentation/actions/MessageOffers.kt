@@ -35,6 +35,17 @@ internal fun MessageMarks.offer(
     return OfferedAction(flag.label(on), symbol, leaves = false) { set(markable, flag, !on) }
 }
 
+/** Turns [flag] on for the [messages] that lack it and may take it, as a chain does; null when none does. */
+internal fun MessageMarks.offerOn(
+    messages: List<MailMessage>,
+    flag: MessageFlag,
+): OfferedAction? {
+    val lacking = messages.filter { can(it, flag) && !it.hasFlag(flag) }
+    if (lacking.isEmpty()) return null
+    val symbol = if (flag == MessageFlag.Flagged) Res.drawable.symbol_flag else Res.drawable.symbol_mark_email_read
+    return OfferedAction(flag.label(on = false), symbol, leaves = false) { set(lacking, flag, true) }
+}
+
 /** Saves the messages not saved yet; once all are saved, removes them. */
 internal fun MessageActions.offerReadLater(messages: List<MailMessage>): OfferedAction? {
     val changes = messages.mapNotNull(readLater)
@@ -85,12 +96,36 @@ internal fun MessageActions.offerMoveTo(
     messages: List<MailMessage>,
     button: BarButton.MoveTo,
 ): OfferedAction? {
-    val target = { message: MailMessage ->
-        moves.targets(message).firstOrNull { folder -> folder.path?.map { it.lowercase() } == button.key }
-    }
+    val target = { message: MailMessage -> moves.targets(message).at(button.key) }
     val name = messages.firstNotNullOfOrNull(target)?.name ?: return null
     return offerMoves(messages, "Move to $name", name, button, target)
 }
+
+/**
+ * Adds each message to the folder at [button]'s path in its own account and keeps it where it is.
+ * Once every message has the label, the button takes it off instead. With [addOnly], as a chain
+ * runs it, it only ever adds.
+ */
+internal fun MessageActions.offerLabel(
+    messages: List<MailMessage>,
+    button: BarButton.LabelAs,
+    addOnly: Boolean = false,
+): OfferedAction? {
+    val folders = messages.mapNotNull { message -> moves.listed(message).at(button.key)?.let { message to it } }
+    val name = folders.firstOrNull()?.second?.name ?: return null
+    val changes = folders.mapNotNull { (message, folder) -> moves.label(message, folder) }
+    val adding = changes.filter { it.adds }
+    val chosen = if (addOnly) adding else adding.ifEmpty { changes }
+    if (chosen.isEmpty()) return null
+    val label = if (chosen.first().adds) "Label as $name" else "Remove label $name"
+    return OfferedAction(label, button.symbol, chosen.any { it.leaves }, primaryLabel = name) {
+        chosen.forEach { it.apply() }
+    }
+}
+
+/** The folder at the shared folder path [key], which is in lower case. */
+private fun List<MoveTarget>.at(key: List<String>): MoveTarget? =
+    firstOrNull { folder -> folder.path?.map { it.lowercase() } == key }
 
 /** Moves the messages to [folder], such as the one the sender's mail usually goes to. */
 internal fun MessageActions.offerFolder(

@@ -28,30 +28,46 @@ enum class ActionTarget {
 enum class MailAction(
     override val storageValue: String,
     override val target: ActionTarget,
-    val swipeable: Boolean = false,
+    override val swipeable: Boolean = false,
 ) : BarButton {
     Read("read", ActionTarget.Messages, swipeable = true),
     Flag("flag", ActionTarget.Messages, swipeable = true),
     ReadLater("read_later", ActionTarget.Messages, swipeable = true),
     Archive("archive", ActionTarget.Messages, swipeable = true),
     Trash("trash", ActionTarget.Messages, swipeable = true),
-    Spam("spam", ActionTarget.Messages),
+    Spam("spam", ActionTarget.Messages, swipeable = true),
     NotSpam("not_spam", ActionTarget.Messages),
     Restore("restore", ActionTarget.Messages),
     DeleteForever("delete_forever", ActionTarget.Messages),
-    Move("move", ActionTarget.Messages),
+    Move("move", ActionTarget.Messages, swipeable = true),
     SuggestedMove("suggested_move", ActionTarget.Messages),
     RuleForSender("rule_for_sender", ActionTarget.OneMessage),
     Reply("reply", ActionTarget.OneMessage),
     ReplyAll("reply_all", ActionTarget.OneMessage),
     Forward("forward", ActionTarget.OneMessage),
     FollowUp("follow_up", ActionTarget.OneMessage),
+
+    /** Leaves the mailing list the open message came from. */
+    Unsubscribe("unsubscribe", ActionTarget.OneMessage),
+
+    /** Stops alerts for the open message's conversation, or brings them back. */
+    Mute("mute", ActionTarget.OneMessage),
+    BlockSender("block_sender", ActionTarget.OneMessage),
+
+    /** Shows the open message's blocked remote images this time, or hides them again. */
+    ShowImages("show_images", ActionTarget.OneMessage),
     NewMail("new_mail", ActionTarget.Anywhere),
     Search("search", ActionTarget.List),
     Filters("filters", ActionTarget.List),
     MarkAllRead("mark_all_read", ActionTarget.List),
+
+    /** Selects every message the list shows, so the selection's bar can act on them. */
+    SelectAll("select_all", ActionTarget.List),
     EmptyFolder("empty_folder", ActionTarget.List),
     Send("send", ActionTarget.Draft),
+
+    /** Picks when Send has the server send the draft. */
+    ScheduleSend("schedule_send", ActionTarget.Draft),
     Attach("attach", ActionTarget.Draft),
     Discard("discard", ActionTarget.Draft),
     EditScheduled("edit_scheduled", ActionTarget.Scheduled),
@@ -63,20 +79,5 @@ enum class MailAction(
 
     companion object {
         fun fromStorageValue(value: String?): MailAction? = entries.firstOrNull { it.storageValue == value }
-
-        /** A saved swipe: "none" is no action, and a missing or unknown value is [default]. */
-        fun decodeSwipe(
-            value: String?,
-            default: MailAction?,
-        ): MailAction? =
-            when (value) {
-                null -> default
-                NO_SWIPE -> null
-                else -> fromStorageValue(value)?.takeIf { it.swipeable } ?: default
-            }
-
-        fun encodeSwipe(action: MailAction?): String = action?.storageValue ?: NO_SWIPE
-
-        private const val NO_SWIPE = "none"
     }
 }

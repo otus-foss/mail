@@ -2,9 +2,10 @@ package com.otusfoss.mail.feature.inbox.presentation.components
 
 import androidx.compose.runtime.Composable
 import com.otusfoss.mail.core.mailbox.MailboxRole
-import com.otusfoss.mail.core.messages.domain.ComposeRequest
 import com.otusfoss.mail.core.messages.domain.MailMessage
 import com.otusfoss.mail.core.messages.presentation.MessageActions
+import com.otusfoss.mail.core.messages.presentation.actions.ChooseFolder
+import com.otusfoss.mail.feature.inbox.presentation.InboxContext
 import com.otusfoss.mail.feature.inbox.presentation.InboxState
 
 /**
@@ -19,7 +20,7 @@ internal fun inboxBar(
     state: InboxState,
     rows: InboxRows,
     actions: MessageActions?,
-    onCompose: (ComposeRequest) -> Unit,
+    page: InboxContext,
     header: InboxHeaderActions,
 ): (@Composable () -> Unit)? =
     when {
@@ -42,7 +43,15 @@ internal fun inboxBar(
         }
 
         else -> {
-            inboxBarContent(listed, state, actions, header::openFilters, onCompose)
+            val bar =
+                InboxBarActions(
+                    header::openFilters,
+                    header.overlays.filters::update,
+                    rows.selectAll,
+                    page.onCompose,
+                    page.folderPage,
+                )
+            inboxBarContent(listed, state, actions, bar)
         }
     }
 
@@ -58,19 +67,22 @@ private fun inboxBarContent(
     listed: ListedMail,
     state: InboxState,
     actions: MessageActions,
-    onFilters: () -> Unit,
-    onCompose: (ComposeRequest) -> Unit,
-): @Composable () -> Unit = { InboxBar(listed.messages, state, listed.filters, actions, onFilters, onCompose) }
+    page: InboxBarActions,
+): @Composable () -> Unit = { InboxBar(listed, state, actions, page) }
 
-/** Row taps, long presses, and drags: opening marks a message read as the saved behavior asks. */
+/**
+ * Row taps, long presses, drags, and swipes: opening marks a message read as the saved behavior
+ * asks, and a Move swipe picks its folder through [chooseFolder].
+ */
 internal fun rowGestures(
     actions: MessageActions?,
     selected: List<MailMessage>,
+    chooseFolder: ChooseFolder,
     onToggle: (MailMessage) -> Unit,
     onSelect: (Set<String>) -> Unit,
     onOpen: (MailMessage) -> Unit,
 ): RowGestures =
-    RowGestures(actions, selected.map { it.id }.toSet(), onToggle, onSelect) { message ->
+    RowGestures(actions, selected.map { it.id }.toSet(), chooseFolder, onToggle, onSelect) { message ->
         actions?.opened(message)
         onOpen(message)
     }

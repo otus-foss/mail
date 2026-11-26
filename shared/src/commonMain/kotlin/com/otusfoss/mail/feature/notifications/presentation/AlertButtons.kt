@@ -45,8 +45,9 @@ private fun AlertAccount.allows(action: MailAction): Boolean =
 
 /**
  * How an alert's button runs: a [Change] edits the message by id, where the account has the
- * folder it [Change.needs], and Reply opens a draft. Read only marks the message read and Flag only
- * flags it, since an alert is about unread, unflagged mail.
+ * folder it [Change.needs], and Reply opens a draft. Read only marks the message read, Flag only
+ * flags it, and Mute only mutes its conversation, since an alert is about unread, unflagged mail
+ * the user still gets alerts for.
  */
 private sealed interface AlertRun {
     class Change(
@@ -70,12 +71,15 @@ private fun MailAction.alertRun(): AlertRun? =
 
         MailAction.Flag -> AlertRun.Change(needs = null, EmailByIdWriter::flag)
 
+        MailAction.Mute -> AlertRun.Change(needs = null, EmailByIdWriter::mute)
+
         MailAction.Reply -> AlertRun.OpensReply
 
         MailAction.ReadLater, MailAction.NotSpam, MailAction.Restore, MailAction.DeleteForever, MailAction.Move,
         MailAction.SuggestedMove, MailAction.RuleForSender, MailAction.ReplyAll, MailAction.Forward,
         MailAction.FollowUp, MailAction.NewMail, MailAction.Search, MailAction.Filters, MailAction.MarkAllRead,
         MailAction.EmptyFolder, MailAction.Send, MailAction.Attach, MailAction.Discard, MailAction.AllActions,
-        MailAction.EditScheduled, MailAction.SendNow,
+        MailAction.EditScheduled, MailAction.SendNow, MailAction.Unsubscribe, MailAction.BlockSender,
+        MailAction.ShowImages, MailAction.SelectAll, MailAction.ScheduleSend,
         -> null
     }

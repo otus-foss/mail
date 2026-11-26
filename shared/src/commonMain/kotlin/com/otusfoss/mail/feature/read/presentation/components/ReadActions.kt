@@ -9,6 +9,7 @@ import com.otusfoss.mail.core.messages.presentation.actions.ActionSubject
 import com.otusfoss.mail.core.messages.presentation.actions.MailBar
 import com.otusfoss.mail.core.messages.presentation.actions.MoveOptions
 import com.otusfoss.mail.core.messages.presentation.actions.OfferedAction
+import com.otusfoss.mail.core.messages.presentation.actions.PageExtras
 import com.otusfoss.mail.core.messages.presentation.actions.PageSubject
 import com.otusfoss.mail.core.messages.presentation.actions.barFor
 import com.otusfoss.mail.core.messages.presentation.actions.offer
@@ -29,7 +30,10 @@ internal class ReadActions(
     val bar: MailBar?,
 )
 
-/** The Read view's actions, with the bar's big button replying to all of the [page]'s people or to its sender. */
+/**
+ * The Read view's actions, with the bar's big button replying to all of the [page]'s people or to
+ * its sender, and [extras], what only this view can do with the page.
+ */
 @Composable
 internal fun rememberReadActions(
     row: MailMessage,
@@ -37,6 +41,7 @@ internal fun rememberReadActions(
     replies: ReadReplies,
     actions: MessageActions?,
     moveChoice: MoveChoice,
+    extras: PageExtras,
 ): ReadActions {
     val role = actions?.cleanup?.role?.invoke(row)
     val saved = actions?.saved()
@@ -47,7 +52,7 @@ internal fun rememberReadActions(
             actions,
             listOf(row),
             moves = MoveOptions(moveChoice::choose, suggestion),
-            page = PageSubject(page, role, replies.onCompose, replies.scheduled),
+            page = PageSubject(page, role, replies.onCompose, replies.scheduled, extras),
         )
     return ReadActions(
         subject,
