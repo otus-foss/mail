@@ -77,9 +77,14 @@ A row (`data/Conversations.kt`) is the thread's newest email in the shown mailbo
 `MailConversation`. Its count, participants, and newest email leave out drafts and Trash or Junk
 mail unless the list shows that mailbox; Sent mail counts. The row is unread when any of its emails
 in the mailbox is, flagged when any counted email is, and its `mailboxIds` cover the whole thread.
-When several chosen mailboxes hold one thread, their rows merge into one. Marks, moves, Delete, and
-Not spam apply to every email of the row in the shown mailboxes, and Delete decides for each email
-whether it is only in that folder.
+When several chosen mailboxes hold one thread, their rows merge into one, and each member keeps
+the folder and role it was listed in. Marks apply to every listed email of the row. Moves and
+Archive build a patch per email from the folders that email belongs to and act only on emails in
+the folders the action leaves, so emails in Sent, Trash, or Spam stay put when filing from other
+folders, and Restore acts only on emails in Trash. Undo (`moveBack`) restores only the emails the
+move changed to the folders they left. Not spam acts only on emails in Spam. Delete forever removes
+or destroys only emails listed in Trash or Spam, decides per email whether it is only in that
+folder, and refuses to destroy from any other folder.
 
 The list shows each email's `preview`. An open message loads its body with a second `Email/get`
 (`JmapMessageBodies`): the `textBody` and `htmlBody` parts with `fetchAllBodyValues` and values up

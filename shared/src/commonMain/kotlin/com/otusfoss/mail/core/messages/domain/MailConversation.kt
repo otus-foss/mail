@@ -1,5 +1,7 @@
 package com.otusfoss.mail.core.messages.domain
 
+import com.otusfoss.mail.core.mailbox.MailboxRole
+
 /**
  * A JMAP thread as one list row. [members] are its emails in the shown mailboxes, the row email
  * first. Actions on the row apply to every member, so the whole conversation leaves or changes.
@@ -61,14 +63,15 @@ data class ThreadEmail(
 
 /**
  * One email of a conversation row. [mailboxIds] are all of its mailboxes; [mailboxId] is the shown
- * mailbox it was listed in, which Delete and Not spam take it out of. [flags] are the marks the
- * email itself has, so Undo can set each email back to its own mark.
+ * mailbox it was listed in, with role [mailboxRole], which filing, Delete, and Not spam check.
+ * [flags] are the marks the email itself has, so Undo can set each email back to its own mark.
  */
 data class ThreadMember(
     val emailId: String,
     val mailboxIds: Set<String>,
     val mailboxId: String = "",
     val flags: Set<MessageFlag> = emptySet(),
+    val mailboxRole: MailboxRole? = null,
 )
 
 internal fun ThreadMember.withFlag(
