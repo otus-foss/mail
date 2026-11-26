@@ -38,7 +38,7 @@ Inbox node: `19:386`.
   The detached row has no extra top gap; its touch padding leaves a 6 dp visual gap below the header.
   Pills have minimum 48 dp touch targets. The row is therefore taller than Figma's 29 px
   visual-only row; neighboring interactive targets do not overlap.
-- Figtree is bundled for panel text; existing global typography remains unchanged.
+- Panel text uses the font chosen in Appearance › Font, the system font by default.
 - The Figma fade contains `#353637`, outside the approved palette. It is replaced with an alpha fade.
 - The panel sizes to its content and does not preserve the inbox frame's unused 278 px height.
 - Inbox/search mode changes keep one panel surface. Its lower edge expands and contracts over

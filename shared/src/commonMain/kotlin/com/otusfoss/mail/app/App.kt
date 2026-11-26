@@ -35,6 +35,7 @@ import com.otusfoss.core.designsystem.theme.motion.LocalMotionScale
 import com.otusfoss.core.settings.presentation.AnimationSettingsState
 import com.otusfoss.core.settings.presentation.AppIconSettingsState
 import com.otusfoss.core.settings.presentation.DateFormatSettingsState
+import com.otusfoss.core.settings.presentation.FontSettingsState
 import com.otusfoss.core.settings.presentation.ThemeSettingsState
 import com.otusfoss.core.settings.presentation.components.LocalDateFormatter
 import com.otusfoss.core.settings.presentation.components.rememberDateFormatter
@@ -66,6 +67,7 @@ fun App(
     // Null where the platform cannot switch its icon; the launch animation then uses the accent.
     appIconState: AppIconSettingsState? = null,
     build: InstalledBuild? = null,
+    fontState: FontSettingsState = remember { FontSettingsState(inMemoryChoice()) },
 ) {
     val dateFormatter = rememberDateFormatter(dateFormatState)
     val currentDates = rememberUpdatedState(dateFormatter)
@@ -79,13 +81,13 @@ fun App(
     var updateOpen by rememberSaveable { mutableStateOf(false) }
     // Each page keeps its own saved state, such as an inbox search, while another page is shown.
     val pages = rememberSaveableStateHolder()
-    val settings = rememberSharedSettings(dateFormatState, themeState, animationState, appIconState)
+    val settings = rememberSharedSettings(dateFormatState, themeState, animationState, fontState, appIconState)
     val navigation = rememberMailNavigation({ page = it }) { scope.launch { sidebar.open() } }
     AppEffects(services, states, behaviorState, start, navigation, current = { page }) { page = it }
     val onboarding = rememberOnboarding(states, behaviorState)
     // A launch that may open on the first run plays no launch animation over it.
     val firstRun = remember(behaviorState) { !behaviorState.behavior.onboarded }
-    AppTheme(themeState, animationState, dateFormatter) {
+    AppTheme(themeState, fontState, animationState, dateFormatter) {
         Box(Modifier.fillMaxSize()) {
             if (onboarding) {
                 // Another account is added where accounts live, not by running the setup again.
@@ -144,15 +146,16 @@ private fun rememberMailStates(
     }
 }
 
-/** The theme, motion speed, date format, and bottom clearance every page reads. */
+/** The theme, font, motion speed, date format, and bottom clearance every page reads. */
 @Composable
 private fun AppTheme(
     themeState: ThemeSettingsState,
+    fontState: FontSettingsState,
     animationState: AnimationSettingsState,
     dateFormatter: DateFormatter,
     content: @Composable () -> Unit,
 ) {
-    OtusTheme(themeState.palette) {
+    OtusTheme(themeState.palette, fontState.font) {
         CompositionLocalProvider(
             LocalMotionScale provides animationState.speed.scale,
             LocalDateFormatter provides dateFormatter,

@@ -49,6 +49,7 @@ internal fun SharedSettings.mailAppearance(
         dateFormat,
         theme,
         animation,
+        font,
         openTheme,
         look = listOfNotNull(appIcon?.let { appIconRow(it) { style -> MailAppIcon(style) } }, mailList),
     )

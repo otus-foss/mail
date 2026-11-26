@@ -20,6 +20,7 @@ import com.otusfoss.core.designsystem.theme.colors.systemTheme
 import com.otusfoss.core.settings.presentation.AnimationSettingsState
 import com.otusfoss.core.settings.presentation.AppIconSettingsState
 import com.otusfoss.core.settings.presentation.DateFormatSettingsState
+import com.otusfoss.core.settings.presentation.FontSettingsState
 import com.otusfoss.core.settings.presentation.ThemeSettingsState
 import com.otusfoss.mail.app.App
 import com.otusfoss.mail.app.IncognitoKeyboard
@@ -61,6 +62,7 @@ class MainActivity : ComponentActivity() {
                 .toDrawable(),
         )
         val animationState = AnimationSettingsState(animationChoice())
+        val fontState = FontSettingsState(fontChoice())
         val build =
             InstalledBuild(
                 ReleaseChannel.valueOf(BuildConfig.CHANNEL),
@@ -81,7 +83,16 @@ class MainActivity : ComponentActivity() {
             SideEffect { keepScreenPrivate(secure) }
             IncognitoKeyboard(behaviorState.behavior.privacy.incognitoKeyboard) {
                 CompositionLocalProvider(LocalAllowNotifications provides notificationRequest()) {
-                    App(dateFormatState, services, behaviorState, themeState, animationState, appIconState, build)
+                    App(
+                        dateFormatState,
+                        services,
+                        behaviorState,
+                        themeState,
+                        animationState,
+                        appIconState,
+                        build,
+                        fontState,
+                    )
                 }
             }
         }

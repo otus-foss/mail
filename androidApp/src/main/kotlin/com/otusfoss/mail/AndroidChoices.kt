@@ -12,5 +12,7 @@ fun Context.appIconChoice(): StoredChoice = StoredChoice(SharedPreferenceValues(
 
 fun Context.animationChoice(): StoredChoice = StoredChoice(SharedPreferenceValues(this, "otus_animation"), "speed")
 
+fun Context.fontChoice(): StoredChoice = StoredChoice(SharedPreferenceValues(this, "otus_font"), "font")
+
 fun Context.dateFormatChoice(): StoredChoice =
     StoredChoice(SharedPreferenceValues(this, "otus_date_format"), "date_format")

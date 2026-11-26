@@ -8,8 +8,9 @@ Icons use the upstream default weight, unfilled, 24 px optical size, displayed i
 - License: Apache 2.0, bundled as `material_symbols_LICENSE.txt`.
 - Icons: chevron_left, search, notifications, person, calendar_add_on, inbox, alternate_email, filter_list, attach_file, close, mark_email_unread, settings, chevron_right, tune, unfold_more, folder, create_new_folder, send, draft, delete, archive, report, edit, drive_file_move, rule_folder, add, arrow_upward, arrow_downward.
 
-Figtree Regular is used by the context panel elements, matching the Figma typography. It ships in
-the shared design system (`com.otusfoss.core:designsystem`) with its SIL Open Font License, together with
+Text uses the system font by default; Appearance › Font switches it to Google Sans or Figtree, each
+regular or rounded. Figma uses Figtree. The fonts ship in the shared design system
+(`com.otusfoss.core:designsystem`) with their SIL Open Font Licenses, together with
 the close, chevron_left, and search icons the shared components use. Mail keeps its own copies of
 those three icons for its screens.
 

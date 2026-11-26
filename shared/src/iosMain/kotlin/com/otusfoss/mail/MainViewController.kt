@@ -3,6 +3,7 @@ package com.otusfoss.mail
 import androidx.compose.ui.window.ComposeUIViewController
 import com.otusfoss.core.settings.presentation.AnimationSettingsState
 import com.otusfoss.core.settings.presentation.DateFormatSettingsState
+import com.otusfoss.core.settings.presentation.FontSettingsState
 import com.otusfoss.core.settings.presentation.ThemeSettingsState
 import com.otusfoss.mail.app.App
 import com.otusfoss.mail.app.trimCache
@@ -20,5 +21,8 @@ fun mainViewController(push: IosPushRuntime? = null) =
         val behaviorState = iosMailBehavior
         val themeState = ThemeSettingsState(themeChoice())
         val animationState = AnimationSettingsState(animationChoice())
-        ComposeUIViewController { App(dateFormatState, services, behaviorState, themeState, animationState) }
+        val fontState = FontSettingsState(fontChoice())
+        ComposeUIViewController {
+            App(dateFormatState, services, behaviorState, themeState, animationState, fontState = fontState)
+        }
     }
