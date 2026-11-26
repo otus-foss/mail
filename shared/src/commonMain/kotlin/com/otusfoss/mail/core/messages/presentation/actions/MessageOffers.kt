@@ -5,18 +5,12 @@ import com.otusfoss.core.designsystem.resources.symbol_bookmark
 import com.otusfoss.core.designsystem.resources.symbol_flag
 import com.otusfoss.core.designsystem.resources.symbol_mark_email_read
 import com.otusfoss.core.designsystem.resources.symbol_mark_email_unread
-import com.otusfoss.mail.core.mailbox.MailboxRole
-import com.otusfoss.mail.core.messages.domain.BarButton
 import com.otusfoss.mail.core.messages.domain.MailAction
 import com.otusfoss.mail.core.messages.domain.MailMessage
 import com.otusfoss.mail.core.messages.domain.MessageFlag
 import com.otusfoss.mail.core.messages.domain.hasFlag
 import com.otusfoss.mail.core.messages.presentation.MessageActions
 import com.otusfoss.mail.core.messages.presentation.MessageMarks
-import com.otusfoss.mail.core.messages.presentation.MoveTarget
-
-/** Opens the Move to sheet for some messages, offering the targets every one of them can move to. */
-internal typealias ChooseFolder = (messages: List<MailMessage>, targets: List<MoveTarget>) -> Unit
 
 /** Turns [flag] on for all [messages] while any lacks it, and off otherwise. */
 internal fun MessageMarks.offer(
@@ -35,6 +29,17 @@ internal fun MessageMarks.offer(
     return OfferedAction(flag.label(on), symbol, leaves = false) { set(markable, flag, !on) }
 }
 
+/** Turns [flag] on for the [messages] that lack it and may take it, as a chain does; null when none does. */
+internal fun MessageMarks.offerOn(
+    messages: List<MailMessage>,
+    flag: MessageFlag,
+): OfferedAction? {
+    val lacking = messages.filter { can(it, flag) && !it.hasFlag(flag) }
+    if (lacking.isEmpty()) return null
+    val symbol = if (flag == MessageFlag.Flagged) Res.drawable.symbol_flag else Res.drawable.symbol_mark_email_read
+    return OfferedAction(flag.label(on = false), symbol, leaves = false) { set(lacking, flag, true) }
+}
+
 /** Saves the messages not saved yet; once all are saved, removes them. */
 internal fun MessageActions.offerReadLater(messages: List<MailMessage>): OfferedAction? {
     val changes = messages.mapNotNull(readLater)
@@ -49,72 +54,3 @@ internal fun MessageActions.offerRule(messages: List<MailMessage>): OfferedActio
     messages.singleOrNull()?.let(ruleForSender)?.let { start ->
         OfferedAction(MailAction.RuleForSender.label, MailAction.RuleForSender.symbol, leaves = true, run = start)
     }
-
-/**
- * Files each message into its account's [shortcut] folder, skipping those already there or without
- * one. The offer carries [action]'s name, so the Trash action reads Delete.
- */
-internal fun MessageActions.offerFiling(
-    messages: List<MailMessage>,
-    shortcut: MailboxRole,
-    action: BarButton,
-): OfferedAction? = offerMoves(messages, action.label, action.label, action) { shortcutTarget(it, shortcut) }
-
-/** Opens the Move to sheet with the folders every message can move to, all from one account. */
-internal fun MessageActions.offerMove(
-    messages: List<MailMessage>,
-    chooseFolder: ChooseFolder,
-): OfferedAction? {
-    val oneAccount = messages.distinctBy { it.location.accountId }.size == 1
-    val targets =
-        if (oneAccount) {
-            messages
-                .map { moves.targets(it) }
-                .reduce { common, next -> common.filter { target -> next.any { it.folderId == target.folderId } } }
-        } else {
-            emptyList()
-        }
-    if (targets.isEmpty()) return null
-    return OfferedAction(MailAction.Move.label, MailAction.Move.symbol, leaves = false, asks = true) {
-        chooseFolder(messages, targets)
-    }
-}
-
-/** Moves each message to the folder at [button]'s path in its own account, where it has one. */
-internal fun MessageActions.offerMoveTo(
-    messages: List<MailMessage>,
-    button: BarButton.MoveTo,
-): OfferedAction? {
-    val target = { message: MailMessage ->
-        moves.targets(message).firstOrNull { folder -> folder.path?.map { it.lowercase() } == button.key }
-    }
-    val name = messages.firstNotNullOfOrNull(target)?.name ?: return null
-    return offerMoves(messages, "Move to $name", name, button, target)
-}
-
-/** Moves messages of [folder]'s account to [folder], such as the one the sender's mail usually goes to. */
-internal fun MessageActions.offerFolder(
-    messages: List<MailMessage>,
-    folder: MoveTarget,
-): OfferedAction? {
-    val accountId = folder.accountId ?: messages.firstOrNull()?.location?.accountId ?: return null
-    return offerMoves(messages, "Move to ${folder.name}", folder.name, MailAction.SuggestedMove) { message ->
-        if (message.location.accountId != accountId) return@offerMoves null
-        moves.targets(message).firstOrNull { it.folderId == folder.folderId }
-    }
-}
-
-/** Moves each message to its [target]; null when none has one. The main button shows [primaryLabel]. */
-private fun MessageActions.offerMoves(
-    messages: List<MailMessage>,
-    label: String,
-    primaryLabel: String,
-    button: BarButton,
-    target: (MailMessage) -> MoveTarget?,
-): OfferedAction? {
-    val moving = messages.mapNotNull { message -> target(message)?.let { message to it } }
-    if (moving.isEmpty()) return null
-    return OfferedAction(label, button.symbol, leaves = true, primaryLabel = primaryLabel) {
-        moving.forEach { (message, folder) -> moves.onMove(message, folder) }
-    }
-}

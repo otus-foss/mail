@@ -59,9 +59,9 @@ private fun ActionBarLayout.following(reply: MailAction): ActionBarLayout {
     return copy(primary = reply, secondary = secondary.map { if (it == reply) old else it })
 }
 
-/** The swipe that runs [action] on what [subject] holds; null when there is none or it cannot take it. */
-internal fun ActionSubject.swipe(action: MailAction?): SwipeAction? =
-    action
+/** The swipe that runs [button] on what this subject holds; null when there is none or it cannot take it. */
+internal fun ActionSubject.swipe(button: BarButton?): SwipeAction? =
+    button
         ?.takeIf { it.swipeable }
         ?.let(::offer)
         ?.let { SwipeAction(UiAction(it.label, it.symbol, onClick = it.run), dismisses = it.leaves) }

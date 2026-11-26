@@ -12,6 +12,7 @@ import com.otusfoss.mail.core.messages.domain.MessageFlag
 import com.otusfoss.mail.core.messages.domain.RowFolder
 import com.otusfoss.mail.core.messages.domain.leavingFolders
 import com.otusfoss.mail.core.messages.presentation.EditedList
+import com.otusfoss.mail.core.messages.presentation.LabelChange
 import com.otusfoss.mail.core.messages.presentation.MailEdits
 import com.otusfoss.mail.core.messages.presentation.MoveTarget
 import com.otusfoss.mail.core.messages.presentation.ReadLaterChange
@@ -98,14 +99,14 @@ internal class MessageFiling(
         feed: EditedList,
         message: MailMessage,
         target: MoveTarget,
-    ) = edits.moveWithUndo(feed, message, target, leaving(message, target.shortcut))
+    ) = edits.moveWithUndo(feed, message, target, folders.leaving(message, target.shortcut))
 
     /** Undoes a move of [message] to [target]; see [MailEdits.moveBack]. */
     suspend fun moveBack(
         feed: EditedList,
         message: MailMessage,
         target: MoveTarget,
-    ) = edits.moveBack(feed, message, target, leaving(message, target.shortcut))
+    ) = edits.moveBack(feed, message, target, folders.leaving(message, target.shortcut))
 
     /** Read later for a loaded message shown in [feed]; supplied messages have no server id. */
     fun readLater(
@@ -128,6 +129,30 @@ internal class MessageFiling(
         }
     }
 
+    /**
+     * [target] as a label of a loaded message shown in [feed]: the message gains the folder and
+     * keeps its others, or loses it. It gains none once the server's limit of folders for one
+     * message is reached, and keeps its last folder (RFC 8621, section 4.1.1).
+     */
+    fun label(
+        feed: EditedList,
+        message: MailMessage,
+        target: MoveTarget,
+    ): LabelChange? {
+        val account = folders.account(message.location.accountId)
+        if (account == null || message.emailId.isEmpty()) return null
+        val shown = message.location.mailboxId
+        val folderIds = message.location.mailboxIds.ifEmpty { setOf(shown) }
+        val labeled = target.folderId in folderIds
+        val leaves = labeled && shown == target.folderId
+        val removable = account.folder(target.folderId)?.rights?.mayRemoveItems != false
+        val room = account.limits.maxFoldersPerMessage?.let { folderIds.size < it } ?: true
+        val allowed = if (labeled) removable && (folderIds - target.folderId).isNotEmpty() else room
+        return LabelChange(adds = !labeled, leaves) {
+            edits.setInFolder(feed, message, target.folderId, target.name, saved = !labeled, leaves)
+        }.takeIf { allowed }
+    }
+
     private fun setReadLater(
         feed: EditedList,
         message: MailMessage,
@@ -142,17 +167,7 @@ internal class MessageFiling(
         message: MailMessage,
         target: MoveTarget,
     ) {
-        edits.move(feed, message, target, leaving(message, target.shortcut))
-    }
-
-    private fun leaving(
-        message: MailMessage,
-        shortcut: MailboxRole?,
-    ): Set<String> {
-        val account = folders.account(message.location.accountId)
-        return message.leavingFolders(shortcut, account?.inbox?.id) { folderId ->
-            folders.folder(message.location.accountId, folderId)?.role
-        }
+        edits.move(feed, message, target, folders.leaving(message, target.shortcut))
     }
 }
 
@@ -190,6 +205,15 @@ internal fun FoldersState.mayMark(
             MessageFlag.Read -> rightsOf(message).maySetSeen
             MessageFlag.Flagged -> rightsOf(message).maySetKeywords
         }
+
+/** The folders [message] leaves when filed by [shortcut]; see [leavingFolders]. */
+private fun FoldersState.leaving(
+    message: MailMessage,
+    shortcut: MailboxRole?,
+): Set<String> =
+    message.leavingFolders(shortcut, account(message.location.accountId)?.inbox?.id) { folderId ->
+        folder(message.location.accountId, folderId)?.role
+    }
 
 /** The system folders one action files a message into. */
 private val SHORTCUTS = setOf(MailboxRole.Inbox, MailboxRole.Archive, MailboxRole.Junk, MailboxRole.Trash)

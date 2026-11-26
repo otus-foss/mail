@@ -59,7 +59,12 @@ class ComposeActionsTest {
     ) {
         val messageActions =
             MessageActions(
-                moves = MessageMoves(targets = { emptyList() }, onMove = { _, _ -> }, suggested = { null }) { null },
+                moves =
+                    MessageMoves(targets = { emptyList() }, onMove = {
+                        _,
+                        _,
+                        ->
+                    }, suggested = { null }, futureSorting = { null }),
                 marks = MessageMarks(can = { _, _ -> false }, set = { _, _, _ -> }),
                 ruleForSender = { null },
                 readLater = { null },

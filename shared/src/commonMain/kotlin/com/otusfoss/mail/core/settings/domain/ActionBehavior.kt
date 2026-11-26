@@ -4,33 +4,40 @@ import com.otusfoss.mail.core.messages.domain.ActionBarLayout
 import com.otusfoss.mail.core.messages.domain.ActionBarMode
 import com.otusfoss.mail.core.messages.domain.ActionBarPlace
 import com.otusfoss.mail.core.messages.domain.BarButton
+import com.otusfoss.mail.core.messages.domain.ListFilter
 import com.otusfoss.mail.core.messages.domain.MailAction
+import com.otusfoss.mail.core.messages.domain.QuickFacet
 
 /**
  * Where actions show up. Swipes are named by layout direction: [startToEnd] is a swipe right in
- * left-to-right languages, and a null swipe does nothing. [bars] holds each place's bar, and
+ * left-to-right languages, and a null swipe does nothing. A swipe can also be a Move to button for
+ * one folder. [bars] holds each place's bar, and
  * [barMode] picks whether places use their own or the Everywhere bar. A [minimizedBar] shows only
  * its primary, as a round button. [notificationActions] are the buttons, in order, that new-mail
  * alerts offer where the account can run them; see `alertButtons`. Read later is offered only
  * while it is on, which the choices take as `readLater`.
  */
 data class ActionBehavior(
-    val startToEnd: MailAction? = MailAction.Read,
-    val endToStart: MailAction? = MailAction.Trash,
+    val startToEnd: BarButton? = MailAction.Read,
+    val endToStart: BarButton? = MailAction.Trash,
     val bars: Map<ActionBarPlace, ActionBarLayout> = ActionBarPlace.entries.associateWith { it.defaultLayout },
     val barMode: ActionBarMode = ActionBarMode.Adaptive,
     val minimizedBar: Boolean = false,
     val notificationActions: List<MailAction> = DefaultNotificationActions,
 ) {
-    /** What a swipe can be set to besides nothing. */
+    /** The plain actions a swipe can be set to, besides nothing and a Move to button. */
     fun swipeChoices(readLater: Boolean): List<MailAction> =
         MailAction.entries.filter { it.swipeable && offers(it, readLater) }
 
-    /** What a bar slot at [place] can hold. */
+    /** The plain actions a bar slot at [place] can hold. */
     fun barChoices(
         place: ActionBarPlace,
         readLater: Boolean,
     ): List<MailAction> = place.actions.filter { offers(it, readLater) }
+
+    /** The filters a Filter button can turn on and off. */
+    fun filterChoices(readLater: Boolean): List<ListFilter> =
+        ListFilter.all.filter { offers(BarButton.Filter(it), readLater) }
 
     /** The layout [place] shows: its own in Adaptive mode, the Everywhere one in Fixed mode. */
     fun barLayout(place: ActionBarPlace): ActionBarLayout =
@@ -57,5 +64,9 @@ data class ActionBehavior(
     private fun offers(
         button: BarButton,
         readLater: Boolean,
-    ): Boolean = readLater || button != MailAction.ReadLater
+    ): Boolean = readLater || button !in READ_LATER_BUTTONS
 }
+
+/** The buttons that need Read later on. */
+private val READ_LATER_BUTTONS =
+    setOf(MailAction.ReadLater, BarButton.Filter(ListFilter.Quick(QuickFacet.ReadLater)))

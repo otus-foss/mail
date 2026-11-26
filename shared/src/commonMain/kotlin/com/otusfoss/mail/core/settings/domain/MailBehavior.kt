@@ -1,5 +1,6 @@
 package com.otusfoss.mail.core.settings.domain
 
+import com.otusfoss.mail.core.messages.domain.BarButton
 import com.otusfoss.mail.core.messages.domain.MailAction
 
 /**
@@ -30,7 +31,7 @@ data class MailBehavior(
     fun withReadLater(on: Boolean): MailBehavior {
         val defaults = ActionBehavior()
 
-        fun MailAction?.orDefault(default: MailAction?) = if (!on && this == MailAction.ReadLater) default else this
+        fun BarButton?.orDefault(default: BarButton?) = if (!on && this == MailAction.ReadLater) default else this
         return copy(
             readLater = on,
             list =

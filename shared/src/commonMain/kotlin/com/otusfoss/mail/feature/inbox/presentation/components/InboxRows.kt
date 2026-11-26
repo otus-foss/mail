@@ -13,13 +13,19 @@ import androidx.navigationevent.compose.rememberNavigationEventState
 import com.otusfoss.mail.core.mailbox.MailboxRole
 import com.otusfoss.mail.core.messages.domain.MailMessage
 import com.otusfoss.mail.core.messages.presentation.MessageActions
+import com.otusfoss.mail.core.messages.presentation.components.MoveChoice
+import com.otusfoss.mail.core.messages.presentation.components.rememberMoveChoice
 import com.otusfoss.mail.feature.inbox.presentation.OpenRequest
 
-/** The open message, the selected rows, and the row gestures that change them; [selectAll] selects the rows given. */
+/**
+ * The open message, the selected rows, and the row gestures that change them; [selectAll] selects
+ * the rows given. [moveChoice] is the Move to sheet a row's Move swipe opens.
+ */
 internal class InboxRows(
     val opened: MailMessage?,
     val selected: List<MailMessage>,
     val gestures: RowGestures,
+    val moveChoice: MoveChoice,
     val clearSelection: () -> Unit,
     val selectAll: (List<MailMessage>) -> Unit,
     val close: () -> Unit,
@@ -53,10 +59,12 @@ internal fun rememberInboxRows(
         openId = request.id
         request.taken()
     }
+    val moveChoice = rememberMoveChoice {}
     val gestures =
         rowGestures(
             actions,
             selected,
+            moveChoice::choose,
             onToggle = { if (actions.selects()) selectedIds = selectedIds.toggled(it.id) },
             onSelect = { if (actions.selects()) selectedIds = it.toList() },
         ) { if (it.attributes.draft) openDraft(it) else openId = it.id }
@@ -64,6 +72,7 @@ internal fun rememberInboxRows(
         messages.firstOrNull { it.id == openId },
         selected,
         gestures,
+        moveChoice,
         clearSelection,
         selectAll = { rows -> selectedIds = rows.map { it.id } },
     ) { openId = null }

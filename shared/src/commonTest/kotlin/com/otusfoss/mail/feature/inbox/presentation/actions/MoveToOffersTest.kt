@@ -1,5 +1,6 @@
 package com.otusfoss.mail.feature.inbox.presentation.actions
 
+import com.otusfoss.mail.core.mailbox.MailboxRole
 import com.otusfoss.mail.core.messages.domain.BarButton.MoveTo
 import com.otusfoss.mail.core.messages.domain.MailAction
 import com.otusfoss.mail.core.messages.domain.MailMessage
@@ -62,6 +63,13 @@ class MoveToOffersTest {
         assertEquals("Acme", offered.primaryLabel)
         offered.run()
         assertEquals(listOf("1" to "ada-a"), moved)
+    }
+
+    @Test
+    fun mailWaitingInScheduledStaysWhereItIs() {
+        val inbox = offerMessage("1")
+        val waiting = inbox.copy(location = inbox.location.copy(mailboxRole = MailboxRole.Scheduled))
+        assertNull(offer(listOf(waiting), MoveTo(listOf("receipts"))), "Moving it would leave its send running")
     }
 
     @Test

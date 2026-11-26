@@ -2,7 +2,6 @@ package com.otusfoss.mail.feature.read.presentation.components
 
 import com.otusfoss.core.designsystem.resources.Res
 import com.otusfoss.core.designsystem.resources.symbol_all_inbox
-import com.otusfoss.core.designsystem.resources.symbol_block
 import com.otusfoss.core.designsystem.resources.symbol_delete
 import com.otusfoss.core.designsystem.resources.symbol_group
 import com.otusfoss.core.designsystem.resources.symbol_info
@@ -12,14 +11,12 @@ import com.otusfoss.core.designsystem.resources.symbol_person_add
 import com.otusfoss.core.designsystem.resources.symbol_print
 import com.otusfoss.core.designsystem.resources.symbol_verified_user
 import com.otusfoss.core.designsystem.shared.controls.elements.UiAction
-import com.otusfoss.core.designsystem.shared.feedback.components.ToastMessage
 import com.otusfoss.core.designsystem.shared.overlays.components.OptionsItem
 import com.otusfoss.mail.core.categories.presentation.label
 import com.otusfoss.mail.core.mailbox.MailboxRole
 import com.otusfoss.mail.core.messages.domain.MailAction
 import com.otusfoss.mail.core.messages.domain.MailMessage
 import com.otusfoss.mail.core.messages.domain.MessageContent
-import com.otusfoss.mail.core.messages.domain.shownName
 import com.otusfoss.mail.core.messages.presentation.MessageMarks
 import com.otusfoss.mail.core.messages.presentation.actions.ActionSubject
 import com.otusfoss.mail.core.messages.presentation.actions.OfferedAction
@@ -119,10 +116,6 @@ internal class ReadMenuActions(
                 }
             }
 
-            ReadMenuEntry.BlockSender -> {
-                blocks?.let { action("Block sender", Res.drawable.symbol_block, run = ::block) }
-            }
-
             is ReadMenuEntry.Mute -> {
                 mute(entry)
             }
@@ -161,9 +154,9 @@ internal class ReadMenuActions(
         }
 
     private fun mute(entry: ReadMenuEntry.Mute): OptionsItem? =
-        state.muted?.takeIf { edits != null }?.let {
+        subject.page?.extras?.mute?.let { switch ->
             OptionsItem.Toggle("Mute conversation", Res.drawable.symbol_notifications_off, entry.on) {
-                mute(!entry.on)
+                switch.set(!entry.on)
             }
         }
 
@@ -180,27 +173,6 @@ internal class ReadMenuActions(
 
     private fun offer(action: MailAction): OfferedAction? =
         if (action == MailAction.Read || action == MailAction.Flag) pageSubject.offer(action) else subject.offer(action)
-
-    private fun block() {
-        val senderBlocks = blocks ?: return
-        val name = page.sender.shownName
-        read.effects.launch {
-            val blocked = senderBlocks.block(page)
-            val text = if (blocked) "Mail from $name now goes to Spam" else "Couldn't block $name. Try again."
-            read.effects.toasts.show(ToastMessage(text))
-        }
-    }
-
-    private fun mute(on: Boolean) {
-        val edits = edits ?: return
-        state.muted = on
-        read.effects.launch {
-            if (!edits.setMuted(row, on)) {
-                state.muted = !on
-                read.effects.toasts.show(ToastMessage("Couldn't change mute. Try again."))
-            }
-        }
-    }
 }
 
 private fun action(

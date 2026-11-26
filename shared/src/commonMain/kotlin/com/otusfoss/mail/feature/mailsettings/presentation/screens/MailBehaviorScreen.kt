@@ -9,23 +9,25 @@ import com.otusfoss.mail.core.settings.presentation.FolderPillOption
 import com.otusfoss.mail.core.settings.presentation.MailBehaviorState
 import com.otusfoss.mail.core.settings.presentation.SidebarPinOption
 import com.otusfoss.mail.feature.mailsettings.presentation.components.BehaviorPages
+import com.otusfoss.mail.feature.mailsettings.presentation.components.FolderOption
 import com.otusfoss.mail.feature.mailsettings.presentation.components.mailBehaviorSettings
 
 /**
  * Settings › Mail behavior, as [mailBehaviorSettings] lists it; [pages] open the pages its rows
- * lead to.
+ * lead to, and a swipe can move mail to one of [moveFolders].
  */
 @Composable
 fun MailBehaviorScreen(
     state: MailBehaviorState,
     folderPills: List<FolderPillOption>,
     startPages: List<SidebarPinOption>,
+    moveFolders: List<FolderOption>,
     pages: BehaviorPages,
     onBack: () -> Unit,
 ) {
     val rtl = LocalLayoutDirection.current == LayoutDirection.Rtl
     Subpage(MAIL_BEHAVIOR_TITLE, onBack) {
-        SettingSections(mailBehaviorSettings(state, folderPills, startPages, rtl, pages))
+        SettingSections(mailBehaviorSettings(state, folderPills, startPages, rtl, pages, moveFolders))
     }
 }
 

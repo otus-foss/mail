@@ -26,7 +26,8 @@ import com.otusfoss.mail.feature.mailsettings.presentation.inboxSummary
  * Inbox lists, its pills, and its categories, Panels the start page, the sidebar, and the filter
  * panel, then Actions, Reading, and Writing. [folderPills] are the folder pills the accounts'
  * folders can fill, [startPages] the sidebar mailboxes Mail can open on, and [rtl] names the swipes
- * by their physical direction. Each change is saved at once.
+ * by their physical direction. [moveFolders] are the folders a swipe can move mail to, each with
+ * its icon color name; search, which only lists the rows, passes none. Each change is saved at once.
  */
 fun mailBehaviorSettings(
     state: MailBehaviorState,
@@ -34,11 +35,12 @@ fun mailBehaviorSettings(
     startPages: List<SidebarPinOption>,
     rtl: Boolean,
     pages: BehaviorPages,
+    moveFolders: List<FolderOption> = emptyList(),
 ): List<SettingsSectionSpec> =
     listOf(
         SettingsSectionSpec("Inbox", inboxRows(state, folderPills)),
         SettingsSectionSpec("Panels", panelRows(state, startPages, pages)),
-        SettingsSectionSpec("Actions", actionRows(state, rtl, pages.actionBar)),
+        SettingsSectionSpec("Actions", actionRows(state, rtl, moveFolders, pages.actionBar)),
         SettingsSectionSpec("Reading", readingRows(state)),
         SettingsSectionSpec("Writing", writingRows(state, pages.signatures)),
     )

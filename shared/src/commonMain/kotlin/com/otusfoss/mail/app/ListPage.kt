@@ -3,6 +3,7 @@ package com.otusfoss.mail.app
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import com.otusfoss.core.dateformat.DateFormatter
+import com.otusfoss.mail.core.mailbox.sharedFolders
 import com.otusfoss.mail.core.messages.domain.MailLocation
 import com.otusfoss.mail.core.messages.domain.inScope
 import com.otusfoss.mail.feature.folders.presentation.components.rememberFolderNudge
@@ -81,6 +82,7 @@ internal fun ListPage(
                         labeled,
                     ),
                 onLoadMore = feed::loadMore,
+                folderPage = rememberFolderPage(states, navigation),
                 scope = states.scopeSwitch(states.mailScope, states.chooseScope),
                 quick = rememberQuickView(states, page, navigation),
                 opening = opening,
@@ -145,4 +147,18 @@ private fun rememberQuickView(
             QuickJumpTarget(mailbox.title, mailbox.icon) { navigation.go(launchPage(mailbox.pin)) }
         },
     )
+}
+
+/**
+ * Opens the page of the shared folder at a lower-case path, as its sidebar entry does; null while
+ * no account has that folder.
+ */
+@Composable
+private fun rememberFolderPage(
+    states: MailStates,
+    navigation: MailNavigation,
+): (List<String>) -> (() -> Unit)? {
+    val accounts = states.folders.all.accounts
+    val keys = remember(accounts) { sharedFolders(accounts).flatMap { it.flatten() }.map { it.key }.toSet() }
+    return { key -> { navigation.go(MailPage.Shared(key)) }.takeIf { key in keys } }
 }

@@ -21,15 +21,15 @@ import com.otusfoss.core.designsystem.shared.settings.components.PreviewCard
 import com.otusfoss.core.designsystem.theme.tokens.overlays.SheetTokens
 import com.otusfoss.mail.core.messages.domain.ActionBarLayout
 import com.otusfoss.mail.core.messages.domain.ActionBarPlace
-import com.otusfoss.mail.core.messages.domain.BarButton
 import com.otusfoss.mail.core.messages.domain.BarSlot
 import com.otusfoss.mail.core.messages.presentation.components.RowTextInset
+import com.otusfoss.mail.core.settings.domain.MailBehavior
 import com.otusfoss.mail.core.settings.presentation.MailBehaviorState
 import com.otusfoss.mail.core.settings.presentation.icon
 
 /**
  * Edits [place]'s bar, saving each change at once. Tapping a button in the preview, or the Add
- * button after the last one, opens [ActionPickerSheet] for that slot. Its Move to buttons pick among
+ * button after the last one, opens [ActionPickerSheet] for that slot. Its folder buttons pick among
  * [folders], the paths of every account's own folders, each icon in its [folderColor]. The copy
  * button opposite Done closes the sheet and runs [onCopy].
  */
@@ -71,11 +71,7 @@ internal fun ActionBarEditSheet(
     ActionPickerSheet(
         slot,
         layout,
-        // An empty slot takes only what the bar lacks; a filled one can trade with any button.
-        behavior.actions
-            .barChoices(place, behavior.readLater)
-            .filter { layout.actionAt(slot) != null || layout.slotOf(it) == null },
-        folders.map(BarButton::MoveTo).filter(place::offers).associateWith { folderColor(it.path) },
+        behavior.pickerChoices(place, layout, slot, folders.map { FolderOption(it, folderColor(it)) }),
         onPick = { save(layout.with(slot, it)) },
         onRemove =
             (slot as? BarSlot.Secondary)?.takeIf { layout.actionAt(it) != null }?.let {
@@ -86,3 +82,19 @@ internal fun ActionBarEditSheet(
             },
     ) { picking = null }
 }
+
+/**
+ * What [slot]'s picker offers at [place]: an empty slot takes only the actions [layout] lacks,
+ * while a filled one can trade with any button. The buttons the user completes pick among [folders].
+ */
+private fun MailBehavior.pickerChoices(
+    place: ActionBarPlace,
+    layout: ActionBarLayout,
+    slot: BarSlot,
+    folders: List<FolderOption>,
+): PickerChoices =
+    PickerChoices(
+        actions.barChoices(place, readLater).filter { layout.actionAt(slot) != null || layout.slotOf(it) == null },
+        CustomKind.entries.filter { place.offers(it.target) },
+        ButtonChoices(folders, actions.filterChoices(readLater)),
+    )

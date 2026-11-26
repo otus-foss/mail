@@ -1,30 +1,18 @@
 package com.otusfoss.mail.core.messages.data
 
-import com.otusfoss.core.jmap.GetMethod
 import com.otusfoss.core.jmap.JmapConnections
 import com.otusfoss.core.jmap.JmapException
-import com.otusfoss.core.jmap.JmapIds
-import com.otusfoss.core.jmap.jmapCallOr
-import com.otusfoss.core.jmap.jmapPatch
 import com.otusfoss.core.jmap.login.LoginStoreException
 import com.otusfoss.mail.core.cache.CacheStorageException
-import com.otusfoss.mail.core.cache.MailCache
-import com.otusfoss.mail.core.mail.EMAIL_FOLDERS_PROPERTIES
-import com.otusfoss.mail.core.mail.EmailFoldersType
 import com.otusfoss.mail.core.mail.Keywords
 import com.otusfoss.mail.core.mail.keywordPatch
 import com.otusfoss.mail.core.mail.mailAccount
-import com.otusfoss.mail.core.mail.mailboxPatch
 import com.otusfoss.mail.core.mail.movePatch
 import com.otusfoss.mail.core.mailbox.MailFolder
 import com.otusfoss.mail.core.mailbox.MailboxRole
 import com.otusfoss.mail.core.mailbox.Mailboxes
-import com.otusfoss.mail.core.messages.domain.Deletion
 import com.otusfoss.mail.core.messages.domain.EmailByIdWriter
-import com.otusfoss.mail.core.messages.domain.MailMessage
-import com.otusfoss.mail.core.messages.domain.MessageFlag
 import kotlinx.serialization.json.JsonObject
-import kotlinx.serialization.json.JsonPrimitive
 
 /**
  * The changes of one email by id as `Email/set` patches through [queue], as [JmapEmailWriter]
@@ -58,7 +46,7 @@ class JmapEmailByIdWriter(
         val folders = folders(loginId)
         val archive = folders.withRole(MailboxRole.Archive) ?: return false
         val inboxes = folders.filter { it.role == MailboxRole.Inbox }.map { it.id }
-        return when (mailboxesOf(loginId, emailId)?.none { it in inboxes }) {
+        return when (connections.emailMailboxes(loginId, emailId)?.none { it in inboxes }) {
             true -> true
             else -> updateOne(loginId, emailId, movePatch(inboxes, archive.id))
         }
@@ -73,6 +61,19 @@ class JmapEmailByIdWriter(
         loginId: String,
         emailId: String,
     ): Boolean = discard(loginId, emailId, MailboxRole.Junk)
+
+    /**
+     * Marks every email of the thread, as the Read view's Mute does. While the server cannot list
+     * them, it marks the email alone, so the change still waits in the queue.
+     */
+    override suspend fun mute(
+        loginId: String,
+        emailId: String,
+    ): Boolean {
+        val ids = connections.threadEmailIds(loginId, emailId).ifEmpty { listOf(emailId) }
+        val patch = keywordPatch(Keywords.MUTED, true)
+        return queue.update(loginId, ids.associateWith { patch }).containsAll(ids)
+    }
 
     /**
      * Puts the email in the account's mailbox with [role] alone, as the list's Delete and Spam do:
@@ -94,31 +95,6 @@ class JmapEmailByIdWriter(
         emailId: String,
         patch: JsonObject,
     ): Boolean = emailId in queue.update(loginId, mapOf(emailId to patch))
-
-    /** The mailboxes [emailId] is in on the server now; empty when it is gone, null when the server cannot say. */
-    private suspend fun mailboxesOf(
-        loginId: String,
-        emailId: String,
-    ): Set<String>? =
-        try {
-            jmapCallOr(null) {
-                connections.mailAccount(loginId)?.let { account ->
-                    account.connection
-                        .call(
-                            GetMethod(
-                                EmailFoldersType,
-                                account.id,
-                                JmapIds.Of(listOf(emailId)),
-                                EMAIL_FOLDERS_PROPERTIES,
-                            ),
-                        ).list
-                        .flatMap { it.mailboxIds.filterValues { kept -> kept }.keys }
-                        .toSet()
-                }
-            }
-        } catch (expected: LoginStoreException) {
-            null
-        }
 
     private fun List<MailFolder>.withRole(role: MailboxRole): MailFolder? = firstOrNull { it.role == role }
 

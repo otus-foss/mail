@@ -53,6 +53,13 @@ class ReadMenuTest {
     }
 
     @Test
+    fun entriesForMailsActionsKeepThemOutOfTheBarsLeftovers() {
+        val thread = readMenu(ReadPage(message(), own, count = 6)).covers
+        assertTrue(MailAction.BlockSender in thread && MailAction.Mute in thread)
+        assertFalse(MailAction.Mute in readMenu(ReadPage(message(), own)).covers, "A single message has no Mute entry")
+    }
+
+    @Test
     fun aSingleMessageMovesFromItsOwnSection() {
         val menu = readMenu(ReadPage(message(), own))
         assertEquals(listOf(ReadMenuPart.ThisMessage, ReadMenuPart.Sender("Grace Hopper")), menu.parts())

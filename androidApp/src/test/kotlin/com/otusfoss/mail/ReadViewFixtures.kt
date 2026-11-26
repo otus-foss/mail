@@ -224,7 +224,12 @@ internal object ReadViewFixtures {
 
     fun actions(targets: List<MoveTarget> = emptyList()) =
         MessageActions(
-            moves = MessageMoves(targets = { targets }, onMove = { _, _ -> }, suggested = { null }) { null },
+            moves =
+                MessageMoves(targets = { targets }, onMove = {
+                    _,
+                    _,
+                    ->
+                }, suggested = { null }, futureSorting = { null }),
             marks = MessageMarks(can = { _, _ -> true }, set = { _, _, _ -> }),
             ruleForSender = { null },
             readLater = { null },

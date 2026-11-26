@@ -56,7 +56,10 @@ enum class ActionBarPlace(
         get() = MailAction.entries.filter(::offers)
 
     /** Whether the bar here can hold [button]; every bar can hold All actions. */
-    fun offers(button: BarButton): Boolean = button == MailAction.AllActions || button.target in targets
+    fun offers(button: BarButton): Boolean = button == MailAction.AllActions || offers(button.target)
+
+    /** Whether the bar here holds buttons that act on [target]. */
+    fun offers(target: ActionTarget): Boolean = target in targets
 
     /** Places with their own bar in Adaptive mode. */
     val adaptive: Boolean

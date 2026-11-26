@@ -60,22 +60,23 @@ class ReadMenu(
 ) {
     /** Mail's actions in the menu's sections. */
     val placed: Set<MailAction>
-        get() =
-            sections
-                .flatMap { it.entries }
-                .filterIsInstance<ReadMenuEntry.Act>()
-                .map { it.action }
-                .toSet()
+        get() = sections.flatMap { it.entries }.mapNotNull { it.action }.toSet()
 
     val covers: Set<MailAction>
         get() = placed + withheld
 }
 
-/** One ⋯ menu entry: one of Mail's actions, or one only the Read view offers. */
+/**
+ * One ⋯ menu entry: one of Mail's actions, or one only the Read view offers. [action] is the
+ * action of Mail's the entry stands for, so the bar's leftovers do not list it again.
+ */
 sealed interface ReadMenuEntry {
+    val action: MailAction?
+        get() = null
+
     /** [action] as the bar would offer it; marks act on the page alone. A [detail] shows under it. */
     data class Act(
-        val action: MailAction,
+        override val action: MailAction,
         val detail: String? = null,
     ) : ReadMenuEntry
 
@@ -90,12 +91,13 @@ sealed interface ReadMenuEntry {
         val sender: String,
     ) : ReadMenuEntry
 
-    data object BlockSender : ReadMenuEntry
-
-    /** A switch that stays on until the user turns it off. */
+    /** Mute as a switch that stays on until the user turns it off. */
     data class Mute(
         val on: Boolean,
-    ) : ReadMenuEntry
+    ) : ReadMenuEntry {
+        override val action: MailAction
+            get() = MailAction.Mute
+    }
 
     /** Opens what the app offers for the sender: their card, or ways to save the address. */
     data object SenderContact : ReadMenuEntry
@@ -128,7 +130,11 @@ fun readMenu(page: ReadPage): ReadMenu =
             add(ReadMenuSection(ReadMenuPart.ThisMessage, page.messageEntries()))
             if (!page.fromUser) {
                 val entries =
-                    listOf(ReadMenuEntry.SenderContact, ReadMenuEntry.BlockSender, ReadMenuEntry.Act(MailAction.Spam)) +
+                    listOf(
+                        ReadMenuEntry.SenderContact,
+                        ReadMenuEntry.Act(MailAction.BlockSender),
+                        ReadMenuEntry.Act(MailAction.Spam),
+                    ) +
                         listOfNotNull(ReadMenuEntry.CategorizeSender.takeIf { page.category != null })
                 add(ReadMenuSection(ReadMenuPart.Sender(page.senderName), entries))
             }

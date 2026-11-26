@@ -12,6 +12,7 @@ import com.otusfoss.core.settings.presentation.screens.AppearanceSettingsScreen
 import com.otusfoss.mail.core.mailbox.SharedFolder
 import com.otusfoss.mail.core.mailbox.sharedFolders
 import com.otusfoss.mail.feature.inbox.presentation.components.MailListPreview
+import com.otusfoss.mail.feature.mailsettings.presentation.components.FolderOption
 import com.otusfoss.mail.feature.mailsettings.presentation.components.mailListRow
 import com.otusfoss.mail.feature.mailsettings.presentation.screens.ActionBarSettingsScreen
 import com.otusfoss.mail.feature.mailsettings.presentation.screens.AllowedSendersScreen
@@ -68,7 +69,10 @@ internal fun MailListSettingsPage(
     )
 }
 
-/** Mail behavior, whose Sidebar, Filter panel, Action bar, and Signatures rows open their own pages. */
+/**
+ * Mail behavior, whose Sidebar, Filter panel, Action bar, and Signatures rows open their own
+ * pages, and whose swipes can move mail to any shared folder.
+ */
 @Composable
 internal fun MailBehaviorPage(
     states: MailStates,
@@ -80,6 +84,7 @@ internal fun MailBehaviorPage(
         rememberFolderPills(states),
         // Not remembered: folder colors change apart from the accounts.
         sidebarPinOptions(states.folders.all.accounts, states.folders.colors::groupColorOf),
+        rememberSharedFolders(states).map { FolderOption(it.path, states.folders.colors.groupColorOf(it)) },
         behaviorPages { page -> { navigation.go(page) } },
         onBack = back,
     )

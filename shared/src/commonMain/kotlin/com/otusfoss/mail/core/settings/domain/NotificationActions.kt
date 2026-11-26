@@ -7,7 +7,15 @@ import com.otusfoss.mail.core.messages.domain.MailAction
  * opening Mail except Reply, which opens a reply to the message.
  */
 val NotificationActionChoices: List<MailAction> =
-    listOf(MailAction.Trash, MailAction.Archive, MailAction.Read, MailAction.Flag, MailAction.Spam, MailAction.Reply)
+    listOf(
+        MailAction.Trash,
+        MailAction.Archive,
+        MailAction.Read,
+        MailAction.Flag,
+        MailAction.Spam,
+        MailAction.Mute,
+        MailAction.Reply,
+    )
 
 /** The buttons an alert offers until the user picks their own. */
 val DefaultNotificationActions: List<MailAction> = listOf(MailAction.Trash, MailAction.Archive, MailAction.Read)

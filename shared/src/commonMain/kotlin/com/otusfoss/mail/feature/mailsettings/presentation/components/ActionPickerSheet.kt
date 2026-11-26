@@ -35,15 +35,14 @@ import com.otusfoss.mail.core.settings.presentation.label
 /**
  * Picks the action for [slot] of [layout] from [choices], grouped by what each acts on and narrowed
  * by search. Picking applies at once and moves the check; an action already elsewhere in the bar
- * says it will trade places. Where messages can move to [folders], each with its icon color name,
- * the messages group ends in a [MoveToChoice]. [onRemove], when given, empties the slot and closes the sheet.
+ * says it will trade places. Each group ends with its [CustomButtonChoice] rows, such as Move to
+ * folder. [onRemove], when given, empties the slot and closes the sheet.
  */
 @Composable
 internal fun ActionPickerSheet(
     slot: BarSlot,
     layout: ActionBarLayout,
-    choices: List<MailAction>,
-    folders: Map<BarButton.MoveTo, String?>,
+    choices: PickerChoices,
     onPick: (BarButton) -> Unit,
     onRemove: (() -> Unit)?,
     onDismiss: () -> Unit,
@@ -51,11 +50,13 @@ internal fun ActionPickerSheet(
     var query by rememberSaveable { mutableStateOf("") }
     val current = layout.actionAt(slot)
     val matches = { label: String -> label.contains(query.trim(), ignoreCase = true) }
-    val moveTo = (folders.isNotEmpty() || current is BarButton.MoveTo) && matches(MOVE_TO_FOLDER)
-    val groups =
-        choices.filter { matches(it.label) }.groupBy { it.target }.let { found ->
-            if (moveTo) found + (ActionTarget.Messages to found[ActionTarget.Messages].orEmpty()) else found
-        }
+    val actions = choices.actions.filter { matches(it.label) }.groupBy { it.target }
+    // A kind that picks a folder has nothing to offer without folders, unless the slot holds one to change.
+    val kinds =
+        choices.kinds
+            .filter { matches(it.prompt) }
+            .filter { !it.picksFolder || choices.from.folders.isNotEmpty() || current?.customKind == it }
+    val groups = (actions.keys + kinds.map { it.target }).distinct()
     SheetFrame(slot.title, onDismiss) {
         Column(
             Modifier
@@ -65,13 +66,13 @@ internal fun ActionPickerSheet(
             verticalArrangement = Arrangement.spacedBy(SheetTokens.gap),
         ) {
             PickerSearch(query, { query = it }, "Search actions…")
-            groups.forEach { (target, actions) ->
+            groups.forEach { target ->
                 Column {
                     if (groups.size > 1) Caption(target.title, RowTextInset)
-                    actions.forEach { action ->
-                        ActionChoice(action, layout, slot, current, onPick)
+                    actions[target].orEmpty().forEach { ActionChoice(it, layout, slot, current, onPick) }
+                    kinds.filter { it.target == target }.forEach {
+                        CustomButtonChoice(it, slot, layout, choices.from, onPick)
                     }
-                    if (moveTo && target == ActionTarget.Messages) MoveToChoice(slot, layout, folders, onPick)
                 }
             }
             if (groups.isEmpty()) Caption("No actions match.", RowTextInset, heading = false)

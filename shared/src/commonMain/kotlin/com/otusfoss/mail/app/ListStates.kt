@@ -135,6 +135,7 @@ internal class ListStates(
                     onMove = { message, target -> folders.filing.move(feed, message, target) },
                     suggested = folders.filing::suggestedTarget,
                     futureSorting = { folders.sorting.futureSorting(it, feed) },
+                    label = { message, target -> folders.filing.label(feed, message, target) },
                 ),
             marks = marking.marks(feed, folders.all::mayMark),
             ruleForSender = folders.senderRules::start,

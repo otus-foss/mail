@@ -20,6 +20,7 @@ import com.otusfoss.core.designsystem.shared.actionbar.components.BarNotice
 import com.otusfoss.core.designsystem.theme.tokens.overlays.ActionBarTokens
 import com.otusfoss.core.settings.presentation.components.LocalDateFormatter
 import com.otusfoss.mail.core.messages.domain.shownName
+import com.otusfoss.mail.core.messages.presentation.actions.DraftSubject
 import com.otusfoss.mail.core.settings.domain.ActionBehavior
 import com.otusfoss.mail.feature.compose.presentation.ComposeState
 import com.otusfoss.mail.feature.compose.presentation.recipients
@@ -30,9 +31,10 @@ import kotlin.time.Clock
 /**
  * The compose page's bottom: its action bar, or while the [keyboardUp] the formatting row with
  * Attach and a compact Send. While a time is scheduled, a notice above it names the time, and
- * Change runs [onChangeSchedule]. A reply's earlier messages sit above the bar and open the
- * thread's sheet. Send runs [onSend] and is disabled while it is null; Attach picks files, and is
- * disabled where the platform cannot pick them.
+ * Change runs [onChangeSchedule], as the bar's Schedule send does where the account can delay a
+ * send. A reply's earlier messages sit above the bar and open the thread's sheet. Send runs
+ * [onSend] and is disabled while it is null; Attach picks files, and is disabled where the
+ * platform cannot pick them.
  */
 @Composable
 internal fun ComposeBottom(
@@ -49,6 +51,14 @@ internal fun ComposeBottom(
     var showingThread by remember { mutableStateOf(false) }
     val scheduled = state.sendAt
     val thread = state.thread
+    val subject =
+        DraftSubject(
+            onSend = onSend,
+            onAttach = state.attachments::attach.takeIf { state.attachments.canAttach },
+            onDiscard = onDiscard,
+            scheduled = at != null,
+            onSchedule = onChangeSchedule.takeIf { state.maxDelaySeconds > 0 },
+        )
     Column(verticalArrangement = Arrangement.spacedBy(ActionBarTokens.gap)) {
         if (scheduled != null) {
             BarNotice(
@@ -59,7 +69,7 @@ internal fun ComposeBottom(
             )
         }
         if (thread != null && !keyboardUp) ReplyThreadStrip(thread) { showingThread = true }
-        Bottom(state, actions, keyboardUp, onSend, onDiscard, at) { linking = true }
+        Bottom(state, actions, keyboardUp, subject, at) { linking = true }
     }
     if (linking) LinkSheet(state.body.selectedText, state.body::addLink) { linking = false }
     if (showingThread && thread != null) ThreadSheet(thread) { showingThread = false }
@@ -73,8 +83,7 @@ private fun Bottom(
     state: ComposeState,
     actions: ActionBehavior,
     keyboardUp: Boolean,
-    onSend: (() -> Unit)?,
-    onDiscard: () -> Unit,
+    subject: DraftSubject,
     at: String?,
     onLink: () -> Unit,
 ) {
@@ -87,28 +96,10 @@ private fun Bottom(
     BarMorph(shown) { bar ->
         when (bar) {
             BottomBar.Image -> ComposeImageBar(state)
-            BottomBar.Formatting -> FormattingRow(state, onSend, at, onLink)
-            BottomBar.Actions -> DraftActions(state, actions, onSend, onDiscard, scheduled = at != null)
+            BottomBar.Formatting -> FormattingRow(state, subject.onSend, at, onLink)
+            BottomBar.Actions -> ComposeBar(actions, state.draft, subject)
         }
     }
-}
-
-@Composable
-private fun DraftActions(
-    state: ComposeState,
-    actions: ActionBehavior,
-    onSend: (() -> Unit)?,
-    onDiscard: () -> Unit,
-    scheduled: Boolean,
-) {
-    ComposeBar(
-        actions,
-        state.draft,
-        onSend = onSend,
-        onAttach = state.attachments::attach.takeIf { state.attachments.canAttach },
-        onDiscard = onDiscard,
-        scheduled = scheduled,
-    )
 }
 
 /** Which bar the compose page shows: the image's while one is selected, the formatting row while typing. */

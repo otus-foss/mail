@@ -15,6 +15,7 @@ import com.otusfoss.core.designsystem.resources.symbol_newspaper
 import com.otusfoss.core.designsystem.resources.symbol_reply
 import com.otusfoss.mail.core.messages.domain.DateFilter
 import com.otusfoss.mail.core.messages.domain.FilterSort
+import com.otusfoss.mail.core.messages.domain.ListFilter
 import com.otusfoss.mail.core.messages.domain.QuickFacet
 import com.otusfoss.mail.core.messages.domain.ReadStatus
 import com.otusfoss.mail.core.messages.domain.RecipientField
@@ -57,6 +58,23 @@ internal val QuickFacet.icon: DrawableResource
             QuickFacet.AwaitingReply -> Res.drawable.symbol_hourglass_empty
             QuickFacet.Conversations -> Res.drawable.symbol_forum
             QuickFacet.Forwarded -> Res.drawable.symbol_forward
+        }
+
+/** The filter as the filter panel names it, such as "Unread" or "Flagged". */
+internal val ListFilter.label: String
+    get() =
+        when (this) {
+            ListFilter.Unread -> ReadStatus.Unread.label
+            is ListFilter.Quick -> facet.label
+            is ListFilter.Type -> facet.label
+        }
+
+internal val ListFilter.icon: DrawableResource
+    get() =
+        when (this) {
+            ListFilter.Unread -> ReadStatus.Unread.icon
+            is ListFilter.Quick -> facet.icon
+            is ListFilter.Type -> facet.icon
         }
 
 internal val TypeFacet.label: String

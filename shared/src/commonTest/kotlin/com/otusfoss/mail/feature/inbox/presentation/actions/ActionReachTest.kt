@@ -16,9 +16,11 @@ import com.otusfoss.mail.core.messages.presentation.MessageMoves
 import com.otusfoss.mail.core.messages.presentation.MoveTarget
 import com.otusfoss.mail.core.messages.presentation.ReadLaterChange
 import com.otusfoss.mail.core.messages.presentation.actions.ActionSubject
+import com.otusfoss.mail.core.messages.presentation.actions.ActionSwitch
 import com.otusfoss.mail.core.messages.presentation.actions.MailBar
 import com.otusfoss.mail.core.messages.presentation.actions.MoveOptions
 import com.otusfoss.mail.core.messages.presentation.actions.OfferedAction
+import com.otusfoss.mail.core.messages.presentation.actions.PageExtras
 import com.otusfoss.mail.core.messages.presentation.actions.PageSubject
 import com.otusfoss.mail.core.messages.presentation.actions.barFor
 import com.otusfoss.mail.core.messages.presentation.actions.offer
@@ -53,6 +55,15 @@ class ActionReachTest {
         }
 
     private val roles = listOf(MailboxRole.Inbox, MailboxRole.Sent, MailboxRole.Junk, MailboxRole.Trash)
+
+    /** A newsletter with blocked images from someone else, so the page can take each of its own actions. */
+    private val extras =
+        PageExtras(
+            mute = ActionSwitch(on = false) {},
+            images = ActionSwitch(on = false) {},
+            onBlock = {},
+            onUnsubscribe = {},
+        )
 
     @Test
     fun everyReadViewActionIsOnTheBarOrInTheMenu() {
@@ -124,7 +135,7 @@ class ActionReachTest {
         actions(role),
         messages,
         moves = MoveOptions(suggestion = folders.last()),
-        page = page?.let { PageSubject(it, role, onCompose = {}) },
+        page = page?.let { PageSubject(it, role, onCompose = {}, extras = extras) },
     )
 
     private fun actions(role: MailboxRole) =

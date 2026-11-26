@@ -9,7 +9,7 @@ import com.otusfoss.core.storage.int
 import com.otusfoss.mail.core.messages.domain.ActionBarLayout
 import com.otusfoss.mail.core.messages.domain.ActionBarMode
 import com.otusfoss.mail.core.messages.domain.ActionBarPlace
-import com.otusfoss.mail.core.messages.domain.MailAction
+import com.otusfoss.mail.core.messages.domain.BarButton
 import com.otusfoss.mail.core.messages.domain.RemoteImages
 import com.otusfoss.mail.core.settings.domain.ActionBehavior
 import com.otusfoss.mail.core.settings.domain.AvatarBehavior
@@ -35,8 +35,8 @@ import com.otusfoss.mail.core.storage.TextCodec
 internal fun KeyValueStore.actionBehavior(): ActionBehavior {
     val defaults = ActionBehavior()
     return ActionBehavior(
-        startToEnd = MailAction.decodeSwipe(string(START_TO_END), defaults.startToEnd),
-        endToStart = MailAction.decodeSwipe(string(END_TO_START), defaults.endToStart),
+        startToEnd = BarButton.decodeSwipe(string(START_TO_END), defaults.startToEnd),
+        endToStart = BarButton.decodeSwipe(string(END_TO_START), defaults.endToStart),
         bars = ActionBarPlace.entries.associateWith { ActionBarLayout.decode(string(barKey(it)), it) },
         barMode = ActionBarMode.fromStorageValue(string(ACTION_BAR_MODE)) ?: defaults.barMode,
         minimizedBar = flag(MINIMIZED_BAR, defaults.minimizedBar),
@@ -45,8 +45,8 @@ internal fun KeyValueStore.actionBehavior(): ActionBehavior {
 }
 
 internal fun KeyValueEditor.put(actions: ActionBehavior) {
-    put(START_TO_END, MailAction.encodeSwipe(actions.startToEnd))
-    put(END_TO_START, MailAction.encodeSwipe(actions.endToStart))
+    put(START_TO_END, BarButton.encodeSwipe(actions.startToEnd))
+    put(END_TO_START, BarButton.encodeSwipe(actions.endToStart))
     actions.bars.forEach { (place, layout) -> put(barKey(place), layout.encode()) }
     put(ACTION_BAR_MODE, actions.barMode.storageValue)
     put(MINIMIZED_BAR, actions.minimizedBar)

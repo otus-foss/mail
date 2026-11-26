@@ -315,8 +315,9 @@ submission destroys the copy the request stored and keeps the earlier one in Dra
 
 ### Schedule send
 
-The ⋯ menu offers **Schedule send** only where the account's submission capability has a
-`maxDelayedSend` above 0 and lists `FUTURERELEASE` in its `submissionExtensions` (RFC 8621,
+The ⋯ menu's **Schedule send**, and the same button on the [Writing bar](action-bar.md) where the
+user put it there, open the Send later sheet. Both work only where the account's submission
+capability has a `maxDelayedSend` above 0 and lists `FUTURERELEASE` in its `submissionExtensions` (RFC 8621,
 sections 1.3.2 and 7), since the send carries an RFC 4865 `HOLDUNTIL` parameter. The Undo hold on
 the server needs the same. The **Send later** sheet offers This evening at
 18:00 before 17:00, Tomorrow morning at 8:00, Monday morning at 8:00 from Friday to Sunday, and
