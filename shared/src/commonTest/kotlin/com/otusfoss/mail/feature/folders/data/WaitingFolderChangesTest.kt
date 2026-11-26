@@ -122,7 +122,7 @@ class WaitingFolderChangesTest {
         }
 
     @Test
-    fun anAnswerTheClientCannotReadDropsTheChangeInsteadOfBlockingTheFolders() =
+    fun aCaptivePortalPageKeepsTheChangeWaiting() =
         runTest {
             val folder = receipts()
             down = true
@@ -130,10 +130,13 @@ class WaitingFolderChangesTest {
             down = false
             garbled = true
 
+            repository.accounts()
+            garbled = false
+            sent.clear()
             val loaded = repository.accounts().single()
 
+            assertTrue("\"update\":{\"r\":{\"name\":\"Bills\"}}" in sent[0], sent[0])
             assertEquals(null, loaded.failure)
-            assertEquals("Receipts", loaded.folder("r")?.name)
             assertEquals(emptyMap(), map.read())
         }
 

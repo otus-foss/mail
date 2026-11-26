@@ -148,7 +148,20 @@ private val JmapException.waits: Boolean
     get() =
         when (this) {
             is JmapException.MethodError -> isTemporary
+
+            // A server that asks to be tried later, or a gateway or captive portal in the way.
+            is JmapException.RequestFailed -> status in TRY_LATER_STATUSES
+
+            is JmapException.NotJmap -> true
+
             else -> category in WAITING_CATEGORIES
         }
+
+private const val REQUEST_TIMEOUT = 408
+private const val TOO_MANY_REQUESTS = 429
+private const val BAD_GATEWAY = 502
+private const val GATEWAY_TIMEOUT = 504
+
+private val TRY_LATER_STATUSES = setOf(REQUEST_TIMEOUT, TOO_MANY_REQUESTS) + (BAD_GATEWAY..GATEWAY_TIMEOUT)
 
 private val WAITING_CATEGORIES = setOf(JmapErrorCategory.Offline, JmapErrorCategory.Auth, JmapErrorCategory.Credentials)
