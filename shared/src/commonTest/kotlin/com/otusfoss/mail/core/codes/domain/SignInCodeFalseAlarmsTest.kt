@@ -20,6 +20,18 @@ class SignInCodeFalseAlarmsTest {
     }
 
     @Test
+    fun aWordInsideAPromotionCodeNamesNothing() {
+        assertEquals(null, codeIn("Sale", "Save 20% with CODE2026!"))
+        assertEquals(null, codeIn("Sale", "Use PIN1234 at checkout"))
+    }
+
+    @Test
+    fun aCodeAndANumberInAnotherSentenceAreApart() {
+        assertEquals(null, codeIn("Support", "Need a code? 4829 is our extension."))
+        assertEquals(null, codeIn("Code", "Your code costs $482 913"))
+    }
+
+    @Test
     fun aNumberAnotherWordNamesIsNoCode() {
         assertEquals(null, codeIn("Your sign-in code", "Your code is in the app. Order number 482913."))
         assertEquals(null, codeIn("Your code", "Code: card ending 4829"))

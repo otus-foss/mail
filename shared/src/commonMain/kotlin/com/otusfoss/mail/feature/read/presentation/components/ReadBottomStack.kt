@@ -47,7 +47,8 @@ import kotlinx.coroutines.launch
  * A page with a one-time code shows its code strip, whose Delete runs [onDelete]. Otherwise a
  * conversation shows its thread strip; a single message its newsletter strip when it can be left
  * and is not spam, else the folders it is also in, else nothing. Until the pages load, the row's
- * message count tells a conversation from a single message, so the strip does not change kind.
+ * message count tells a conversation from a single message, so the strip does not change kind
+ * until the page's body shows a code, whose strip then takes the thread strip's place on that page.
  * The thread strip follows the pages as [slide] turns them, and a drag on it turns them too. A
  * swipe up opens the thread strip's list, the files, or the folders sheet, and a swipe down folds
  * the files. [onFoldedHeight] gets the stack's height with the files folded, which the page leaves

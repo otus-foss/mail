@@ -25,6 +25,7 @@ internal fun Context.copyCodeAction(mail: NewMail): NotificationCompat.Action? {
         PendingIntent.getBroadcast(this, 0, intent, PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT)
     return NotificationCompat.Action
         .Builder(0, COPY_LABEL, pending)
+        .setShowsUserInterface(false)
         .setAuthenticationRequired(true)
         .build()
 }

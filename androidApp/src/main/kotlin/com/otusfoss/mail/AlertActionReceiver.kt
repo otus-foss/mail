@@ -28,7 +28,8 @@ class AlertActionReceiver : BroadcastReceiver() {
                 .mail()
                 ?.takeUnless { waitsForUnlock(Build.VERSION.SDK_INT) { keyguard.isDeviceLocked } }
                 ?: return
-        if (copy) mail.code?.let(context::copyCode)
+        val code = mail.code
+        if (copy && code != null) context.copyCode(code)
         MailNotifications(context).clear(listOf(AlertedMail(mail.loginId, mail.emailId)))
         AlertActionWorker.enqueue(context, action, mail)
     }

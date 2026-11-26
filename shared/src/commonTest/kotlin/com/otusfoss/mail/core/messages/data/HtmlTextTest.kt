@@ -92,6 +92,30 @@ class HtmlTextTest {
     }
 
     @Test
+    fun wordsThatOnlyContainHiddenHideNothing() {
+        val html =
+            "<div style=\"overflow: hidden !important\">One</div><div class=\"hidden md:block\">Two</div>" +
+                "<div style=\"backface-visibility: hidden\">Three</div><a title=\"Show hidden\">Four</a>"
+        assertEquals("One\nTwo\nThree\nFour", html.htmlToText())
+    }
+
+    @Test
+    fun aHiddenElementLeftOpenKeepsWhatFollows() {
+        assertEquals("Preview\n\nYour code\n\nEnd", "<p hidden>Preview<p>Your code</p>End".htmlToText())
+    }
+
+    @Test
+    fun commentsAndEmptyElementsInsideAHiddenOneDoNotKeepItOpen() {
+        assertEquals("Body", "<div style=\"display:none\"><!--[if mso]><div><![endif]-->x</div>Body".htmlToText())
+        assertEquals("Body", "<div style=\"display:none\"><div/></div>Body".htmlToText())
+    }
+
+    @Test
+    fun aHiddenElementLeavesNoBreak() {
+        assertEquals("Hello World", "Hello <div style=\"display:none\">x</div>World".htmlToText())
+    }
+
+    @Test
     fun hidingAnEmptyElementHidesNothingAfterIt() {
         assertEquals("Shown", "<img style=\"display:none\" src=\"x\">Shown".htmlToText())
         assertEquals("Shown", "<div style=\"display:none\"/>Shown".htmlToText())

@@ -73,7 +73,8 @@ private fun qualifiedAfter(
     return next in words || (next in LINKS && near.after.getOrNull(1) in words)
 }
 
-private val WORD = Regex("""\p{L}+""")
+/** A run of letters, not part of a token such as "CODE2026" or "2FA", which is a code or a name. */
+private val WORD = Regex("""(?<![\p{L}\p{N}])\p{L}+(?![\p{L}\p{N}])""")
 
 /** How many words after a code word can say what kind of code it is: "código de descuento". */
 private const val WORDS_AFTER = 2

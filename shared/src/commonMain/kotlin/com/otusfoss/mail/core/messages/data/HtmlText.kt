@@ -40,19 +40,18 @@ private fun String.tag(
     val nameEnd = (nameStart until length).firstOrNull { !this[it].isLetterOrDigit() } ?: length
     val name = substring(nameStart, nameEnd).lowercase()
     val end = tagEnd(nameEnd)
+    val attributes = substring(nameEnd, maxOf(nameEnd, end - 1)).trimEnd()
+    val hides = !closing && name !in VOID && !attributes.endsWith('/') && hidesElement(attributes)
+    // A hidden element with no end tag to find keeps its content rather than taking the rest away.
+    val hiddenEnd = if (hides) hiddenElementEnd(end, name) else null
+    if (hiddenEnd != null) return hiddenEnd
     when (name) {
         "br" -> text.lineBreak()
         in PARAGRAPHS -> text.paragraph()
         in LINES -> text.line()
         in CELLS -> text.space()
     }
-    val attributes = substring(nameEnd, maxOf(nameEnd, end - 1))
-    return when {
-        closing -> end
-        name in HIDDEN -> hiddenContentEnd(end, name)
-        name !in VOID && !attributes.endsWith('/') && hidesElement(attributes) -> hiddenElementEnd(end, name)
-        else -> end
-    }
+    return if (!closing && name in HIDDEN) hiddenContentEnd(end, name) else end
 }
 
 /** The index after the `>` that closes a tag, skipping quoted attribute values; the end when none does. */
@@ -175,8 +174,8 @@ private class PlainText {
     override fun toString() = text.toString().trimEnd()
 }
 
-private const val COMMENT_START = "<!--"
-private const val COMMENT_END = "-->"
+internal const val COMMENT_START = "<!--"
+internal const val COMMENT_END = "-->"
 private const val DECIMAL = 10
 private const val HEX = 16
 private const val MAX_DIGITS = 8
