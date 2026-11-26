@@ -22,7 +22,7 @@ import kotlin.test.assertTrue
 import kotlin.time.Instant
 
 class DeviceDraftsTest {
-    private val server = Server()
+    private val server = FakeDraftServer()
     private val map = MemoryMapStore()
     private var woken = 0
     private var clock = 1_000L
@@ -290,42 +290,5 @@ class DeviceDraftsTest {
             newId = { "device-draft:${map.read().size}-${ids++}" },
             io = Dispatchers.Unconfined,
         )
-    }
-
-    private class Server : DraftRepository {
-        val saves = mutableListOf<Draft>()
-        val discards = mutableListOf<Pair<String, String>>()
-        var failure: MailFailure? = null
-        var refused: String? = null
-        var gate: CompletableDeferred<Unit>? = null
-        var sent = emptySet<String>()
-        private var stored = 0
-
-        override suspend fun identities(accountId: String): List<SendIdentity> = emptyList()
-
-        override suspend fun isDraft(
-            accountId: String,
-            emailId: String,
-        ): Result<Boolean> {
-            val failed = failure ?: return Result.success(emailId !in sent)
-            return Result.failure(DraftException(DraftFailure.Mail(failed)))
-        }
-
-        override suspend fun save(draft: Draft): Result<String> {
-            saves += draft
-            gate?.await()
-            val failed = failure ?: MailFailure.NotPermitted.takeIf { draft.accountId == refused }
-            if (failed != null) return Result.failure(DraftException(DraftFailure.Mail(failed)))
-            return Result.success("e${++stored}")
-        }
-
-        override suspend fun discard(
-            accountId: String,
-            emailId: String,
-        ): Result<Unit> {
-            discards += accountId to emailId
-            val failed = failure ?: return Result.success(Unit)
-            return Result.failure(DraftException(DraftFailure.Mail(failed)))
-        }
     }
 }
