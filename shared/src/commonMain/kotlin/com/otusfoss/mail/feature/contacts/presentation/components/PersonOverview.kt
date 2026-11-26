@@ -2,7 +2,6 @@ package com.otusfoss.mail.feature.contacts.presentation.components
 
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.produceState
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.platform.UriHandler
@@ -17,40 +16,18 @@ import com.otusfoss.core.designsystem.shared.people.components.PersonTile
 import com.otusfoss.core.designsystem.shared.people.components.PersonTiles
 import com.otusfoss.core.designsystem.shared.people.components.SharedPeopleRow
 import com.otusfoss.core.settings.presentation.components.LocalDateFormatter
-import com.otusfoss.mail.core.messages.domain.PersonHistory
 import com.otusfoss.mail.core.messages.domain.SharedPerson
 import com.otusfoss.mail.core.messages.presentation.components.chipAvatar
 import com.otusfoss.mail.core.messages.presentation.components.firstName
 import com.otusfoss.mail.core.messages.presentation.components.mailToday
 import com.otusfoss.mail.core.messages.presentation.shortLabel
 import com.otusfoss.mail.feature.contacts.presentation.PersonMail
-import kotlinx.coroutines.async
-import kotlinx.coroutines.coroutineScope
-
-/** The person's mail as the sheet loads it once it opens; each part null while unknown. */
-internal class PersonActivity(
-    val messages: Long?,
-    val unread: Long?,
-    val history: PersonHistory?,
-)
-
-/** Loads [mail]'s counts and history side by side; null until all of them answer. */
-@Composable
-internal fun rememberPersonActivity(mail: PersonMail): PersonActivity? =
-    produceState<PersonActivity?>(null, mail) {
-        value =
-            coroutineScope {
-                val messages = async { mail.count(false) }
-                val unread = async { mail.count(true) }
-                val history = async { mail.history() }
-                PersonActivity(messages.await(), unread.await(), history.await())
-            }
-    }.value
 
 /**
  * The person's card [note], the tiles to write, call when they have a [phone], take the
- * [contactActions], such as New contact, and show their mail, the people they share threads with, which [onShared] lists, and their recent threads.
- * Each part shows only when there is something in it.
+ * [contactActions], such as New contact, and show their mail, the people they share threads
+ * with, which [onShared] lists, and their recent threads. Each part shows only when there is
+ * something in it.
  */
 @Composable
 internal fun PersonOverview(

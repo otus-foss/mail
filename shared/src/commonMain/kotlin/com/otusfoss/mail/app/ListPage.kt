@@ -70,9 +70,7 @@ internal fun ListPage(
                         navigation,
                         page,
                         messageActions,
-                        rowLook.own,
-                        base.categories != null,
-                        filters,
+                        ReadList(rowLook.own, sorted = base.categories != null, filters),
                     ),
                 nudge =
                     rememberFolderNudge(

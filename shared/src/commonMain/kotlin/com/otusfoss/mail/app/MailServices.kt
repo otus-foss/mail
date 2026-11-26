@@ -261,19 +261,12 @@ class MailServices(
         push: MailPush,
         beforeCreate: suspend (String) -> Unit,
     ): PushSubscriptions =
-        PushSubscriptions(
-            connections,
-            states,
-            deviceClientId,
-            push.types,
-            beforeCreate = beforeCreate,
-        )
+        PushSubscriptions(connections, states, deviceClientId, push.types, beforeCreate = beforeCreate)
 
     /**
      * Sends the messages the outbox kept that are due, the marks and moves that wait, the drafts
      * written offline, and the folder changes that wait, as from a background job after the app
-     * closed. True when some still
-     * wait for the network, so the job should run again.
+     * closed. True when some still wait for the network, so the job should run again.
      */
     suspend fun resumeOutbox(): Boolean {
         outbox.resume()

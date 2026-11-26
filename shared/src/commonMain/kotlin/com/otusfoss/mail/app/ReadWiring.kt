@@ -125,8 +125,18 @@ internal class ReadWiring(
 }
 
 /**
+ * What the Read view needs from the list it opens from: the user's [own] addresses, whether the
+ * page is [sorted] into categories, and the [filters] its person sheet counts and applies.
+ */
+internal class ReadList(
+    val own: OwnAddresses,
+    val sorted: Boolean,
+    val filters: InboxFilterState,
+)
+
+/**
  * The Read view of [feed]'s rows on [page], whose drafts close back to that page, again when the
- * feed changes. On a [sorted] page its ⋯ menu offers the categories.
+ * feed changes. On a sorted [list] its ⋯ menu offers the categories.
  */
 @Composable
 internal fun rememberReadView(
@@ -135,15 +145,13 @@ internal fun rememberReadView(
     navigation: MailNavigation,
     page: MailPage,
     actions: MessageActions,
-    own: OwnAddresses,
-    sorted: Boolean,
-    filters: InboxFilterState,
+    list: ReadList,
 ): ReadView {
     val scheduled = rememberScheduledActions(states, navigation, page)
     val read =
-        remember(states, feed, own, sorted, filters) {
-            val person = personSheet(states, filters, navigation, page, own)
-            states.reading.context(feed, person, own, sorted, scheduled) {
+        remember(states, feed, list.own, list.sorted, list.filters) {
+            val person = personSheet(states, list.filters, navigation, page, list.own)
+            states.reading.context(feed, person, list.own, list.sorted, scheduled) {
                 navigation.go(MailPage.Compose(it, parent = page))
             }
         }
