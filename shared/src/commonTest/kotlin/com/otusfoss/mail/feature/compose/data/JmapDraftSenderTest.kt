@@ -77,6 +77,13 @@ class JmapDraftSenderTest {
                         responses("""["Email/set", {"newState": "e3", $tidied}, "c0"]""")
                     }
 
+                    // The copy a send tidies up is still a draft.
+                    "Email/get" in body && "\"old\"" in body -> {
+                        responses(
+                            """["Email/get", {"state": "e", "list": [{"id": "old", $RECEIVED, "keywords": {"${'$'}draft": true}}]}, "c0"]""",
+                        )
+                    }
+
                     "Email/get" in body -> {
                         responses(
                             """["Email/get", {"state": "e", "list": [{"id": "m1", $RECEIVED, "keywords": $originalKeywords}]}, "c0"]""",
@@ -108,7 +115,9 @@ class JmapDraftSenderTest {
     fun sendingStoresTheDraftThenSubmitsThatCopyByIdAndFilesItInSent() =
         runTest {
             assertTrue(sender().send(reply, AnsweredMessage("m1", forwarded = false), SendTime.Now).isSuccess)
-            val (route, store, submit, destroy, mark) = calls.map(::methods)
+            val (route, store, submit, tidy, destroy) = calls.map(::methods)
+            val mark = methods(calls[5])
+            assertEquals(listOf("Email/get"), tidy.map { it.name }, "The old copy is checked before it goes")
             assertEquals(listOf("Mailbox/get", "Identity/get"), route.map { it.name })
             assertEquals(listOf("Email/set"), store.map { it.name })
             assertEquals(listOf("EmailSubmission/set"), submit.map { it.name })

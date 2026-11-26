@@ -9,13 +9,12 @@ import com.otusfoss.mail.core.messages.domain.DraftRepository
 import com.otusfoss.mail.core.messages.domain.SendIdentity
 import com.otusfoss.mail.core.messages.domain.WaitingDraft
 import com.otusfoss.mail.core.messages.domain.WaitingDraftList
+import com.otusfoss.mail.core.messages.domain.isDeviceDraftId
 import com.otusfoss.mail.core.messages.domain.newDeviceDraftId
 import com.otusfoss.mail.core.storage.DeviceStore
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
-import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.sync.withLock
-import kotlinx.coroutines.withContext
 import kotlin.coroutines.CoroutineContext
 import kotlin.time.Clock
 import kotlin.time.Instant
@@ -63,6 +62,7 @@ class DeviceDrafts(
                     draft.accountId,
                     copy.emailId,
                     waiting,
+                    draft.emailId,
                 ).then { server.save(copy.copy(emailId = it)) }
             when {
                 result.isUnreachable -> {
@@ -70,7 +70,7 @@ class DeviceDrafts(
                 }
 
                 result.isSuccess -> {
-                    if (waiting != null) withContext(NonCancellable) { shelf.arrive(waiting.id, result.getOrThrow()) }
+                    if (waiting != null) shelf.arrive(waiting.id, result.getOrThrow())
                     result
                 }
 
@@ -142,7 +142,7 @@ class DeviceDrafts(
                 }
 
                 result.isSuccess || waiting.discarded -> {
-                    withContext(NonCancellable) { shelf.arrive(waiting.id, result.getOrNull()) }
+                    shelf.arrive(waiting.id, result.getOrNull())
                 }
             }
         }
@@ -150,8 +150,9 @@ class DeviceDrafts(
     }
 
     /**
-     * Drops the waiting draft [id] and destroys the server's copy it names. When the server cannot
-     * be reached, that copy waits to be destroyed, and the lists hide it meanwhile.
+     * Drops the waiting draft [id] and destroys the server's copy it names. The draft becomes a
+     * discarded entry before the server is asked, so the lists hide that copy and a process that
+     * ends meanwhile still destroys it; the entry goes once the server has answered.
      */
     private suspend fun discard(
         loginId: String,
@@ -159,16 +160,14 @@ class DeviceDrafts(
         waiting: WaitingDraft?,
     ): Result<Unit> {
         val replaced = shelf.serverCopy(id, waiting)
-        if (waiting != null) shelf.change { it - id }
+        val entry = waiting?.id ?: newId()
+        if (replaced != null) shelf.keep(entry, Draft(loginId, emailId = replaced), discarded = true)
         val result =
-            replacedCopy(loginId, replaced, waiting).then { copy ->
+            replacedCopy(loginId, replaced, waiting, id).then { copy ->
                 copy?.let { server.discard(loginId, it) } ?: Result.success(Unit)
             }
-        if (replaced != null && result.isUnreachable) {
-            shelf.keep(waiting?.id ?: newId(), Draft(loginId, emailId = replaced), discarded = true)
-            return Result.success(Unit)
-        }
-        return result
+        if (!result.isUnreachable) shelf.change { it - entry }
+        return if (result.isUnreachable) Result.success(Unit) else result
     }
 }
 
@@ -181,8 +180,10 @@ private suspend fun DeviceDrafts.replacedCopy(
     loginId: String,
     replaced: String?,
     waiting: WaitingDraft?,
+    emailId: String? = null,
 ): Result<String?> =
-    if (waiting == null || replaced == null) {
+    // A device id still names the copy its draft replaced after Undo of a send, so it is looked up too.
+    if (replaced == null || (waiting == null && emailId?.let(::isDeviceDraftId) != true)) {
         Result.success(replaced)
     } else {
         isDraft(loginId, replaced).map { draft -> replaced.takeIf { draft } }

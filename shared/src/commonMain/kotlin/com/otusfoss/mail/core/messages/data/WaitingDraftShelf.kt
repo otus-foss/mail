@@ -4,6 +4,7 @@ import com.otusfoss.mail.core.messages.domain.Draft
 import com.otusfoss.mail.core.messages.domain.WaitingDraft
 import com.otusfoss.mail.core.messages.domain.isDeviceDraftId
 import com.otusfoss.mail.core.storage.DeviceStore
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
@@ -31,12 +32,17 @@ internal class WaitingDraftShelf(
 
     suspend fun all(): Map<String, WaitingDraft> = lock.withLock { held() }
 
-    /** Replaces the waiting drafts with what [edit] makes of them, and saves that. */
+    /**
+     * Replaces the waiting drafts with what [edit] makes of them, and saves that. A caller that is
+     * cancelled meanwhile still finishes it, so memory and the store never disagree.
+     */
     suspend fun change(edit: (Map<String, WaitingDraft>) -> Map<String, WaitingDraft>) {
-        lock.withLock {
-            val edited = edit(held())
-            drafts = edited
-            store?.let { saving -> withContext(io) { saving.write(edited) } }
+        withContext(NonCancellable) {
+            lock.withLock {
+                val edited = edit(held())
+                drafts = edited
+                store?.let { saving -> withContext(io) { saving.write(edited) } }
+            }
         }
     }
 
@@ -56,8 +62,10 @@ internal class WaitingDraftShelf(
         id: String,
         emailId: String?,
     ) {
-        if (emailId != null) lock.withLock { arrived = arrived + (id to emailId) }
-        change { it - id }
+        withContext(NonCancellable) {
+            if (emailId != null) lock.withLock { arrived = arrived + (id to emailId) }
+            change { it - id }
+        }
     }
 
     /**
