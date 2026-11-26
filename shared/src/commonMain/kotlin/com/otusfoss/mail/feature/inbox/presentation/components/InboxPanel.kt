@@ -168,8 +168,7 @@ private fun SelectionPanel(
         placement = ChipPlacement.None,
         navigation = { PanelNavigation("Stop selecting", selecting.onClear, icon = PanelNavigationIcon.Close) },
         trailingAction = { PanelTextAction("Select all", selecting.onSelectAll) },
-        motion = PanelMotion(look.collapse),
-        minHeight = look.minHeight,
+        motion = PanelMotion(look.collapse, minHeight = look.minHeight),
     ) { PanelTitle("${selecting.count} selected", Modifier.padding(start = PanelTokens.titleStart)) }
 }
 
