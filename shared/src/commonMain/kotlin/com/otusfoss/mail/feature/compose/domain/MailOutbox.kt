@@ -4,12 +4,14 @@ import com.otusfoss.mail.core.mail.MailFailure
 import com.otusfoss.mail.core.messages.domain.AnsweredMessage
 import com.otusfoss.mail.core.messages.domain.Draft
 import com.otusfoss.mail.core.messages.domain.DraftSender
+import com.otusfoss.mail.core.messages.domain.HandedDrafts
 import com.otusfoss.mail.core.messages.domain.SendException
 import com.otusfoss.mail.core.messages.domain.SendFailure
 import com.otusfoss.mail.core.messages.domain.SendTime
 import com.otusfoss.mail.core.messages.domain.SentMessage
 import com.otusfoss.mail.core.messages.domain.accountId
 import com.otusfoss.mail.core.messages.domain.answered
+import com.otusfoss.mail.core.messages.domain.isDeviceDraftId
 import com.otusfoss.mail.core.storage.DeviceStore
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
@@ -29,7 +31,8 @@ import kotlin.uuid.Uuid
  * a dropped connection loses none. Each gets its own Message-ID, so after a send whose answer was
  * lost, [checker] can find out whether it went before it goes again. [wake] asks the platform to
  * run [resume] at a time even if the app is closed by then. [store] is read and written on [io].
- * Without a store, messages last as long as the process.
+ * Without a store, messages last as long as the process. A draft that waited on the device leaves
+ * [drafts] only once its entry is saved, and Undo gives it back, so it is never in neither.
  */
 class MailOutbox(
     store: DeviceStore<String, String>?,
@@ -38,6 +41,7 @@ class MailOutbox(
     private val wake: (Instant) -> Unit = {},
     private val now: () -> Instant = { Clock.System.now() },
     io: CoroutineContext = Dispatchers.IO,
+    private val drafts: HandedDrafts = HandedDrafts.None,
 ) {
     // One send at a time, so Undo, a retry, and a background run never send the same message twice.
     private val lock = Mutex()
@@ -54,12 +58,14 @@ class MailOutbox(
         val entry =
             OutboxEntry(
                 id,
-                draft.copy(messageId = "$id@otus.mail"),
+                drafts.forSending(draft).copy(messageId = "$id@otus.mail"),
                 answered,
                 due.toEpochMilliseconds(),
                 sendAt?.toEpochMilliseconds(),
+                deviceDraftId = draft.emailId?.takeIf(::isDeviceDraftId),
             )
         lock.withLock { entries.save(entries.all() + entry) }
+        drafts.handedOver(draft)
         // Later than the app itself sends it, so a background run only takes over from a closed app.
         wake(due + BACKGROUND_DELAY)
         return id
@@ -72,13 +78,14 @@ class MailOutbox(
      */
     suspend fun cancel(id: String): Boolean =
         lock.withLock {
-            val entry = entries.all().firstOrNull { it.id == id }
-            when {
-                entry == null -> Unit
-                entry.attempted -> entries.replace(entry.copy(withdrawn = true, problem = null))
-                else -> entries.removeIf { it.id == id }
+            val entry = entries.all().firstOrNull { it.id == id } ?: return@withLock false
+            if (entry.attempted) {
+                entries.replace(entry.copy(withdrawn = true, problem = null))
+            } else {
+                entries.removeIf { it.id == id }
+                entry.deviceDraftId?.let { drafts.takenBack(entry.draft.copy(emailId = it)) }
             }
-            entry != null
+            true
         }
 
     /** Forgets a message the user took back to edit, as from a "Couldn't send" toast. */

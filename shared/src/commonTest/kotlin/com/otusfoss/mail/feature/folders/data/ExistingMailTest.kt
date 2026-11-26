@@ -140,7 +140,7 @@ class ExistingMailTest {
             val connections = JmapConnections(JmapClient(engine), store)
             val cache = InMemoryMailCache()
             val changes = EmailChangeQueue(connections, cache, store = null)
-            val repository = JmapFolderRuleRepository(connections, Mailboxes(cache), changes)
+            val repository = JmapFolderRuleRepository(connections, Mailboxes(cache), changes, cache)
             assertEquals(14, repository.existingCount("ada", "P", FolderRule(agency)))
             val count = calls.last()
             assertTrue(

@@ -13,6 +13,7 @@ import com.otusfoss.mail.core.mail.isMuted
 import com.otusfoss.mail.core.mail.mailAccount
 import com.otusfoss.mail.core.mail.objects
 import com.otusfoss.mail.core.messages.domain.MailMessage
+import com.otusfoss.mail.core.messages.domain.isDeviceDraftId
 
 /**
  * Which emails a mute of a conversation marks, and whether it is muted. Muting sets the keyword
@@ -42,7 +43,7 @@ internal class ConversationMuting(
         message: MailMessage,
         read: suspend (MailAccount, List<String>) -> T,
     ): T? {
-        if (message.emailId.isEmpty()) return null
+        if (message.emailId.isEmpty() || isDeviceDraftId(message.emailId)) return null
         return jmapCallOr(null) {
             connections.mailAccount(message.location.accountId)?.let { account ->
                 account.threadEmailIds(message.emailId).ifEmpty { null }?.let { read(account, it) }

@@ -17,6 +17,16 @@ script, so they keep working while the app is closed.
   While no folders show, as at launch, a load first shows the cached ones with their counts, so the
   sidebar fills before the server answers. Loading stays on until the server's folders replace
   them. The cache keeps no shared mailboxes or server limits, so those arrive with the server load.
+- A login whose load fails, such as offline, shows the folders the device keeps, with the reason
+  the load failed, so the sidebar and Settings › Folders & rules keep their folders.
+- A rename, a move into another folder, or a new order that the server cannot be reached for
+  waits on the device: it shows in the kept folders at once and counts as made. The waiting
+  changes go to the server first, in the order they were made, before the next load or change, and
+  from the background job that sends the outbox once the network is back. One the server refuses,
+  such as a name another client took meanwhile, is dropped; the load after it reads every mailbox
+  again, so the folders show what the server kept. Creating and deleting a folder, and every change
+  to a shared mailbox, still need the server. See
+  [changes waiting for the server](storage.md#changes-waiting-for-the-server).
 - A new load, such as the refresh after a move or a read mark, replaces the one running. The
   replaced load shows nothing and leaves the loading state to the newer one, so a slow load
   cannot bring back older folders or counts. A change finishes with the newest load, so a page
