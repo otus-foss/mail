@@ -28,7 +28,7 @@ one, after removing copies of the same code.
    line below names a code. A word for another kind of number, such as "order", "Rechnung", or
    "número", between them, or on that line, rules it out.
 
-The words are in `Word.kt`, in English, German, French, Spanish, Portuguese, and Dutch.
+The words are in `CodeVocabulary.kt`, in English, German, French, Spanish, Portuguese, and Dutch.
 "Code" also counts at the end of a compound ("Bestätigungscode", "verificatiecode"). Postcodes,
 QR codes, promo codes, and the like do not count, nor does "code" after such a word or before
 "postal" or "de descuento". A code with letters needs a word that is not about a booking or a
