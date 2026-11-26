@@ -193,6 +193,14 @@ The Inbox finds the message's row, loads its full body, and opens a reply to it 
 page. The alert goes once Mail takes the request, since Android keeps an alert after a button that
 opens an app.
 
+An alert about mail with a one-time code shows **Copy code** first, as the setting's description
+says; see [one-time codes](codes.md). `JmapNewMailChecker` finds the code in the subject and the
+preview and keeps it in `NewMail.code`. Copy code is no `MailAction`: `AlertActionReceiver` puts
+the code on the clipboard at once, marked sensitive so Android 13 and later leave it out of their
+copy preview, then removes the alert and queues Mark read like the Mark read button. Copy code
+already marks the message read, so the Mark read button gives its place to the next chosen one.
+Like the others, it asks to unlock on a lock screen, and alerts that hide their message have none.
+
 The buttons also name their meaning to Android, for watches and cars: `SEMANTIC_ACTION_DELETE`,
 `SEMANTIC_ACTION_ARCHIVE`, and `SEMANTIC_ACTION_MARK_AS_READ`. Reply names none, because
 `SEMANTIC_ACTION_REPLY` promises an inline reply and this one opens the composer.

@@ -7,19 +7,23 @@ import com.otusfoss.mail.core.messages.domain.BarButton
 import com.otusfoss.mail.core.messages.domain.MailAction
 import com.otusfoss.mail.core.messages.domain.MailMessage
 import com.otusfoss.mail.core.messages.domain.MailSender
+import com.otusfoss.mail.core.messages.domain.OwnAddresses
+import com.otusfoss.mail.core.messages.domain.isOwn
+import com.otusfoss.mail.core.messages.domain.otherPeople
 import com.otusfoss.mail.core.messages.domain.shownName
 
 /**
  * Who [primary] writes to, shown beside it: the sender for Reply, everyone for Reply all, and the
- * message's recipients for Follow up.
+ * message's recipients for Follow up. None of them is one of the user's [own] addresses.
  */
 internal fun replyContext(
     message: MailMessage,
     primary: BarButton,
+    own: OwnAddresses,
 ): BarContext? {
-    val everyone = message.others(listOf(message.sender) + message.to + message.cc)
+    val everyone = message.otherPeople(own)
     return when {
-        primary == MailAction.FollowUp -> peopleContext(message.others(message.to + message.cc))
+        primary == MailAction.FollowUp -> peopleContext(message.others(own, message.to + message.cc))
         primary == MailAction.ReplyAll && everyone.size > 1 -> peopleContext(everyone)
         primary == MailAction.Reply || primary == MailAction.ReplyAll -> personContext(message.sender)
         else -> null
@@ -48,10 +52,11 @@ private fun personContext(person: MailSender): BarContext {
     return BarContext(name, BarToken.Person(person.chipAvatar), "to $name")
 }
 
-/** [people], each address once, without the account itself. */
-private fun MailMessage.others(people: List<MailSender>): List<MailSender> {
-    val own = EmailAddressKey(location.accountAddress)
-    return people
-        .filter { it.address.isNotBlank() && EmailAddressKey(it.address) != own }
+/** [people], each address once, without the user's [own] addresses. */
+private fun MailMessage.others(
+    own: OwnAddresses,
+    people: List<MailSender>,
+): List<MailSender> =
+    people
+        .filter { it.address.isNotBlank() && !isOwn(own, it) }
         .distinctBy { EmailAddressKey(it.address) }
-}

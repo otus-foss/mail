@@ -32,6 +32,7 @@ import com.otusfoss.core.designsystem.shared.panels.components.ContextPanel
 import com.otusfoss.core.designsystem.shared.panels.elements.PanelNavigation
 import com.otusfoss.core.designsystem.theme.tokens.layout.PageTokens
 import com.otusfoss.core.designsystem.theme.typography.panelTextStyle
+import com.otusfoss.mail.core.text.presentation.plainTextClip
 import com.otusfoss.mail.feature.contacts.domain.CardKey
 import com.otusfoss.mail.feature.contacts.domain.CardSync
 import com.otusfoss.mail.feature.contacts.domain.ContactAddress
@@ -55,7 +56,6 @@ import com.otusfoss.mail.feature.contacts.presentation.current
 import com.otusfoss.mail.feature.contacts.presentation.groupsOf
 import com.otusfoss.mail.feature.contacts.presentation.isOwnAvatar
 import com.otusfoss.mail.feature.contacts.presentation.look
-import com.otusfoss.mail.feature.contacts.presentation.plainTextClip
 import com.otusfoss.mail.feature.contacts.presentation.removeFromGroup
 import com.otusfoss.mail.feature.contacts.presentation.saveElsewhere
 import com.otusfoss.mail.feature.contacts.presentation.setAvatar

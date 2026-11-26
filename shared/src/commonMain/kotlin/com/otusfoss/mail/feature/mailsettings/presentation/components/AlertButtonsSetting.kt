@@ -21,7 +21,7 @@ fun alertButtonsRow(state: MailBehaviorState): ChoiceRowSpec =
         shownCount(state.behavior.actions.notificationActions.size),
         { AlertButtonsSheet(state, it) },
         NotificationActionChoices.map { it.buttonLabel() },
-        description = "Up to $NOTIFICATION_ACTION_LIMIT, in this order",
+        description = "Up to $NOTIFICATION_ACTION_LIMIT, in this order. Copy code comes first on mail with a code.",
         keywords = listOf("Notification actions", "Quick actions"),
     )
 

@@ -162,6 +162,7 @@ private fun LazyItemScope.ConversationItem(
             model,
             selection = selection,
             onLongClick = { gestures.onToggle(message) },
+            onCodeCopied = { gestures.codeCopied(message, model.read) },
         ) { gestures.tap(message) }
     }
 }

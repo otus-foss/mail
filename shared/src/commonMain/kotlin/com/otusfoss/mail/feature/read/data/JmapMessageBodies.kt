@@ -64,7 +64,11 @@ class JmapMessageBodies(
                 jmapCallOr(null) {
                     cache.withAccount(loginId) { it.cached(loginId, message.emailId) ?: it.fetched(loginId, message) }
                 }
-            val body = email?.let { found -> jmapCallOr(null) { jmapDecoding { found.toMessageContent() } } }
+            // Bodies saved before the subject was fetched take it from the list.
+            val body =
+                email
+                    ?.let { found -> if (found.subject == null) found.copy(subject = message.subject) else found }
+                    ?.let { found -> jmapCallOr(null) { jmapDecoding { found.toMessageContent() } } }
             emit(body)
             if (email == null || body == null) return@flow
             val parts = email.inlineParts(body.html?.html)
@@ -189,6 +193,7 @@ class JmapMessageBodies(
             listOf(
                 "id",
                 "receivedAt",
+                "subject",
                 "textBody",
                 "htmlBody",
                 "bodyValues",

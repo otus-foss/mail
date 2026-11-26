@@ -30,6 +30,8 @@ data class NewMail(
     val mailboxRoles: Set<MailboxRole> = emptySet(),
     /** Whether its account can send, so the alert can offer Reply. */
     val canSend: Boolean = false,
+    /** The one-time code its subject or preview gives, which the alert offers to copy. */
+    val code: String? = null,
 ) {
     /** This alert as one line of JSON. */
     fun encoded(): String = Json.encodeToString(this)

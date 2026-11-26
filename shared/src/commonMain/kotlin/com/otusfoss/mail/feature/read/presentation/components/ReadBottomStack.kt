@@ -10,6 +10,7 @@ import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -23,6 +24,8 @@ import com.otusfoss.core.designsystem.shared.rows.components.rememberUnfold
 import com.otusfoss.core.designsystem.theme.tokens.content.ReadTokens
 import com.otusfoss.core.designsystem.theme.tokens.layout.PageTokens
 import com.otusfoss.core.settings.presentation.components.LocalDateFormatter
+import com.otusfoss.mail.core.codes.domain.SignInCode
+import com.otusfoss.mail.core.codes.presentation.components.rememberCodeCopy
 import com.otusfoss.mail.core.messages.domain.MailAttachment
 import com.otusfoss.mail.core.messages.domain.MailMessage
 import com.otusfoss.mail.core.messages.domain.MailingList
@@ -38,9 +41,11 @@ import com.otusfoss.mail.feature.read.presentation.subtitle
 
 /**
  * The strips above the action bar, from the bottom up: one context strip, then the page's files.
- * A conversation shows its thread strip; a single message its newsletter strip when it can be left
+ * A page with a one-time code shows its code strip, with the source's Delete. Otherwise a
+ * conversation shows its thread strip; a single message its newsletter strip when it can be left
  * and is not spam, else the folders it is also in, else nothing. Until the pages load, the row's
- * message count tells a conversation from a single message, so the strip does not change kind.
+ * message count tells a conversation from a single message, so the strip does not change kind
+ * until the page's body shows a code, whose strip then takes the thread strip's place on that page.
  * The thread strip follows the pages as [slide] turns them, and a drag on it turns them too. A
  * swipe up opens the thread strip's list, the files, or the folders sheet, and a swipe down folds
  * the files. [onFoldedHeight] gets the stack's height with the files folded, which the page leaves
@@ -72,7 +77,12 @@ internal fun ReadBottomStack(
                 key(page.id) { FilesStrip(state, page, it, actions) }
             }
         }
-        ContextStrip(state, current, source, content, actions, slide)
+        val code = content?.signInCode
+        if (code != null) {
+            CodeStrip(page, code, source.onDelete)
+        } else {
+            ContextStrip(state, current, source, content, actions, slide)
+        }
     }
 }
 
@@ -114,6 +124,22 @@ private fun ContextStrip(
             }
         }
     }
+}
+
+/** The [page]'s one-time [code], copied without its spaces and kept out of the system's copy preview. */
+@Composable
+private fun CodeStrip(
+    page: MailMessage,
+    code: SignInCode,
+    onDelete: (() -> Unit)?,
+) {
+    val copyCode = rememberCodeCopy()
+    var copied by remember(page.id) { mutableStateOf(false) }
+    val copy: () -> Unit = {
+        copied = true
+        copyCode(code)
+    }
+    ReadCodeStrip(code, copied, copy, onDelete)
 }
 
 /** The page's files, which a tap or a drag unfolds; the drag moves them with the finger. */

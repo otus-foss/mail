@@ -48,8 +48,10 @@ as `ListPage` for the Inbox and every folder page. It holds no feature behavior 
 - `core/categories`: the Inbox's categories that the list, the Read view, and settings share: the
   categories, a message's verdict and its reasons, the user's category settings, and their labels.
   The classifier that makes verdicts stays in `inbox`; see [categories](categories.md).
+- `core/codes`: finding the one-time code a message gives, which the Read view and alerts share;
+  see [one-time codes](codes.md).
 - `core/cache`, `core/files`, `core/text`: the mail cache, picked, saved, and downloaded files,
-  and size text.
+  size text, and clipboard text.
 - `core/storage`: `StoreSpec` and `DeviceStore`, the typed app-private stores each feature
   declares.
 
