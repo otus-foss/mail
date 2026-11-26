@@ -6,8 +6,6 @@ import com.otusfoss.core.designsystem.shared.feedback.components.ToastState
 import com.otusfoss.mail.core.messages.domain.ComposeRequest
 import com.otusfoss.mail.core.messages.domain.Draft
 import com.otusfoss.mail.core.messages.domain.DraftSender
-import com.otusfoss.mail.core.messages.domain.ScheduledSends
-import com.otusfoss.mail.core.messages.domain.SendCancel
 import com.otusfoss.mail.core.messages.domain.SendException
 import com.otusfoss.mail.core.messages.domain.SendFailure
 import com.otusfoss.mail.core.messages.domain.SendTime
@@ -30,44 +28,19 @@ internal abstract class OutgoingMailFixture {
     protected val toasts = ToastState()
     protected val runs = mutableListOf<SendTime>()
     protected val opened = mutableListOf<ComposeRequest>()
-    protected val cancelled = mutableListOf<SentMessage>()
-    protected val sentNow = mutableListOf<SentMessage>()
-    protected var sendNowFailure: SendFailure? = null
-
-    /** What cancel ends in; the send counts as canceled only when it stopped. */
-    protected var cancelOutcome: SendCancel = SendCancel.Stopped
-    protected val filedSent = mutableListOf<String>()
+    protected val scheduled = FakeScheduledSends()
+    protected val cancelled get() = scheduled.cancelled
+    protected val sentNow get() = scheduled.sentNow
+    protected var sendNowFailure by scheduled::sendNowFailure
+    protected var cancelOutcome by scheduled::cancelOutcome
+    protected val filedSent get() = scheduled.filedSent
     protected val drafts = FakeDrafts()
     protected val checks = mutableListOf<Boolean>()
     protected var failure: SendFailure? = null
     protected var check = SendCheck.NotSent
     protected var hold = HOLD
-    protected var serverDelaySeconds = 0L
+    protected var serverDelaySeconds by scheduled::maxDelay
     protected val draft = Draft("a1", subject = "Lunch", emailId = "d1")
-
-    protected val scheduled =
-        object : ScheduledSends {
-            override suspend fun maxDelaySeconds(accountId: String) = serverDelaySeconds
-
-            override suspend fun cancel(message: SentMessage): SendCancel {
-                if (cancelOutcome == SendCancel.Stopped) cancelled += message
-                return cancelOutcome
-            }
-
-            override suspend fun sendNow(message: SentMessage): Result<Unit> {
-                sentNow += message
-                return sendNowFailure?.let { Result.failure(SendException(it)) } ?: Result.success(Unit)
-            }
-
-            override suspend fun fileSent(accountId: String) {
-                filedSent += accountId
-            }
-
-            override suspend fun held(
-                accountId: String,
-                emailId: String,
-            ) = null
-        }
 
     protected val checker =
         SendChecker { _, _, cancelHeld ->
@@ -85,11 +58,8 @@ internal abstract class OutgoingMailFixture {
 
     protected fun TestScope.outgoing(): OutgoingMail {
         val now = { NOW + testScheduler.currentTime.milliseconds }
-        return OutgoingMail(backgroundScope, toasts, scheduled, MailOutbox(null, sender, checker, now = now), {
-            DAY_FIRST
-        }, now) {
-            hold
-        }
+        val outbox = MailOutbox(null, sender, checker, scheduled, now = now)
+        return OutgoingMail(backgroundScope, toasts, scheduled, outbox, { DAY_FIRST }, now) { hold }
     }
 
     protected fun swipeAway() = assertNotNull(toasts.messages.single().swipeAction).onClick()

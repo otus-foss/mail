@@ -186,7 +186,7 @@ class MailServices(
     /** Messages handed over for sending, kept until the server has them; see docs/compose.md. */
     internal val outbox by lazy {
         val checker = JmapSendChecker(connections, changes)
-        MailOutbox(stores.waiting.outbox, compose.sender, checker, host.wakeOutbox, io = io)
+        MailOutbox(stores.waiting.outbox, compose.sender, checker, compose.sender, host.wakeOutbox, io = io)
     }
     internal val signatures: SignatureRepository by lazy { JmapSignatures(connections) }
     internal val threads: ThreadHistory by lazy { JmapThreadHistory(connections) }

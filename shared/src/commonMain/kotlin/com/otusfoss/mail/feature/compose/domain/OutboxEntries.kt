@@ -39,7 +39,11 @@ internal class OutboxEntries(
         withContext(io) { saved.update { it + OutboxStore.ENTRIES.entry(entries) } }
     }
 
+    suspend fun find(id: String): OutboxEntry? = all().firstOrNull { it.id == id }
+
     suspend fun replace(entry: OutboxEntry) = save(all().map { if (it.id == entry.id) entry else it })
+
+    suspend fun remove(id: String) = removeIf { it.id == id }
 
     suspend fun removeIf(predicate: (OutboxEntry) -> Boolean) = save(all().filterNot(predicate))
 

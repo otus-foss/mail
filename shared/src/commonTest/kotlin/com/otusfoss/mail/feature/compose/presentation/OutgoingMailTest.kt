@@ -220,11 +220,11 @@ internal class OutgoingMailTest : OutgoingMailFixture() {
     fun aMessageAnEarlierRunCouldNotSendIsOfferedToOpen() =
         runTest {
             val store = DeviceStore(MemoryMapStore(), OutboxStore)
-            val earlier = MailOutbox(store, sender, checker, io = EmptyCoroutineContext)
+            val earlier = MailOutbox(store, sender, checker, scheduled, io = EmptyCoroutineContext)
             failure = SendFailure.Recipients
             earlier.send(earlier.add(draft, null, NOW))
 
-            val restarted = MailOutbox(store, sender, checker, io = EmptyCoroutineContext)
+            val restarted = MailOutbox(store, sender, checker, scheduled, io = EmptyCoroutineContext)
             OutgoingMail(backgroundScope, toasts, scheduled, restarted, { DAY_FIRST }) { hold }.resume { opened += it }
             runCurrent()
             val offer = toasts.messages.single()
@@ -242,12 +242,12 @@ internal class OutgoingMailTest : OutgoingMailFixture() {
     fun anOfferedMessageLeavesTheOutboxOnlyOnceAPageShowsIt() =
         runTest {
             val store = DeviceStore(MemoryMapStore(), OutboxStore)
-            val earlier = MailOutbox(store, sender, checker, io = EmptyCoroutineContext)
+            val earlier = MailOutbox(store, sender, checker, scheduled, io = EmptyCoroutineContext)
             failure = SendFailure.Recipients
             earlier.send(earlier.add(draft, null, NOW))
             val pages = PageRequests(backgroundScope)
 
-            val restarted = MailOutbox(store, sender, checker, io = EmptyCoroutineContext)
+            val restarted = MailOutbox(store, sender, checker, scheduled, io = EmptyCoroutineContext)
             OutgoingMail(backgroundScope, toasts, scheduled, restarted, { DAY_FIRST }) { hold }
                 .resume { pages.show(MailPage.Compose(it)) }
             runCurrent()
@@ -255,7 +255,7 @@ internal class OutgoingMailTest : OutgoingMailFixture() {
             assertNotNull(toasts.messages.single().action).onClick()
             runCurrent()
 
-            suspend fun kept() = MailOutbox(store, sender, checker, io = EmptyCoroutineContext).offers()
+            suspend fun kept() = MailOutbox(store, sender, checker, scheduled, io = EmptyCoroutineContext).offers()
             assertEquals(1, kept().size, "The message stays until a page has it")
             val shown = mutableListOf<MailPage>()
             backgroundScope.launch { pages.collect { shown += it } }

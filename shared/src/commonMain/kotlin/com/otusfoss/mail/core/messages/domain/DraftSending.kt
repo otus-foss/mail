@@ -63,6 +63,7 @@ class SendException(
  * when it has one, and takes back the answered or forwarded mark this send gave [marked]. A copy
  * submitted again files in [sentId], the Sent folder the send found.
  */
+@Serializable
 data class SentMessage(
     val accountId: String,
     val emailId: String,

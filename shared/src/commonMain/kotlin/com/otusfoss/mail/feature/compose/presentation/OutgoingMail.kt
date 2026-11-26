@@ -8,7 +8,6 @@ import com.otusfoss.mail.core.mail.MailFailure
 import com.otusfoss.mail.core.messages.domain.ComposeRequest
 import com.otusfoss.mail.core.messages.domain.SERVER_SPARE
 import com.otusfoss.mail.core.messages.domain.ScheduledSends
-import com.otusfoss.mail.core.messages.domain.SendCancel
 import com.otusfoss.mail.core.messages.domain.SendException
 import com.otusfoss.mail.core.messages.domain.SendFailure
 import com.otusfoss.mail.core.messages.domain.SentMessage
@@ -18,7 +17,6 @@ import com.otusfoss.mail.feature.compose.presentation.components.scheduledToast
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.async
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeoutOrNull
 import kotlinx.datetime.LocalDateTime
@@ -26,7 +24,6 @@ import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toInstant
 import kotlin.time.Clock
 import kotlin.time.Duration.Companion.milliseconds
-import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Duration.Companion.seconds
 import kotlin.time.Instant
 
@@ -47,6 +44,8 @@ internal class OutgoingMail(
     private val now: () -> Instant = { Clock.System.now() },
     private val holdMillis: () -> Long,
 ) {
+    private val undo = SendUndo(scope, toasts)
+
     fun send(outgoing: Outgoing) {
         val group = Any()
         val hold = holdMillis()
@@ -68,26 +67,29 @@ internal class OutgoingMail(
                 toasts.show(ToastMessage("Sending…", group = group))
                 deliver(outgoing, id.await(), group)
             }
-        val undo =
+        val takeBack =
             UiAction("Undo") {
                 onDevice.cancel()
                 scope.launch {
                     val sent = held.await()?.getOrNull()
-                    when {
-                        sent != null -> unschedule(outgoing, sent)
-                        outbox.cancel(id.await()) -> outgoing.open(outgoing.reopenSaved())
-                        else -> toasts.show(ToastMessage(ALREADY_SENT, group = group))
-                    }
+                    undo.takeBack(outgoing, sent, group) { outbox.cancel(id.await()) }
                 }
             }
         val sentToast = { scope.launch { if (held.await()?.isSuccess == true) toasts.show(sent(group)) } }
         val send =
             UiAction("Send") {
                 early.complete(Unit)
-                scope.launch { sendEarly(outgoing, held.await()?.getOrNull() ?: return@launch, deadline, group) }
+                scope.launch { sendEarly(outgoing, id.await(), held.await()?.getOrNull() ?: return@launch, group) }
             }
         toasts.show(
-            ToastMessage("Sending…", undo, group, onClose = { sentToast() }, durationMillis = hold, swipeAction = send),
+            ToastMessage(
+                "Sending…",
+                takeBack,
+                group,
+                onClose = { sentToast() },
+                durationMillis = hold,
+                swipeAction = send,
+            ),
         )
     }
 
@@ -138,8 +140,8 @@ internal class OutgoingMail(
             onSuccess = { sent ->
                 outgoing.draft.sent()
                 outgoing.filed()
-                val undo = sent?.let { UiAction("Undo") { scope.launch { unschedule(outgoing, it) } } }
-                toasts.show(ToastMessage(dates().scheduledToast(at, outgoing.scheduledBefore), undo))
+                val cancel = sent?.let { UiAction("Undo") { scope.launch { unschedule(outgoing, it) } } }
+                toasts.show(ToastMessage(dates().scheduledToast(at, outgoing.scheduledBefore), cancel))
             },
             onFailure = { error ->
                 val retry = UiAction("Retry") { scope.launch { schedule(outgoing, id, at) } }
@@ -171,37 +173,31 @@ internal class OutgoingMail(
     }
 
     /**
-     * Sends a message the server holds at once, unless its time is nearly up anyway, where canceling
-     * and sending again would only add a request. Offline, it tries again until the server answers,
-     * since the cancel may have arrived without the new submission. A failure leaves the message
-     * as a draft to open.
+     * Sends a message the server holds at once, through the outbox, which keeps the request until
+     * the server answers and tries again in a background run or at the next start. While the app
+     * runs it also tries again here, so the toast says how it went. A message that will not go is
+     * offered to open: a refused one as its copy, a draft again, and one nobody can confirm apart
+     * from its copy, which may be the sent message.
      */
     private suspend fun sendEarly(
         outgoing: Outgoing,
+        id: String,
         held: SentMessage,
-        deadline: Instant,
         group: Any,
     ) {
-        var result = if (deadline - now() <= SEND_EARLY_MIN) Result.success(Unit) else scheduled.sendNow(held)
-        var wait = RETRY_FIRST
-        if (result.exceptionOrNull()?.isOffline() == true) {
-            toasts.show(ToastMessage(WILL_SEND, group = group, sticky = true))
-        }
-        while (result.exceptionOrNull()?.isOffline() == true) {
-            delay(wait)
-            wait = (wait * 2).coerceAtMost(RETRY_MAX)
-            result = scheduled.sendNow(held)
-        }
-        if (result.isSuccess) {
-            toasts.show(sent(group))
-            return
-        }
-        val reopen = outgoing.reopen
+        val first = outbox.sendNow(id)
+        if (first.isOffline()) toasts.show(ToastMessage(WILL_SEND, group = group, sticky = true))
+        val error = retried(first, { it.isOffline() }) { outbox.sendNow(id) }.exceptionOrNull()
+        if (error == null) return toasts.show(sent(group))
+        val copy = held.emailId.takeUnless { error.isUnconfirmed() }
         val open =
             UiAction("Open") {
-                scope.launch { outgoing.open(reopen.copy(draft = reopen.draft.copy(emailId = held.emailId))) }
+                scope.launch {
+                    outgoing.open(outgoing.reopen.copy(draft = outgoing.reopen.draft.copy(emailId = copy)))
+                    outbox.drop(id)
+                }
             }
-        toasts.show(ToastMessage("Couldn't send", open, group, sticky = true))
+        toasts.show(ToastMessage(if (copy == null) UNCONFIRMED else "Couldn't send", open, group, sticky = true))
     }
 
     private suspend fun deliver(
@@ -228,7 +224,7 @@ internal class OutgoingMail(
         group: Any,
         error: Throwable,
     ) {
-        val unconfirmed = (error as? SendException)?.failure == SendFailure.Unconfirmed
+        val unconfirmed = error.isUnconfirmed()
         val action =
             if (unconfirmed) {
                 UiAction("Open") {
@@ -249,47 +245,22 @@ internal class OutgoingMail(
         toasts.show(ToastMessage(text, action, group, sticky = true))
     }
 
-    /** Cancels a held or scheduled message and opens its copy, a draft again, to edit. */
+    /** Undo of a scheduled message, which left the outbox once the server had it. */
     private suspend fun unschedule(
         outgoing: Outgoing,
         sent: SentMessage,
-    ) {
-        when (scheduled.cancel(sent)) {
-            SendCancel.Stopped -> {
-                val reopen = outgoing.reopen
-                outgoing.filed()
-                // A copy that is not a draft again yet still opens: its first save replaces it.
-                outgoing.open(reopen.copy(draft = reopen.draft.copy(emailId = sent.emailId)))
-            }
-
-            SendCancel.Final -> {
-                toasts.show(ToastMessage(ALREADY_SENT))
-            }
-
-            SendCancel.Unknown -> {
-                toasts.show(ToastMessage(NOT_CONFIRMED))
-            }
-
-            SendCancel.Waiting -> {
-                val retry = UiAction("Retry") { scope.launch { unschedule(outgoing, sent) } }
-                toasts.show(ToastMessage("Couldn't cancel", retry, sticky = true))
-            }
-        }
-    }
+    ) = undo.takeBack(outgoing, sent) { scheduled.cancel(sent) }
 }
 
 private fun sent(group: Any) = ToastMessage("Sent", group = group)
 
 private fun Throwable.isOffline() = (this as? SendException)?.failure == SendFailure.Mail(MailFailure.Unreachable)
 
+private fun Result<*>.isOffline() = exceptionOrNull()?.isOffline() == true
+
+private fun Throwable.isUnconfirmed() = (this as? SendException)?.failure == SendFailure.Unconfirmed
+
 private const val WILL_SEND = "Will send when online"
 private const val UNCONFIRMED = "Couldn't confirm sending"
 
 private fun OutboxProblem?.offerText() = if (this == OutboxProblem.Unconfirmed) UNCONFIRMED else "Couldn't send"
-
-/** The first and the longest wait before sending early again while offline. */
-private val RETRY_FIRST = 5.seconds
-private val RETRY_MAX = 1.minutes
-
-/** Below this much of the Undo window left, a swipe lets the server send on time. */
-private val SEND_EARLY_MIN = 3.seconds

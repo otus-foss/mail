@@ -209,7 +209,7 @@ class JmapDraftSender internal constructor(
                     account.resubmit(message)
                 } catch (error: JmapException) {
                     // When the server cannot be asked, a later run decides, so the copy stays as it is.
-                    if (account.isSubmitted(message.emailId) ?: throw error) return@submissionCall
+                    if (account.isSubmitted(message.emailId) ?: failUnreachable()) return@submissionCall
                     account.restoreCanceledDraft(message, changes)
                     throw error
                 }

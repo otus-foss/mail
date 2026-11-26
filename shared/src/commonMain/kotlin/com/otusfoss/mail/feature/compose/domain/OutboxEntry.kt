@@ -2,6 +2,7 @@ package com.otusfoss.mail.feature.compose.domain
 
 import com.otusfoss.mail.core.messages.domain.AnsweredMessage
 import com.otusfoss.mail.core.messages.domain.Draft
+import com.otusfoss.mail.core.messages.domain.SentMessage
 import com.otusfoss.mail.core.messages.domain.answered
 import com.otusfoss.mail.core.storage.StoreField
 import com.otusfoss.mail.core.storage.StoreSpec
@@ -12,13 +13,17 @@ import kotlinx.serialization.json.Json
 import kotlin.time.Instant
 
 /**
- * A message handed over for sending, kept on the device until the server has it. It goes once
- * [dueMillis] has passed, or at [sendAtMillis], a time the user chose, which the server holds it
- * for. [attempted] once a send started: the server may have taken it even if no answer came, so it
- * is looked for before it goes again. [storedCopy] once the server stored the copy that try
- * submits, so the lookup goes by its id. [problem] when it needs the user. [withdrawn] after Undo
- * of a message the server may hold: it never goes, and stays only until a hold found there is
- * canceled.
+ * A message handed over for sending, kept on the device until its send is final on the server. It
+ * goes once [dueMillis] has passed, or at [sendAtMillis], a time the user chose, which the server
+ * holds it for. [attempted] once a send started: the server may have taken it even if no answer
+ * came, so it is looked for before it goes again. [storedCopy] once the server stored the copy that
+ * try submits, so the lookup goes by its id. [problem] when it needs the user.
+ *
+ * [held] once the server holds it for Undo, which ends at [dueMillis]: the message stays until
+ * that hold is over, so Undo and sending it early work from here, also after a restart. What the
+ * user asks of a waiting message is kept before the server hears of it. [withdrawn] after Undo: it
+ * never goes, and stays only until a hold the server has, or may have, is canceled. [sendNow]
+ * after the user asked for a held message to go at once, until the server sent it.
  */
 @Serializable
 data class OutboxEntry(
@@ -31,9 +36,20 @@ data class OutboxEntry(
     val problem: OutboxProblem? = null,
     val withdrawn: Boolean = false,
     val storedCopy: StoredCopy? = null,
+    val held: SentMessage? = null,
+    val sendNow: Boolean = false,
 ) {
     /** The time the message was given, or null when it goes as soon as it is due. */
     val sendAt: Instant? get() = sendAtMillis?.let(Instant::fromEpochMilliseconds)
+
+    /** When it is due, which for a [held] message is the end of its Undo window. */
+    val due: Instant get() = Instant.fromEpochMilliseconds(dueMillis)
+
+    /** Whether the server holds it and the user asked nothing more of it, so it goes by itself. */
+    val goesByItself: Boolean get() = held != null && !withdrawn && !sendNow
+
+    /** Whether it waits for the server to answer, so a background run should try again. */
+    val awaitsServer: Boolean get() = problem == null && attempted && !goesByItself
 }
 
 /** The Email [emailId] a send stored on the server at [atMillis], before it submitted that copy. */

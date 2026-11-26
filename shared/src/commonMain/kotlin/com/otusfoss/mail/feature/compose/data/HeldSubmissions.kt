@@ -67,7 +67,7 @@ internal suspend fun MailAccount.isSubmitted(emailId: String): Boolean? =
  * unconfirmed, and a server that cannot be asked as unreachable.
  */
 internal suspend fun MailAccount.onlyCanceled(emailId: String): Boolean {
-    val state = jmapCallOr(null) { copyState(emailId) } ?: failSend(SendFailure.Mail(MailFailure.Unreachable))
+    val state = jmapCallOr(null) { copyState(emailId) } ?: failUnreachable()
     if (state.statuses.isEmpty()) failSend(SendFailure.Unconfirmed)
     return state.live.isEmpty()
 }
@@ -140,3 +140,6 @@ internal suspend fun MailAccount.restoredAfterCancel(
     }
     return SendCancel.Stopped
 }
+
+/** Fails a call whose server could not be asked, so a later run tries it again. */
+internal fun failUnreachable(): Nothing = failSend(SendFailure.Mail(MailFailure.Unreachable))

@@ -3,12 +3,14 @@ package com.otusfoss.mail.feature.compose.domain
 import com.otusfoss.mail.core.mail.MailFailure
 import com.otusfoss.mail.core.messages.domain.Draft
 import com.otusfoss.mail.core.messages.domain.DraftSender
+import com.otusfoss.mail.core.messages.domain.SendCancel
 import com.otusfoss.mail.core.messages.domain.SendException
 import com.otusfoss.mail.core.messages.domain.SendFailure
 import com.otusfoss.mail.core.messages.domain.SendTime
 import com.otusfoss.mail.core.messages.domain.SentMessage
 import com.otusfoss.mail.core.messages.domain.accountId
 import com.otusfoss.mail.core.storage.DeviceStore
+import com.otusfoss.mail.testing.FakeScheduledSends
 import com.otusfoss.mail.testing.MemoryMapStore
 import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
@@ -47,9 +49,11 @@ class MailOutboxTest {
             check
         }
 
+    private val held = FakeScheduledSends()
+
     private fun savedEntries() = OutboxStore.ENTRIES.of(store.saved).orEmpty()
 
-    private fun outbox() = MailOutbox(outboxStore, sender, checker, now = { now })
+    private fun outbox() = MailOutbox(outboxStore, sender, checker, held, now = { now })
 
     @Test
     fun aMessageOutlivesTheAppUntilItIsDue() =
@@ -152,7 +156,7 @@ class MailOutboxTest {
             val copies = mutableListOf<String?>()
             val woken = mutableListOf<Instant>()
             val outbox =
-                MailOutbox(outboxStore, storing, checker.recordingCopies(copies), wake = { woken += it }, now = { now })
+                MailOutbox(outboxStore, storing, checker.recordingCopies(copies), held, { woken += it }, { now })
             val id = outbox.add(draft, null, NOW)
             failure = SendFailure.Mail(MailFailure.Unreachable)
             outbox.send(id)
@@ -186,11 +190,11 @@ class MailOutboxTest {
     fun undoDropsAWaitingMessageButNotOneThatWent() =
         runTest {
             val outbox = outbox()
-            assertTrue(outbox.cancel(outbox.add(draft, null, NOW + 5.seconds)))
+            assertEquals(SendCancel.Stopped, outbox.cancel(outbox.add(draft, null, NOW + 5.seconds)))
             assertTrue(savedEntries().isEmpty())
             val went = outbox.add(draft, null, NOW)
             outbox.send(went)
-            assertFalse(outbox.cancel(went))
+            assertEquals(SendCancel.Final, outbox.cancel(went))
         }
 
     @Test
@@ -200,16 +204,17 @@ class MailOutboxTest {
             val sending = outbox.add(draft, null, NOW)
             failure = SendFailure.Mail(MailFailure.Unreachable)
             outbox.send(sending)
-            assertTrue(outbox.cancel(sending), "It is withdrawn")
-
             check = SendCheck.Unreachable
+            assertEquals(SendCancel.Waiting, outbox.cancel(sending), "It is withdrawn until the server answers")
+
             outbox.resume()
             assertTrue(outbox.waiting(), "It waits until the server can be asked")
             check = SendCheck.NotSent
             outbox.resume()
             assertEquals(1, sent.size, "A withdrawn message never goes again")
-            assertEquals(listOf(true, true), heldCancels, "A hold found there is canceled")
+            assertEquals(listOf(true, true, true), heldCancels, "A hold found there is canceled")
             assertTrue(savedEntries().isEmpty())
+            assertEquals(SendCancel.Stopped, outbox.cancel(sending), "An Undo that asks again hears how it went")
         }
 
     @Test
@@ -231,16 +236,16 @@ class MailOutboxTest {
                     tries++
                     throw IllegalArgumentException("Not base64")
                 }
-            val outbox = MailOutbox(outboxStore, throwing, checker, now = { now })
+            val outbox = MailOutbox(outboxStore, throwing, checker, held, now = { now })
             val id = outbox.add(draft, null, NOW)
             outbox.resume()
-            val restarted = MailOutbox(outboxStore, throwing, checker, now = { now })
+            val restarted = MailOutbox(outboxStore, throwing, checker, held, now = { now })
             restarted.resume()
             assertEquals(OutboxProblem.Refused, restarted.offers().single().problem)
             assertEquals(1, tries, "It does not go again by itself")
 
             check = SendCheck.Sent
-            val unsure = MailOutbox(outboxStore, sender, { _, _, _ -> error("Unreadable answer") }, now = { now })
+            val unsure = MailOutbox(outboxStore, sender, { _, _, _ -> error("Unreadable answer") }, held, now = { now })
             assertEquals(SendFailure.Unconfirmed, (unsure.send(id).exceptionOrNull() as SendException).failure)
             assertTrue(sent.isEmpty(), "A lookup that throws never lets the message go again")
         }
