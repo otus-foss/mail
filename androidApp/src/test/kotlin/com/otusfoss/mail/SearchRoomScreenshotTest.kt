@@ -46,8 +46,8 @@ class SearchRoomScreenshotTest {
 
     @Test
     fun accountsSheet() {
-        compose.onNodeWithContentDescription("All accounts, Inbox").performScrollTo().performClick()
-        compose.pickRow("Archive").performClick()
+        compose.onNodeWithText("All accounts").performScrollTo().performClick()
+        compose.pickRow("florian@rubylabs.design").performClick()
         compose.screenshot("search_room/accounts")
     }
 }

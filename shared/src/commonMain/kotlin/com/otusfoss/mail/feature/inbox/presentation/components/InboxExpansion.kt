@@ -180,6 +180,7 @@ private fun FiltersContent(
             inbox.dateFormatter,
             state::edit,
             PeopleSearches(state.senders, state.recipients, people),
+            state.defaultFolders,
         )
     }
 }

@@ -46,12 +46,19 @@ sealed interface MailScope {
         val ownFolders: Boolean = false,
     ) : MailScope
 
+    /** Every mailbox of every account except Spam and Trash (and folders nested under them). */
+    data object AllMail : MailScope
+
     data object AllMailboxes : MailScope
 
-    /** The chosen mailboxes of [accounts]. Empty choices load every mailbox or account. */
+    /**
+     * The chosen mailboxes of [accounts]. Empty choices load every mailbox or account; without
+     * [includeBins], an empty mailbox choice leaves out Spam and Trash (and folders under them).
+     */
     data class Mailboxes(
         val mailboxes: Set<MailboxScope>,
         val accounts: Set<String> = emptySet(),
+        val includeBins: Boolean = false,
     ) : MailScope
 
     /** [accountId] is the login; [folderId] is the server's mailbox id. */

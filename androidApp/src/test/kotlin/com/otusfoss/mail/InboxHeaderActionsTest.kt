@@ -65,7 +65,7 @@ class InboxHeaderActionsTest {
         compose.onNodeWithContentDescription("Open filters").assertIsDisplayed().performClick()
         compose.filterTab("Unread").performClick()
         compose.onNodeWithContentDescription("Show ", substring = true).performClick()
-        compose.onNodeWithText("Search Inbox").assertIsDisplayed()
+        compose.onNodeWithText("Search mail").assertIsDisplayed()
         compose.searchField().assertDoesNotExist()
         compose.onNodeWithText("Unread").assertIsOn()
         compose.onNodeWithContentDescription("Open filters, 1 active").assertIsDisplayed()
@@ -82,7 +82,7 @@ class InboxHeaderActionsTest {
 
         fun bounds(node: SemanticsNodeInteraction) = node.fetchSemanticsNode().boundsInRoot
         show(InboxPill.defaults(readLater = false))
-        val prompt = bounds(compose.onNodeWithText("Search Inbox"))
+        val prompt = bounds(compose.onNodeWithText("Search mail"))
         assertTrue("With pills, the button ends their row", bounds(filters()).top >= prompt.bottom)
         val listWithPills = bounds(compose.onNodeWithText("Your inbox is empty")).top
         show(emptyList())
@@ -102,7 +102,7 @@ class InboxHeaderActionsTest {
         compose.onNodeWithContentDescription("Open navigation").assertIsDisplayed().assertIsEnabled()
         compose.openSearchResults()
         compose.onNodeWithContentDescription("Back to inbox").performClick()
-        compose.onNodeWithText("Search Inbox").assertIsDisplayed()
+        compose.onNodeWithText("Search mail").assertIsDisplayed()
         compose.onNodeWithContentDescription("Open navigation").assertIsEnabled()
     }
 }

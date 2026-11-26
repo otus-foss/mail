@@ -13,17 +13,23 @@ import com.otusfoss.core.designsystem.mail.folders.components.TreeFolder
 import com.otusfoss.core.designsystem.shared.controls.elements.Chip
 import com.otusfoss.core.designsystem.shared.controls.elements.ChipLook
 import com.otusfoss.core.designsystem.shared.controls.elements.ChipStyle
+import com.otusfoss.core.designsystem.shared.controls.elements.Symbol
+import com.otusfoss.core.designsystem.shared.filters.components.FilterSection
 import com.otusfoss.core.designsystem.shared.folders.elements.FolderGlyph
 import com.otusfoss.core.designsystem.shared.overlays.components.ListSheet
+import com.otusfoss.core.designsystem.shared.overlays.components.SheetFootnote
 import com.otusfoss.core.designsystem.shared.rows.components.AccountGroupRow
 import com.otusfoss.core.designsystem.shared.selection.components.PickerSearch
 import com.otusfoss.core.designsystem.theme.tokens.controls.ControlTokens
 import com.otusfoss.core.designsystem.theme.tokens.selection.FilterTokens
 import com.otusfoss.mail.core.mailbox.FolderKey
+import com.otusfoss.mail.core.mailbox.MailboxRole
 import com.otusfoss.mail.core.mailbox.pathText
+import com.otusfoss.mail.core.mailbox.presentation.symbol
 import com.otusfoss.mail.core.messages.presentation.icon
 import com.otusfoss.mail.core.settings.presentation.icon
 import com.otusfoss.mail.feature.inbox.domain.InboxFilters
+import com.otusfoss.mail.feature.inbox.domain.withBin
 import com.otusfoss.mail.feature.inbox.presentation.FilterAccount
 import com.otusfoss.mail.feature.inbox.presentation.FilterFolder
 import com.otusfoss.mail.feature.inbox.presentation.FilterOptions
@@ -49,7 +55,16 @@ internal fun FolderPickerSheet(
     var query by remember { mutableStateOf("") }
     var collapsed by remember { mutableStateOf(emptySet<FolderKey>()) }
     var foldedAccounts by remember { mutableStateOf(emptySet<String>()) }
-    ListSheet("Folders", onDismiss, search = { PickerSearch(query, { query = it }, "Search folders") }) {
+    val clear =
+        { onEdit { it.copy(folders = emptySet(), includedBins = emptySet()) } }
+            .takeIf { draft.folders.isNotEmpty() || draft.includedBins.isNotEmpty() }
+    ListSheet(
+        "Folders",
+        onDismiss,
+        onClear = clear,
+        search = { PickerSearch(query, { query = it }, "Search folders") },
+    ) {
+        if (draft.folders.isEmpty() && query.isBlank()) AlsoIncludeBins(draft, onEdit)
         options.accounts.forEach { account ->
             val open = account.id !in foldedAccounts
             if (options.accounts.size > 1) {
@@ -65,6 +80,30 @@ internal fun FolderPickerSheet(
         }
     }
 }
+
+/** Spam and Trash opt-in chips while searching all folders, since bins stay excluded by default. */
+@Composable
+private fun AlsoIncludeBins(
+    draft: InboxFilters,
+    onEdit: FilterEdit,
+) {
+    FilterSection("Also include", Modifier.padding(horizontal = FilterTokens.bodyInset)) {
+        BIN_ROLES.forEach { role ->
+            val on = role in draft.includedBins
+            Chip(
+                role.title,
+                { onEdit { it.withBin(role, !on) } },
+                selected = on,
+                style = ChipStyle(look = ChipLook.Raised),
+            ) {
+                Symbol(role.symbol, size = ControlTokens.chipIconSize)
+            }
+        }
+    }
+    SheetFootnote("Spam and Trash stay out until included.")
+}
+
+private val BIN_ROLES = listOf(MailboxRole.Junk, MailboxRole.Trash)
 
 @Composable
 private fun FolderRows(

@@ -34,7 +34,6 @@ internal fun InboxPage(
         MailPage.Inbox,
         feed,
         ListBase.inbox(
-            contents,
             pills,
             MailboxSearch(
                 states.list.searchMailboxes(),

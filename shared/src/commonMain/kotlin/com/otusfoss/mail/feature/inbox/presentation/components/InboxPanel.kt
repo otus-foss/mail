@@ -40,6 +40,7 @@ import com.otusfoss.mail.core.messages.presentation.components.MailScopeSwitch
 import com.otusfoss.mail.core.messages.presentation.icon
 import com.otusfoss.mail.core.settings.presentation.icon
 import com.otusfoss.mail.feature.inbox.domain.InboxSearch
+import com.otusfoss.mail.feature.inbox.domain.activeCount
 import com.otusfoss.mail.feature.inbox.presentation.CategoryTabs
 import com.otusfoss.mail.feature.inbox.presentation.InboxContext
 
@@ -135,7 +136,7 @@ private fun FilterButton(
     modifier: Modifier = Modifier,
     look: IconButtonLook = IconButtonLook.Bare,
 ) {
-    val count = filters.applied.activeCount
+    val count = filters.applied.activeCount(filters.defaultFolders)
     IconButton(
         if (count == 0) "Open filters" else "Open filters, $count active",
         onOpenFilters,

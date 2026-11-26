@@ -3,6 +3,7 @@ package com.otusfoss.mail
 import com.otusfoss.core.designsystem.shared.feedback.components.ToastState
 import com.otusfoss.mail.core.categories.domain.InboxCategories
 import com.otusfoss.mail.core.messages.domain.ComposeRequest
+import com.otusfoss.mail.core.messages.domain.FolderRef
 import com.otusfoss.mail.core.messages.domain.MailMessage
 import com.otusfoss.mail.core.messages.domain.MessageContent
 import com.otusfoss.mail.core.messages.domain.OwnAddresses
@@ -71,6 +72,8 @@ internal class InboxContextBuilder {
     var quick = QuickViewContext(QuickViewModule.Defaults, targets = emptyList())
     var opening: OpenRequest? = null
     var categories: InboxCategories? = null
+    var searchPrompt: String? = null
+    var searchFolders: Set<FolderRef> = emptySet()
 
     fun build(): InboxContext =
         InboxContext(
@@ -91,6 +94,8 @@ internal class InboxContextBuilder {
             quick = quick,
             opening = opening,
             categories = categories,
+            searchPrompt = searchPrompt ?: if (title == "Inbox") "Search mail" else "Search $title",
+            searchFolders = searchFolders,
         )
 }
 

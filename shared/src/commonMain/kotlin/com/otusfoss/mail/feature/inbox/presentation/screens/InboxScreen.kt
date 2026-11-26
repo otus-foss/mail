@@ -25,7 +25,9 @@ import com.otusfoss.mail.core.messages.domain.MailMessage
 import com.otusfoss.mail.core.messages.presentation.MessageActions
 import com.otusfoss.mail.feature.inbox.domain.InboxFilters
 import com.otusfoss.mail.feature.inbox.domain.InboxSearch
-import com.otusfoss.mail.feature.inbox.domain.scopeToLoad
+import com.otusfoss.mail.feature.inbox.domain.activeCount
+import com.otusfoss.mail.feature.inbox.domain.hasFolderOverride
+import com.otusfoss.mail.feature.inbox.domain.isDefault
 import com.otusfoss.mail.feature.inbox.presentation.InboxContext
 import com.otusfoss.mail.feature.inbox.presentation.InboxFilterState
 import com.otusfoss.mail.feature.inbox.presentation.InboxState
@@ -51,6 +53,7 @@ import com.otusfoss.mail.feature.inbox.presentation.components.rememberFilterSel
 import com.otusfoss.mail.feature.inbox.presentation.components.rememberHeaderActions
 import com.otusfoss.mail.feature.inbox.presentation.components.rememberInboxRows
 import com.otusfoss.mail.feature.inbox.presentation.components.rememberUnreadCount
+import com.otusfoss.mail.feature.inbox.presentation.components.shownPage
 import com.otusfoss.mail.feature.inbox.presentation.listFrame
 
 @Composable
@@ -68,12 +71,13 @@ fun InboxScreen(
     val filters = context.filters ?: remember { InboxFilterState() }
     val sorted = rememberCategoryView(context, state, messages, status, filters)
     val unreadCount = rememberUnreadCount(sorted.listed, status.loading)
-    val activeFilters = rememberActiveFilters(filters, context.filterOptions, messages, dateFormatter)
+    val page = shownPage(state, context, filters).sortedInto(sorted)
+    val activeFilters = rememberActiveFilters(filters, page.filterOptions, messages, dateFormatter)
     var panelHeight by remember { mutableStateOf(0.dp) }
     val density = LocalDensity.current
-    val page = shownPage(state, context).sortedInto(sorted)
     val headerActions = rememberHeaderActions(state, page, filters, messages, rows, onOpenNavigation, dateFormatter)
     val selecting = rows.panelSelection(sorted.listed.messages)
+    val narrowed = filters.applied.activeCount(filters.defaultFolders) > 0
     ProvideTextStyle(panelTextStyle()) {
         SlidingOverlay(
             rows.opened,
@@ -83,12 +87,9 @@ fun InboxScreen(
                     bar = inboxBar(sorted.listed, state, rows, messageActions, context.onCompose, headerActions),
                     Modifier
                         .fillMaxSize()
-                        // The control panel draws behind the status bar and pads itself.
                         .belowControlPanel()
-                        // What an open message or an overlay covers, accessibility services skip too.
                         .hiddenWhen(rows.opened != null || headerActions.overlays.coverPage()),
                 ) { barPadding ->
-                    // Message rows reach the screen edges so a swipe's color does; everything else keeps the inset.
                     PanelOverList(
                         status.loading,
                         rowsShown = sorted.messages.isNotEmpty(),
@@ -96,20 +97,15 @@ fun InboxScreen(
                         holdInset = selecting != null,
                         expansion = headerActions.expansion,
                         panel = { collapse, modifier ->
-                            InboxHeader(
-                                messages,
-                                state,
-                                page,
-                                dateFormatter,
-                                headerActions,
-                                PanelLook(collapse, unreadCount, activeFilters, sorted.tabs, selecting),
+                            val look = PanelLook(collapse, unreadCount, activeFilters, sorted.tabs, selecting)
+                            val sized =
                                 Modifier
                                     .onSizeChanged { panelHeight = with(density) { it.height.toDp() } }
-                                    .then(modifier),
-                            )
+                                    .then(modifier)
+                            InboxHeader(messages, state, page, dateFormatter, headerActions, look, sized)
                         },
                     ) { topInset, collapse ->
-                        val frame = page.listFrame(state.searching, topInset, barPadding, collapse)
+                        val frame = page.listFrame(state.searching, topInset, barPadding, collapse, narrowed)
                         Box(Modifier.hiddenWhen(headerActions.covers(state))) {
                             InboxResults(sorted.listed, status, state, dateFormatter, rows.gestures, frame) {
                                 InboxEmptyContent(sorted.messages, status, state, page, filters, onRefresh)
@@ -206,7 +202,8 @@ private fun InboxEmptyContent(
     onRefresh: () -> Unit,
 ) {
     // The server leaves out mail the applied filters hide, so an empty list may still be a filtered one.
-    val narrowed = !filters.applied.isDefault
+    val defaultFolders = filters.defaultFolders
+    val narrowed = !filters.applied.isDefault(defaultFolders)
     InboxEmptyState(
         context.emptyTitle,
         state.searching,
@@ -215,36 +212,10 @@ private fun InboxEmptyContent(
         status,
         onReset = {
             state.reset()
-            filters.update(InboxFilters())
+            filters.update(InboxFilters(folders = defaultFolders))
         },
         onRefresh = onRefresh,
     )
-}
-
-/**
- * [context] showing the selected folder pill and named after it. This loads the pill's folders, or
- * the mailboxes a search picks beyond the page's own, and the page's own again once neither applies.
- * The pill is dropped once the user takes it off the row.
- */
-@Composable
-private fun shownPage(
-    state: InboxState,
-    context: InboxContext,
-): InboxContext {
-    val pills = context.pills
-    val shown = pills.option(state.folderPill)
-    val scope = shown?.scopeFor(state.search.accounts) ?: state.search.scopeToLoad(context.defaultSearch)
-    LaunchedEffect(scope) { context.mailboxSearch.load(scope) }
-    LaunchedEffect(pills.pills, pills.folders, pills.foldersLoaded) {
-        val unavailable = pills.foldersLoaded && shown == null
-        val selected = state.folderPill
-        if (selected != null && (selected !in pills.pills || unavailable)) {
-            state.showFolder(null)
-        }
-    }
-    return shown?.let {
-        context.copy(title = it.label, emptyTitle = "${it.label} is empty", folderPill = it)
-    } ?: context
 }
 
 /** This page naming an empty category pill, and paging for the pill's share of the mail. */
@@ -255,4 +226,4 @@ private fun InboxContext.sortedInto(view: CategoryView): InboxContext =
 private fun InboxState.mixesFolders(
     filters: InboxFilterState,
     page: InboxContext,
-): Boolean = searching || filters.applied.folders.isNotEmpty() || page.folderPill != null
+): Boolean = searching || filters.applied.hasFolderOverride(filters.defaultFolders) || page.folderPill != null

@@ -110,6 +110,31 @@ class InboxFiltersTest {
     }
 
     @Test
+    fun defaultFoldersAreNotCountedUntilChangedAndBinsOptInSeparately() {
+        val folder1 = FolderRef("ada", "f1", includeSubfolders = false)
+        val folder2 = FolderRef("ada", "f2", includeSubfolders = false)
+        val defaults = setOf(folder1)
+        val untouched = InboxFilters(folders = defaults)
+        assertEquals(0, untouched.activeCount(defaults))
+        assertTrue(untouched.isDefault(defaults))
+        assertFalse(untouched.hasFolderOverride(defaults))
+
+        val added = untouched.withFolder(folder2, on = true)
+        assertEquals(2, added.activeCount(defaults))
+        assertTrue(added.hasFolderOverride(defaults))
+
+        val widened = InboxFilters()
+        assertEquals(1, widened.activeCount(defaults))
+        assertTrue(widened.hasFolderOverride(defaults))
+
+        val withSpam = InboxFilters().withBin(MailboxRole.Junk, on = true).withBin(MailboxRole.Inbox, on = true)
+        assertEquals(setOf(MailboxRole.Junk), withSpam.includedBins)
+        assertEquals(1, withSpam.activeCount)
+        assertTrue(withSpam.hasFolderOverride(emptySet()))
+        assertEquals(emptySet(), withSpam.withFolder(folder1, on = true).includedBins)
+    }
+
+    @Test
     fun subfoldersExpandOnlyWhenIncluded() {
         val tree = mapOf("clients" to setOf("acme", "acme-2026"), "work" to setOf("w1"))
         val work = FolderRef("ada", "work", includeSubfolders = false)

@@ -16,6 +16,7 @@ import com.otusfoss.core.designsystem.resources.symbol_straighten
 import com.otusfoss.core.designsystem.resources.symbol_swap_vert
 import com.otusfoss.mail.core.messages.domain.DateFilter
 import com.otusfoss.mail.core.messages.domain.FilterSort
+import com.otusfoss.mail.core.messages.domain.FolderRef
 import com.otusfoss.mail.core.messages.domain.MailMessage
 import com.otusfoss.mail.core.messages.domain.ReadStatus
 import com.otusfoss.mail.core.messages.domain.RecipientField
@@ -25,6 +26,7 @@ import com.otusfoss.mail.core.messages.presentation.label
 import com.otusfoss.mail.core.settings.presentation.icon
 import com.otusfoss.mail.core.settings.presentation.label
 import com.otusfoss.mail.feature.inbox.domain.InboxFilters
+import com.otusfoss.mail.feature.inbox.domain.hasFolderOverride
 import com.otusfoss.mail.feature.inbox.presentation.FilterOptions
 import com.otusfoss.mail.feature.inbox.presentation.InboxFilterState
 
@@ -47,6 +49,7 @@ class ActiveFilters(
     val onChange: (InboxFilters) -> Unit = {},
     val button: FocusRequester = FocusRequester(),
     private val people: FilterPeople = FilterPeople(),
+    val defaultFolders: Set<FolderRef> = emptySet(),
 ) {
     /**
      * Each applied choice in the panel's order, ending with the sort order while it is not the
@@ -78,9 +81,13 @@ class ActiveFilters(
                         options.account(id)?.let(::accountPill) ?: symbolPill(id, Res.drawable.symbol_account_circle)
                     add(removing(InboxFilters::account, pill) { it.copy(account = null) })
                 }
-                if (applied.folders.isNotEmpty()) {
-                    val pill = foldersPill(applied.folders.toList(), options)
-                    add(removing(InboxFilters::folders, pill) { it.copy(folders = emptySet()) })
+                if (applied.hasFolderOverride(defaultFolders)) {
+                    val pill = folderFilterPill(applied, options, defaultFolders)
+                    add(
+                        removing(InboxFilters::folders, pill) {
+                            it.copy(folders = defaultFolders, includedBins = emptySet())
+                        },
+                    )
                 }
                 if (applied.date != DateFilter.Any) {
                     val pill = symbolPill(dateValue(applied.date, dateFormatter), Res.drawable.symbol_calendar_today)
@@ -141,5 +148,6 @@ internal fun rememberActiveFilters(
         state::update,
         button,
         people = rememberFilterPeople(state, options, messages),
+        defaultFolders = state.defaultFolders,
     )
 }

@@ -122,13 +122,13 @@ internal fun AndroidComposeTestRule<*, MainActivity>.holdScrolledBy(distance: Dp
 }
 
 /** Taps the search pill, which focuses the field, and on the inbox grows its search room. */
-internal fun ComposeTestRule.openSearch(prompt: String = "Search Inbox") {
+internal fun ComposeTestRule.openSearch(prompt: String = "Search mail") {
     onNodeWithContentDescription(prompt).performClick()
     waitForIdle()
 }
 
 /** Opens the page's search by its [prompt] and shows all results, so the list and the search pills show. */
-internal fun ComposeTestRule.openSearchResults(prompt: String = "Search Inbox") {
+internal fun ComposeTestRule.openSearchResults(prompt: String = "Search mail") {
     onNodeWithContentDescription(prompt).performClick()
     searchField().performImeAction()
     waitForIdle()

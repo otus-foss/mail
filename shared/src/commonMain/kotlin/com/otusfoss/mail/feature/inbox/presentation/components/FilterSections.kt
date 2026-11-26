@@ -19,6 +19,7 @@ import com.otusfoss.core.designsystem.shared.overlays.components.onPressDown
 import com.otusfoss.core.designsystem.theme.tokens.controls.ControlTokens
 import com.otusfoss.core.designsystem.theme.tokens.selection.FilterTokens
 import com.otusfoss.mail.core.messages.domain.FilterSort
+import com.otusfoss.mail.core.messages.domain.FolderRef
 import com.otusfoss.mail.core.messages.domain.ReadStatus
 import com.otusfoss.mail.core.messages.domain.SizeFilter
 import com.otusfoss.mail.core.messages.presentation.icon
@@ -45,6 +46,7 @@ internal fun FilterSections(
     dateFormatter: DateFormatter,
     onEdit: FilterEdit,
     people: PeopleSearches,
+    defaultFolders: Set<FolderRef> = emptySet(),
 ) {
     val area = remember { PeopleCardArea() }
     val focus = LocalFocusManager.current
@@ -60,7 +62,7 @@ internal fun FilterSections(
                 FilterSection.Status -> StatusSection(draft, onEdit)
                 FilterSection.Quick -> QuickSection(draft, options, onEdit)
                 FilterSection.People -> PeopleCard(draft, options, people, onEdit, area)
-                FilterSection.Rows -> MetadataRows(draft, options, dateFormatter, onEdit)
+                FilterSection.Rows -> MetadataRows(draft, options, dateFormatter, onEdit, defaultFolders)
                 FilterSection.Sort -> SortSection(draft, onEdit)
             }
         }
@@ -94,8 +96,9 @@ private fun MetadataRows(
     options: FilterOptions,
     dateFormatter: DateFormatter,
     onEdit: FilterEdit,
+    defaultFolders: Set<FolderRef>,
 ) {
-    PopupRows(draft, options, dateFormatter, onEdit)
+    PopupRows(draft, options, dateFormatter, onEdit, defaultFolders)
     SegmentSection("Size", SizeFilter.entries, draft.size, { it.label }) { size ->
         onEdit { it.copy(size = size) }
     }

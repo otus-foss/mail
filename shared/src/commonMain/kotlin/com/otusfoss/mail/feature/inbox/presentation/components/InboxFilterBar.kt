@@ -6,6 +6,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import com.otusfoss.core.designsystem.shared.filters.components.FilterShowBar
+import com.otusfoss.mail.feature.inbox.domain.isDefault
 import com.otusfoss.mail.feature.inbox.presentation.FilterCount
 import com.otusfoss.mail.feature.inbox.presentation.InboxFilterState
 import com.otusfoss.mail.feature.inbox.presentation.showLabel
@@ -24,6 +25,6 @@ internal fun InboxFilterBar(
         onApply,
         state::reset,
         applyEnabled = count != FilterCount.Known(0),
-        resetEnabled = state.draft?.isDefault == false,
+        resetEnabled = state.draft?.isDefault(state.defaultFolders) == false,
     )
 }

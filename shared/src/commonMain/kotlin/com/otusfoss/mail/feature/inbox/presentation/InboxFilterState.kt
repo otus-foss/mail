@@ -3,7 +3,9 @@ package com.otusfoss.mail.feature.inbox.presentation
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import com.otusfoss.mail.core.messages.domain.FolderRef
 import com.otusfoss.mail.core.messages.domain.FoundPerson
+import com.otusfoss.mail.core.messages.domain.MailScope
 import com.otusfoss.mail.core.messages.domain.PeopleField
 import com.otusfoss.mail.core.text.TYPING_PAUSE_MILLIS
 import com.otusfoss.mail.feature.inbox.domain.InboxFilters
@@ -50,6 +52,14 @@ class InboxFilterState(
     var count by mutableStateOf<FilterCount>(FilterCount.Unknown)
         private set
 
+    /** The unmodified folder selection for the current mode, such as the active folder during a folder search. */
+    var defaultFolders by mutableStateOf<Set<FolderRef>>(emptySet())
+        private set
+
+    /** Optional scope to count drafts against while searching, overriding the page's default feed scope. */
+    var countScope: MailScope? = null
+        private set
+
     val senders = FilterPeopleSearch(PeopleField.From, scope, findPeople)
 
     val recipients = FilterPeopleSearch(PeopleField.To, scope, findPeople)
@@ -58,6 +68,17 @@ class InboxFilterState(
         get() = draft != null
 
     private var counting: Job? = null
+
+    /** Updates the search-time [folders] treated as default and the [scope] used to count drafts. */
+    fun useSearchDefaults(
+        folders: Set<FolderRef>,
+        scope: MailScope?,
+    ) {
+        val scopeChanged = countScope != scope
+        defaultFolders = folders
+        countScope = scope
+        if (scopeChanged && isOpen) recount()
+    }
 
     fun open() {
         draft = applied
@@ -72,7 +93,7 @@ class InboxFilterState(
         recipients.clear()
     }
 
-    fun reset() = edit { InboxFilters() }
+    fun reset() = edit { InboxFilters(folders = defaultFolders) }
 
     fun edit(transform: (InboxFilters) -> InboxFilters) {
         val current = draft ?: return

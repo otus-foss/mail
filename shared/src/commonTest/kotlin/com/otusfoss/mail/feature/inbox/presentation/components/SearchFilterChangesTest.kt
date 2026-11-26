@@ -1,7 +1,9 @@
 package com.otusfoss.mail.feature.inbox.presentation.components
 
 import androidx.compose.runtime.saveable.SaverScope
+import com.otusfoss.mail.core.mailbox.MailboxRole
 import com.otusfoss.mail.core.messages.domain.DateFilter
+import com.otusfoss.mail.core.messages.domain.FolderRef
 import com.otusfoss.mail.core.messages.domain.QuickFacet
 import com.otusfoss.mail.feature.inbox.domain.InboxFilters
 import com.otusfoss.mail.feature.inbox.presentation.InboxFilterState
@@ -75,5 +77,20 @@ class SearchFilterChangesTest {
         requireNotNull(restored).undo(filters)
         assertTrue(filters.applied.has(QuickFacet.Attachments))
         assertEquals(DateFilter.Any, filters.applied.date)
+    }
+
+    @Test
+    fun folderSearchRestoresFoldersOnCloseEvenAfterKeepingOtherFilters() {
+        val filters = InboxFilterState()
+        changes.startFolderSearch(filters.applied)
+        filters.update(InboxFilters(folders = setOf(FolderRef("ada", "f1", includeSubfolders = false))))
+        filters.tapFiles()
+        filters.update(filters.applied.copy(folders = emptySet(), includedBins = setOf(MailboxRole.Junk)))
+        changes.keep()
+        changes.undo(filters)
+        assertTrue(filters.applied.has(QuickFacet.Attachments))
+        assertEquals(emptySet(), filters.applied.folders)
+        assertEquals(emptySet(), filters.applied.includedBins)
+        assertFalse(changes.foldersInitialized)
     }
 }

@@ -64,6 +64,6 @@ internal class FolderCleaning(
             is MailScope.Role -> folders.accounts.flatMap { it.folders }.filter { it.role == mailScope.role }
             is MailScope.Folder -> listOfNotNull(folders.folder(mailScope.accountId, mailScope.folderId))
             is MailScope.Folders -> mailScope.folders.mapNotNull { folders.folder(it.accountId, it.folderId) }
-            MailScope.AllMailboxes, is MailScope.Mailboxes, is MailScope.Roles -> emptyList()
+            MailScope.AllMail, MailScope.AllMailboxes, is MailScope.Mailboxes, is MailScope.Roles -> emptyList()
         }
 }

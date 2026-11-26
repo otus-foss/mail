@@ -1,5 +1,6 @@
 package com.otusfoss.mail.feature.inbox.domain
 
+import com.otusfoss.mail.core.mailbox.MailboxRole
 import com.otusfoss.mail.core.messages.domain.DateFilter
 import com.otusfoss.mail.core.messages.domain.FilterSort
 import com.otusfoss.mail.core.messages.domain.FolderRef
@@ -29,25 +30,19 @@ data class InboxFilters(
     val receivedIn: Set<RecipientField> = RecipientField.Default,
     val account: String? = null,
     val folders: Set<FolderRef> = emptySet(),
+    /** Spam or Trash roles added alongside all folders when [folders] is empty. */
+    val includedBins: Set<MailboxRole> = emptySet(),
     val date: DateFilter = DateFilter.Any,
     val size: SizeFilter = SizeFilter.Any,
     val sort: FilterSort = FilterSort.NewestFirst,
 ) {
     /** How many choices differ from the defaults, one per pill the row shows; the order is not one. */
     val activeCount: Int
-        get() =
-            listOf(quick, types, from, sentTo, to, folders).sumOf { it.size } +
-                listOf(
-                    status != ReadStatus.All,
-                    account != null,
-                    receivedIn != RecipientField.Default,
-                    date != DateFilter.Any,
-                    size != SizeFilter.Any,
-                ).count { it }
+        get() = activeCount(emptySet())
 
     /** Nothing narrows the list, and it is newest first. */
     val isDefault: Boolean
-        get() = this == InboxFilters()
+        get() = isDefault(emptySet())
 
     /** Whether a choice is on that only the loaded threads can tell, so the server cannot count it. */
     val clientOnly: Boolean
@@ -91,7 +86,10 @@ data class InboxFilters(
         on: Boolean,
     ): InboxFilters {
         val others = folders.filterNot { it.loginId == ref.loginId && it.mailboxId == ref.mailboxId }.toSet()
-        return copy(folders = if (on) others + ref else others)
+        return copy(
+            folders = if (on) others + ref else others,
+            includedBins = if (on) emptySet() else includedBins,
+        )
     }
 
     /**
@@ -111,6 +109,40 @@ data class InboxFilters(
         } && (TypeFacet.CalendarInvites !in types || message.attributes.invite)
     }
 }
+
+/** How many choices differ from the defaults, treating [defaultFolders] as the unmodified folder selection. */
+fun InboxFilters.activeCount(defaultFolders: Set<FolderRef>): Int {
+    val folderCount =
+        when {
+            folders == defaultFolders -> 0
+            folders.isNotEmpty() -> folders.size
+            else -> 1
+        }
+    val binCount = if (folders.isEmpty()) includedBins.size else 0
+    return listOf(quick, types, from, sentTo, to).sumOf { it.size } +
+        folderCount +
+        binCount +
+        listOf(
+            status != ReadStatus.All,
+            account != null,
+            receivedIn != RecipientField.Default,
+            date != DateFilter.Any,
+            size != SizeFilter.Any,
+        ).count { it }
+}
+
+/** Whether nothing differs from the page's default, with [defaultFolders] as its unmodified folders. */
+fun InboxFilters.isDefault(defaultFolders: Set<FolderRef>): Boolean = this == InboxFilters(folders = defaultFolders)
+
+/** Whether folders or included Spam/Trash differ from [defaultFolders]. */
+fun InboxFilters.hasFolderOverride(defaultFolders: Set<FolderRef>): Boolean =
+    folders != defaultFolders || (folders.isEmpty() && includedBins.isNotEmpty())
+
+/** Includes or excludes Spam or Trash alongside all folders; ignores non-bin roles. */
+fun InboxFilters.withBin(
+    role: MailboxRole,
+    on: Boolean,
+): InboxFilters = if (!role.isBin) this else copy(includedBins = if (on) includedBins + role else includedBins - role)
 
 /** The quick filter a row pill turns on; null for Unread, which sets the status. */
 internal val InboxPill.Filter.quick: QuickFacet?

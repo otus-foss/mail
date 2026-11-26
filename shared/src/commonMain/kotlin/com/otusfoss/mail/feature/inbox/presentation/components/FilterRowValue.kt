@@ -7,6 +7,7 @@ import com.otusfoss.mail.core.messages.presentation.label
 import com.otusfoss.mail.core.messages.presentation.rangeLabel
 import com.otusfoss.mail.core.settings.presentation.label
 import com.otusfoss.mail.feature.inbox.domain.InboxFilters
+import com.otusfoss.mail.feature.inbox.domain.hasFolderOverride
 import com.otusfoss.mail.feature.inbox.presentation.FilterOptions
 import com.otusfoss.mail.feature.inbox.presentation.FolderLabel
 import com.otusfoss.mail.feature.inbox.presentation.key
@@ -26,17 +27,30 @@ internal fun accountValue(
     draft.account?.let { id -> FilterRowValue(options.account(id)?.name ?: id, set = true) }
         ?: FilterRowValue("All", set = false)
 
-/** "Any", or the first chosen folder and how many others, such as "Clients +4". */
+/** "Any", the active default folder, or the chosen folders and any included Spam/Trash. */
 internal fun foldersValue(
     draft: InboxFilters,
     options: FilterOptions,
+    defaultFolders: Set<FolderRef> = emptySet(),
 ): FilterRowValue {
-    val first = draft.folders.firstOrNull() ?: return FilterRowValue("Any", set = false)
-    val name = options.folderLabel(first).name
+    val changed = draft.hasFolderOverride(defaultFolders)
+    if (draft.folders.isEmpty()) {
+        val bins = draft.includedBins.sortedBy { it.ordinal }.joinToString(", ") { it.title }
+        val text =
+            when {
+                bins.isNotEmpty() -> "Any + $bins"
+                defaultFolders.isNotEmpty() -> "All folders"
+                else -> "Any"
+            }
+        return FilterRowValue(text, set = changed)
+    }
+    val names = draft.folders.map { options.folderLabel(it).name }
+    val distinct = names.distinct()
     val others = draft.folders.size - 1
-    return when (others) {
-        0 -> FilterRowValue(name, set = true)
-        else -> FilterRowValue("$name +$others", set = true, spoken = "$name and $others more")
+    return when {
+        others == 0 -> FilterRowValue(names.first(), set = changed)
+        !changed && distinct.size == 1 -> FilterRowValue(distinct.single(), set = false)
+        else -> FilterRowValue("${names.first()} +$others", set = changed, spoken = "${names.first()} and $others more")
     }
 }
 

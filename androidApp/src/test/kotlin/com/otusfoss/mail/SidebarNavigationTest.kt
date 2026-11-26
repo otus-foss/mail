@@ -72,7 +72,7 @@ class SidebarNavigationTest {
                 hasContentDescription("Inbox", substring = true) and isSelectable(),
             ).assertIsNotSelected()
             .performClick()
-        compose.onNodeWithText("Search Inbox").assertIsDisplayed()
+        compose.onNodeWithText("Search mail").assertIsDisplayed()
     }
 
     @Test
@@ -88,7 +88,7 @@ class SidebarNavigationTest {
         compose.onNodeWithText("All mail").assertIsDisplayed()
         compose.runOnUiThread { compose.activity.onBackPressedDispatcher.onBackPressed() }
         compose.onNodeWithText("All mail").assertDoesNotExist()
-        compose.onNodeWithText("Search Inbox").assertIsDisplayed()
+        compose.onNodeWithText("Search mail").assertIsDisplayed()
     }
 
     @Test
