@@ -87,7 +87,7 @@ fun InboxPanel(
             )
         },
         chips = { InboxPanelChips(searchChips, search, context, dateFormatter, selection, actions, look) },
-        motion = PanelMotion(look.collapse, look.expansion, look.expanded),
+        motion = PanelMotion(look.collapse, look.expansion, expanded = look.expanded),
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             InboxHeaderField(searching, search, context, actions, look, filterInPill = railShown, Modifier.weight(1f))
