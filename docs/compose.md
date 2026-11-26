@@ -267,8 +267,9 @@ the server already sent it, nothing can bring it back. Undo after the message we
 
 Swiping the "Sending…" toast away sends the message at once; screen readers offer the swipe as
 Send. JMAP cannot move a held submission's send time forward, so Mail cancels the held submission
-and, once the server confirms that, submits the same stored copy again without a hold. If the
-server keeps the held submission, the message still goes at its time. With 3 seconds or less of the
+and, once the server confirms that, submits the same stored copy again without a hold. That
+submission files the copy as sent like a first send, since an earlier try may have made it a draft
+again. If the server keeps the held submission, the message still goes at its time. With 3 seconds or less of the
 window left, Mail lets the server send on time instead. If the new submission is refused, the copy
 becomes a draft again and a "Couldn't send" toast offers to open it. Offline, a "Will send when
 online" toast shows and Mail tries again after 5 seconds, doubling the wait up to a minute,

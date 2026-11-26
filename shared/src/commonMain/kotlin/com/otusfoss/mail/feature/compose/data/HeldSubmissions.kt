@@ -17,6 +17,7 @@ import com.otusfoss.mail.core.messages.data.EmailChangeQueue
 import com.otusfoss.mail.core.messages.domain.DraftRestoreException
 import com.otusfoss.mail.core.messages.domain.SendCancel
 import com.otusfoss.mail.core.messages.domain.SendFailure
+import com.otusfoss.mail.core.messages.domain.SendTime
 import com.otusfoss.mail.core.messages.domain.SentMessage
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonPrimitive
@@ -38,23 +39,18 @@ internal suspend fun MailAccount.cancelSubmission(message: SentMessage): SendFai
         ?: SendFailure.Mail(MailFailure.ServerProblem).takeIf { message.submissionId !in undone.updated }
 }
 
-/** Submits [message]'s stored copy again, without a hold; why the server refused, or null. */
+/**
+ * Submits [message]'s stored copy again, without a hold; why the server refused, or null. Like a
+ * first send, the submission files the copy as sent, since an earlier try may have made it a
+ * draft in Drafts again.
+ */
 internal suspend fun MailAccount.resubmit(message: SentMessage): SetError? =
-    connection
-        .call(
-            SetMethod(
-                EmailSubmissionType,
-                id,
-                create =
-                    mapOf(
-                        RESUBMISSION to
-                            buildJsonObject {
-                                put("emailId", message.emailId)
-                                put("identityId", message.identityId)
-                            },
-                    ),
-            ),
-        ).notCreated[RESUBMISSION]
+    submitCopy(
+        SendRoute(message.identityId, message.draftsId, message.sentId),
+        folder = message.draftsId ?: message.sentId.orEmpty(),
+        copy = message.emailId,
+        time = SendTime.Now,
+    ).notCreated[SUBMISSION]
 
 /**
  * Whether the server holds or sent a submission of [emailId] that nobody canceled (RFC 8621,
@@ -144,5 +140,3 @@ internal suspend fun MailAccount.restoredAfterCancel(
     }
     return SendCancel.Stopped
 }
-
-private const val RESUBMISSION = "send"

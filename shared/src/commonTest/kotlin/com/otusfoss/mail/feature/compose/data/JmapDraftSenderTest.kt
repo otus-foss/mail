@@ -246,7 +246,7 @@ class JmapDraftSenderTest {
         runTest {
             val at = kotlin.time.Instant.parse("2026-10-19T06:00:00.500Z")
             val sent = sender().send(reply, answered = null, SendTime.Scheduled(at)).getOrThrow()
-            assertEquals(SentMessage("ada", "e9", "s1", draftsId = "dr", identityId = "i1"), sent)
+            assertEquals(SentMessage("ada", "e9", "s1", draftsId = "dr", identityId = "i1", sentId = "se"), sent)
             assertEquals("Mailbox/set", methods(calls[1])[0].name)
             val stored = methods(calls[2])[0].arguments.at("create", "draft")
             assertEquals(Json.parseToJsonElement("""{"sc": true}"""), stored["mailboxIds"])

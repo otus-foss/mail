@@ -110,17 +110,25 @@ private fun sendFailure(type: String): SendFailure =
 
 private val FORBIDDEN = setOf("forbidden", "forbiddenFrom", "forbiddenMailFrom", "forbiddenToSend")
 
+/** The envelope this draft's submission for [time] carries: one with the time of a held or scheduled send. */
+internal fun Draft.envelope(time: SendTime): JsonObject? =
+    when (time) {
+        SendTime.Now -> null
+        is SendTime.Held -> heldEnvelope(time.at)
+        is SendTime.Scheduled -> heldEnvelope(time.at)
+    }
+
 /**
- * The submission of the stored [copy] in [folder]. A held or scheduled one carries an envelope
- * with its time. A scheduled copy stays in [folder], only losing `$draft`, since the server
- * sends it much later, and Mail moves it to Sent once it went; any other moves at once.
+ * The submission of the stored [copy] in [folder], with the [envelope] of a held or scheduled
+ * one. A scheduled copy stays in [folder], only losing `$draft`, since the server sends it much
+ * later, and Mail moves it to Sent once it went; any other moves at once.
  */
 internal fun MailAccount.submission(
     route: SendRoute,
     folder: String,
     copy: String,
-    draft: Draft,
     time: SendTime,
+    envelope: JsonObject?,
 ) = SetMethod(
     EmailSubmissionType,
     id,
@@ -130,11 +138,7 @@ internal fun MailAccount.submission(
                 buildJsonObject {
                     put("emailId", copy)
                     put("identityId", route.identityId)
-                    when (time) {
-                        SendTime.Now -> Unit
-                        is SendTime.Held -> put("envelope", draft.heldEnvelope(time.at))
-                        is SendTime.Scheduled -> put("envelope", draft.heldEnvelope(time.at))
-                    }
+                    if (envelope != null) put("envelope", envelope)
                 },
         ),
     extra =

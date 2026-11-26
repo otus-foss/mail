@@ -121,7 +121,7 @@ class JmapDraftSender internal constructor(
         stored?.invoke(copy)
         val submitted =
             try {
-                submitCopy(route, folder, copy, draft, time)
+                submitCopy(route, folder, copy, time, draft.envelope(time))
             } catch (error: JmapException.MethodError) {
                 // The copy may still go, or have gone in part (RFC 8620, section 3.6.2), so it stays
                 // for the outbox to look up by its id before anything is destroyed.
@@ -131,7 +131,7 @@ class JmapDraftSender internal constructor(
         val refusal = submitted.notCreated[SUBMISSION]
         if (refusal != null) refused(copy, refusal.toSendFailure())
         val submissionId = submitted.createdId(SUBMISSION) ?: failSend(SendFailure.Mail(MailFailure.ServerProblem))
-        return SentMessage(draft.accountId, copy, submissionId, route.drafts, route.identityId)
+        return SentMessage(draft.accountId, copy, submissionId, route.drafts, route.identityId, sentId = route.sent)
     }
 
     override suspend fun maxDelaySeconds(accountId: String): Long =
