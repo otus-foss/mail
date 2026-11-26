@@ -129,7 +129,7 @@ class SearchFolderFilterTest {
         // Adding Travel differs from the default, so the feed widens and the pane pill appears.
         compose.onNodeWithText("Travel").performScrollTo().performClick()
         compose.onNodeWithText("Done").performClick()
-        compose.onNodeWithContentDescription("Folders, Dev +1, opens page").assertIsDisplayed()
+        compose.onNodeWithContentDescription("Folders, Dev and 1 more, opens page").assertIsDisplayed()
         compose.onNodeWithContentDescription("Show 5 mails").performClick()
         compose.runOnIdle {
             assertEquals(setOf(dev, travel), filterState?.applied?.folders)
