@@ -272,9 +272,11 @@ server keeps the held submission, the message still goes at its time. With 3 sec
 window left, Mail lets the server send on time instead. If the new submission is refused, the copy
 becomes a draft again and a "Couldn't send" toast offers to open it. Offline, a "Will send when
 online" toast shows and Mail tries again after 5 seconds, doubling the wait up to a minute,
-while the app runs. Trying again is safe: when a cancel's answer was lost, Mail asks whether a
-submission that nobody canceled is left. If one is, the server sends it at its time; if none is,
-the cancel arrived and the copy is submitted again. On the device hold, the swipe ends the
+while the app runs. Trying again is safe: when the server did not confirm a cancel, Mail reads
+every submission of the copy. If one that nobody canceled is left, the server sends it at its
+time. If only canceled ones are left, the cancel arrived and the copy is submitted again. If the
+server keeps none, the message may have gone, since a server may destroy a submission once it is
+sent (RFC 8621, section 7), so Mail submits nothing. On the device hold, the swipe ends the
 wait. The sender makes four requests (RFC 8621, section 7.5):
 
 1. `Identity/get` and two `Mailbox/query` calls find the identity for the From address and the

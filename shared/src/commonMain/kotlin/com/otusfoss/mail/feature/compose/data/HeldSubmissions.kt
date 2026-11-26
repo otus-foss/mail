@@ -64,6 +64,19 @@ internal suspend fun MailAccount.isSubmitted(emailId: String): Boolean? =
     jmapCallOr(null) { liveSubmissions(listOf(emailId), limit = 1).isNotEmpty() }
 
 /**
+ * Whether canceled submissions are all the server has of [emailId], so the copy can be submitted
+ * again after a cancel the server did not confirm. False when a submission nobody canceled is
+ * left, which went or goes at its time. A server may destroy a submission once it is sent
+ * (RFC 8621, section 7), so a copy without any submission may have gone: that fails as
+ * unconfirmed, and a server that cannot be asked as unreachable.
+ */
+internal suspend fun MailAccount.onlyCanceled(emailId: String): Boolean {
+    val state = jmapCallOr(null) { copyState(emailId) } ?: failSend(SendFailure.Mail(MailFailure.Unreachable))
+    if (state.statuses.isEmpty()) failSend(SendFailure.Unconfirmed)
+    return state.live.isEmpty()
+}
+
+/**
  * Cancels every submission of [emailIds] that nobody canceled yet. True when there was one and the
  * server canceled them all, so none of the emails goes; false when one already went or the server
  * keeps it.

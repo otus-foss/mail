@@ -121,7 +121,7 @@ class ScheduledCancellationTest {
         runTest {
             val calls = mutableListOf<String>()
             assertTrue(sender(calls, lost = setOf(Lost.Cancel)).sendNow(message).isSuccess)
-            assertTrue("EmailSubmission/query" in calls.first(), "The server says no submission is left")
+            assertTrue("EmailSubmission/get" in calls.first(), "The server says only a canceled submission is left")
             assertTrue("\"create\"" in calls.last())
         }
 
@@ -164,6 +164,11 @@ class ScheduledCancellationTest {
                     }
                 if (kind in lost) throw IOException("The answer was lost")
                 calls += body
+                if ("EmailSubmission/get" in
+                    body
+                ) {
+                    return@stalwartLike copyState(if (submitted) "pending" else "canceled")
+                }
                 if ("EmailSubmission/query" in body) {
                     val ids = if (submitted) """["s2"]""" else "[]"
                     val found = """{"queryState": "q", "ids": $ids, "position": 0}"""
@@ -182,6 +187,12 @@ class ScheduledCancellationTest {
             }
         return composeMail(JmapConnections(JmapClient(engine), store)).sender
     }
+
+    /** What the server knows of the copy, whose one submission has [status], as the sender asks for it. */
+    private fun copyState(status: String) =
+        """{"methodResponses": [["EmailSubmission/query", {"queryState": "q", "ids": ["s"], "position": 0}, "c0"], """ +
+            """["EmailSubmission/get", {"state": "s", "list": [{"id": "s", "undoStatus": "$status"}]}, "c1"], """ +
+            """["Email/get", {"state": "e", "list": [], "notFound": ["e"]}, "c2"]]}"""
 
     private fun also(id: String?) = id?.let { """, "$it": null""" }.orEmpty()
 

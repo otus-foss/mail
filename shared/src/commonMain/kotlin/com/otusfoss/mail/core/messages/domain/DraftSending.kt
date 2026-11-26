@@ -128,8 +128,10 @@ interface ScheduledSends {
     suspend fun cancel(message: SentMessage): SendCancel
 
     /**
-     * Sends a held or scheduled [message] at once. It fails only when the message will not go:
-     * the hold was canceled but the new submission refused, which makes the copy a draft again.
+     * Sends a held or scheduled [message] at once. It fails as unreachable when the server could
+     * not be asked, and as [SendFailure.Unconfirmed] when the server no longer knows the send, which
+     * may have gone. Any other failure means the message will not go: the hold was canceled but the
+     * new submission refused, which makes the copy a draft again.
      */
     suspend fun sendNow(message: SentMessage): Result<Unit>
 

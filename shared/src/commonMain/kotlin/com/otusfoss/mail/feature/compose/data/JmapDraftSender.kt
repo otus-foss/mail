@@ -196,16 +196,14 @@ class JmapDraftSender internal constructor(
      * A held message cannot be sent early, so its submission is canceled and its copy submitted
      * again. When the new submission fails, the copy becomes a draft again, unless a lost answer
      * hid that the server took it. Running it again after a lost answer is safe: a hold already
-     * canceled is submitted again, and one the server keeps or sent is left alone.
+     * canceled is submitted again, one the server keeps or sent is left alone, and one the server
+     * no longer knows fails as unconfirmed.
      */
     override suspend fun sendNow(message: SentMessage): Result<Unit> =
         submissionCall(message) { account ->
             val canceled = jmapCallOr(null) { account.cancelSubmission(message) == null } == true
             // Unless the cancel was confirmed, a submission still there goes at its time by itself.
-            val kept =
-                !canceled &&
-                    account.isSubmitted(message.emailId) ?: failSend(SendFailure.Mail(MailFailure.Unreachable))
-            if (kept) return@submissionCall
+            if (!canceled && !account.onlyCanceled(message.emailId)) return@submissionCall
             val refusal =
                 try {
                     account.resubmit(message)
