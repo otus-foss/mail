@@ -6,7 +6,6 @@ import com.otusfoss.mail.core.messages.domain.FolderRef
 import com.otusfoss.mail.core.messages.domain.MailScope
 import com.otusfoss.mail.core.settings.presentation.FolderPillOption
 import com.otusfoss.mail.feature.inbox.domain.InboxFilters
-import com.otusfoss.mail.feature.inbox.domain.hasFolderOverride
 import com.otusfoss.mail.feature.inbox.domain.scopeToLoad
 import com.otusfoss.mail.feature.inbox.domain.searchScope
 import com.otusfoss.mail.feature.inbox.presentation.InboxContext
@@ -15,8 +14,8 @@ import com.otusfoss.mail.feature.inbox.presentation.InboxState
 
 /**
  * [context] showing the selected folder pill and named after it. This loads the pill's folders, or
- * all non-bin mail / chosen folders during search, and the page's own mail again once neither
- * applies. The pill is dropped once the user takes it off the row.
+ * what a search looks in, and the page's own mail again once neither applies. The pill is dropped
+ * once the user takes it off the row.
  */
 @Composable
 internal fun shownPage(
@@ -57,7 +56,7 @@ private fun resolvedScope(
 ): MailScope? =
     when {
         !state.searching -> shown?.scopeFor(state.search.accounts) ?: state.search.scopeToLoad(context.defaultSearch)
-        shown != null && !applied.hasFolderOverride(searchFolders) -> shown.scopeFor(state.search.accounts)
+        shown != null && !applied.hasFolderOverride -> shown.scopeFor(state.search.accounts)
         else -> state.search.searchScope(searchFolders, applied)
     }
 
@@ -75,14 +74,13 @@ private fun InboxContext.withFolderPill(
         )
     } ?: this
 
-private fun InboxContext.withSearchFoldersOption(searching: Boolean): InboxContext {
-    val offerFolders = filterOptions.folders || (searching && filterOptions.accounts.isNotEmpty())
-    return if (offerFolders == filterOptions.folders) {
-        this
+/** A search offers the folder picker on every page, with Spam and Trash to add. */
+private fun InboxContext.withSearchFoldersOption(searching: Boolean): InboxContext =
+    if (searching && filterOptions.accounts.isNotEmpty()) {
+        copy(filterOptions = filterOptions.copy(folders = true, bins = true))
     } else {
-        copy(filterOptions = filterOptions.copy(folders = offerFolders))
+        this
     }
-}
 
 private fun pillFolderRefs(scope: MailScope): Set<FolderRef> =
     when (scope) {

@@ -49,7 +49,7 @@ internal fun AndroidComposeTestRule<*, MainActivity>.showControlInbox(
     runOnUiThread {
         activity.setContent {
             val scope = rememberCoroutineScope()
-            val filters = remember { InboxFilterState(scope = scope, counter = { 33 }) }
+            val filters = remember { InboxFilterState(scope = scope, counter = { _, _ -> 33 }) }
             OtusTheme(palette) {
                 CompositionLocalProvider(LocalToday provides PinnedToday) {
                     InboxScreen(

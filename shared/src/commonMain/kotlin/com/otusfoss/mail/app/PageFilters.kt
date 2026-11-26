@@ -59,23 +59,18 @@ internal fun rememberPageFilters(
     }
     val filters =
         remember(states, page, feed) {
-            var created: InboxFilterState? = null
-            val state =
-                InboxFilterState(
-                    saved,
-                    scope,
-                    counter = { draft ->
-                        val countScope = created?.countScope ?: feed.mailScope
-                        states.list.filterLookups.count(countScope, states.mailQuery(draft))
-                    },
-                    onApplied = {
-                        pageFilters.keep(page, it)
-                        saved = it
-                    },
-                    findPeople = states.list.filterLookups::findPeople,
-                )
-            created = state
-            state
+            InboxFilterState(
+                saved,
+                scope,
+                counter = { draft, searchScope ->
+                    states.list.filterLookups.count(searchScope ?: feed.mailScope, states.mailQuery(draft))
+                },
+                onApplied = {
+                    pageFilters.keep(page, it)
+                    saved = it
+                },
+                findPeople = states.list.filterLookups::findPeople,
+            )
         }
     LaunchedEffect(filters.applied, states.folders.all.accounts, states.mailScope) {
         feed.query = states.mailQuery(filters.applied)

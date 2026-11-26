@@ -39,7 +39,7 @@ internal fun ListPage(
     val filters = rememberPageFilters(states, page, base, feed)
     val rowLook = rememberRowLook(states)
     val messageActions = rememberMessageActions(states, feed, navigation)
-    val mailboxSearch = rememberMailboxSearch(states, base, feed)
+    val mailboxSearch = mailboxSearch(states, base, feed)
     val searchFolders = rememberSearchFolders(base, feed, states)
     InboxScreen(
         labeled,
@@ -92,8 +92,8 @@ internal fun ListPage(
     )
 }
 
-@Composable
-private fun rememberMailboxSearch(
+/** The page's own mailbox search, or one that loads a folder page's search into its [feed]. */
+private fun mailboxSearch(
     states: MailStates,
     base: ListBase,
     feed: InboxFeedState,

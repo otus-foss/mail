@@ -61,6 +61,8 @@ data class FilterOptions(
     val addresses: List<FilterAddress> = emptyList(),
     val accounts: List<FilterAccount> = emptyList(),
     val folders: Boolean = false,
+    /** Whether the folder picker offers Spam and Trash, which a search leaves out until added. */
+    val bins: Boolean = false,
     val readLater: Boolean = false,
     val layout: FilterLayout = FilterLayout(),
     val kind: ListKind = ListKind.Inbox,

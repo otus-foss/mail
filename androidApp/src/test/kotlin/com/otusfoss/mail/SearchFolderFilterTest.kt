@@ -58,7 +58,7 @@ class SearchFolderFilterTest {
         compose.runOnUiThread {
             compose.activity.setContent {
                 val scope = rememberCoroutineScope()
-                val filters = remember { InboxFilterState(scope = scope, counter = { 3 }) }
+                val filters = remember { InboxFilterState(scope = scope, counter = { _, _ -> 3 }) }
                 filterState = filters
                 OtusTheme {
                     InboxScreen(
@@ -90,7 +90,7 @@ class SearchFolderFilterTest {
     }
 
     @Test
-    fun folderSearchPreselectsItsFolderWithoutAPanePillUntilChanged() {
+    fun folderSearchStaysOnItsFolderWithoutAPanePillUntilChanged() {
         val loaded = mutableListOf<MailScope?>()
         val dev = FolderRef("ada", "dev", includeSubfolders = false)
         val travel = FolderRef("ada", "travel", includeSubfolders = false)
@@ -98,7 +98,7 @@ class SearchFolderFilterTest {
         compose.runOnUiThread {
             compose.activity.setContent {
                 val scope = rememberCoroutineScope()
-                val filters = remember { InboxFilterState(scope = scope, counter = { 5 }) }
+                val filters = remember { InboxFilterState(scope = scope, counter = { _, _ -> 5 }) }
                 filterState = filters
                 OtusTheme {
                     InboxScreen(
@@ -118,9 +118,10 @@ class SearchFolderFilterTest {
             }
         }
         compose.openSearch("Search Dev")
+        // The search starts on the page's own scope, with no load of all mail on the way.
         compose.runOnIdle {
-            assertEquals(null, loaded.last())
-            assertEquals(setOf(dev), filterState?.applied?.folders)
+            assertEquals(listOf<MailScope?>(null), loaded)
+            assertEquals(InboxFilters(), filterState?.applied)
         }
         // Default folder selection is not counted as an active filter in the pane.
         compose.onNodeWithContentDescription("All filters").assertIsDisplayed().performClick()
@@ -152,7 +153,7 @@ class SearchFolderFilterTest {
         compose.runOnUiThread {
             compose.activity.setContent {
                 val scope = rememberCoroutineScope()
-                val filters = remember { InboxFilterState(scope = scope, counter = { 12 }) }
+                val filters = remember { InboxFilterState(scope = scope, counter = { _, _ -> 12 }) }
                 filterState = filters
                 OtusTheme {
                     InboxScreen(
@@ -181,7 +182,7 @@ class SearchFolderFilterTest {
         compose.onNodeWithContentDescription("Folders, All folders, opens page").assertIsDisplayed()
         compose.onNodeWithContentDescription("Show 12 mails").performClick()
         compose.runOnIdle {
-            assertEquals(emptySet<FolderRef>(), filterState?.applied?.folders)
+            assertEquals(InboxFilters(allFolders = true), filterState?.applied)
             assertEquals(MailScope.AllMail, loaded.last())
         }
         compose.onNodeWithText("All folders").assertIsDisplayed()

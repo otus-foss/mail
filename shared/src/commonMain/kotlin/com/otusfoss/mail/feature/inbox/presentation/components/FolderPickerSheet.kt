@@ -26,10 +26,14 @@ import com.otusfoss.mail.core.mailbox.FolderKey
 import com.otusfoss.mail.core.mailbox.MailboxRole
 import com.otusfoss.mail.core.mailbox.pathText
 import com.otusfoss.mail.core.mailbox.presentation.symbol
+import com.otusfoss.mail.core.messages.domain.FolderRef
 import com.otusfoss.mail.core.messages.presentation.icon
 import com.otusfoss.mail.core.settings.presentation.icon
 import com.otusfoss.mail.feature.inbox.domain.InboxFilters
 import com.otusfoss.mail.feature.inbox.domain.withBin
+import com.otusfoss.mail.feature.inbox.domain.withDefaultFolders
+import com.otusfoss.mail.feature.inbox.domain.withoutDefaultFolders
+import com.otusfoss.mail.feature.inbox.domain.withoutFolderOverride
 import com.otusfoss.mail.feature.inbox.presentation.FilterAccount
 import com.otusfoss.mail.feature.inbox.presentation.FilterFolder
 import com.otusfoss.mail.feature.inbox.presentation.FilterOptions
@@ -50,21 +54,26 @@ internal fun FolderPickerSheet(
     draft: InboxFilters,
     options: FilterOptions,
     onEdit: FilterEdit,
+    defaultFolders: Set<FolderRef>,
     onDismiss: () -> Unit,
 ) {
+    val shown = draft.withDefaultFolders(defaultFolders)
+    val edit: FilterEdit = { transform ->
+        onEdit { transform(it.withDefaultFolders(defaultFolders)).withoutDefaultFolders(defaultFolders) }
+    }
     var query by remember { mutableStateOf("") }
     var collapsed by remember { mutableStateOf(emptySet<FolderKey>()) }
     var foldedAccounts by remember { mutableStateOf(emptySet<String>()) }
     val clear =
-        { onEdit { it.copy(folders = emptySet(), includedBins = emptySet()) } }
-            .takeIf { draft.folders.isNotEmpty() || draft.includedBins.isNotEmpty() }
+        { edit { it.withoutFolderOverride() } }
+            .takeIf { shown.folders.isNotEmpty() || shown.includedBins.isNotEmpty() }
     ListSheet(
         "Folders",
         onDismiss,
         onClear = clear,
         search = { PickerSearch(query, { query = it }, "Search folders") },
     ) {
-        if (draft.folders.isEmpty() && query.isBlank()) AlsoIncludeBins(draft, onEdit)
+        if (options.bins && shown.folders.isEmpty() && query.isBlank()) AlsoIncludeBins(shown, edit)
         options.accounts.forEach { account ->
             val open = account.id !in foldedAccounts
             if (options.accounts.size > 1) {
@@ -73,7 +82,7 @@ internal fun FolderPickerSheet(
                 })
             }
             if (open) {
-                FolderRows(account, query, collapsed, draft, options, onEdit) { key, fold ->
+                FolderRows(account, query, collapsed, shown, options, edit) { key, fold ->
                     collapsed = if (fold) collapsed + key else collapsed - key
                 }
             }

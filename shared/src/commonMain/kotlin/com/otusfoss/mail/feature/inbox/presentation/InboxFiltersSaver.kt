@@ -38,6 +38,7 @@ val InboxFiltersSaver: Saver<InboxFilters, Any> =
                 filters.to.forEach { add(line(RECIPIENT, it)) }
                 filters.folders.forEach { add(it.saved()) }
                 filters.includedBins.forEach { add(line(BIN, it.name)) }
+                if (filters.allFolders) add(line(ALL_FOLDERS))
             }
         },
         restore = ::restored,
@@ -66,6 +67,7 @@ private fun restored(lines: List<String>): InboxFilters {
         account = values(ACCOUNT).firstOrNull()?.single(),
         folders = values(FOLDER).mapNotNull(::folderOf).toSet(),
         includedBins = values(BIN).enums<MailboxRole>().filter { it.isBin }.toSet(),
+        allFolders = values(ALL_FOLDERS).isNotEmpty(),
         date = dateOf(lines.getOrNull(1)),
         size = enumOf<SizeFilter>(lines.getOrNull(2)) ?: SizeFilter.Any,
         sort = enumOf<FilterSort>(lines.firstOrNull()) ?: FilterSort.NewestFirst,
@@ -155,6 +157,7 @@ private const val RECIPIENT = "recipient"
 private const val FIELDS = "fields"
 private const val FOLDER = "folder"
 private const val BIN = "bin"
+private const val ALL_FOLDERS = "allFolders"
 
 // Kinds an earlier version saved: Show choices, bare sender addresses, and the Received as fields.
 private const val LEGACY_SHOW = "show"

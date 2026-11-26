@@ -4,21 +4,35 @@ import com.otusfoss.mail.core.messages.domain.FolderRef
 import com.otusfoss.mail.core.messages.domain.MailScope
 
 /**
- * The scope a search loads: all non-bin mail across accounts (or within chosen search accounts)
- * while searching from Inbox or once folder filters differ from [defaultFolders]. Null while
- * searching inside a specific folder's untouched default scope, so the feed stays on it.
+ * The scope a search loads. A search on a folder page or folder pill keeps to its
+ * [defaultFolders] until [filters] choose other folders, narrowed to the search's accounts; null
+ * while nothing narrows it, so the feed stays on the page's own scope. Other searches load
+ * [countScope].
  */
 fun InboxSearch.searchScope(
     defaultFolders: Set<FolderRef>,
     filters: InboxFilters,
-): MailScope? {
-    val scopedToFolder = defaultFolders.isNotEmpty() && !filters.hasFolderOverride(defaultFolders)
-    val noSearchNarrowing = accounts.isEmpty() && mailboxes.isEmpty()
-    if (scopedToFolder && noSearchNarrowing) return null
-    return countScope()
-}
+): MailScope? =
+    when {
+        defaultFolders.isEmpty() || filters.hasFolderOverride -> {
+            countScope()
+        }
 
-/** The scope used to count or query a search's drafts: all non-bin mail (or chosen search accounts/mailboxes). */
+        accounts.isEmpty() -> {
+            null
+        }
+
+        else -> {
+            MailScope.Folders(
+                defaultFolders
+                    .filter { it.loginId in accounts }
+                    .map { MailScope.Folder(it.loginId, it.mailboxId) }
+                    .toSet(),
+            )
+        }
+    }
+
+/** The scope a search counts in: all mail but Spam and Trash, of the chosen accounts if any. */
 fun InboxSearch.countScope(): MailScope =
     if (mailboxes.isEmpty() && accounts.isEmpty()) {
         MailScope.AllMail

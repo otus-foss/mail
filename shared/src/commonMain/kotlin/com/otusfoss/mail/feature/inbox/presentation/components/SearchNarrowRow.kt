@@ -23,7 +23,6 @@ import com.otusfoss.core.designsystem.theme.tokens.layout.QuickViewTokens
 import com.otusfoss.mail.core.messages.domain.DateFilter
 import com.otusfoss.mail.core.messages.domain.QuickFacet
 import com.otusfoss.mail.feature.inbox.domain.SearchField
-import com.otusfoss.mail.feature.inbox.domain.activeCount
 import com.otusfoss.mail.feature.inbox.domain.toggled
 import org.jetbrains.compose.resources.DrawableResource
 
@@ -46,8 +45,7 @@ internal fun SearchNarrowRow(room: SearchRoom) {
             picking = filter
         }
     }
-    val filters = room.sources.filters
-    val badgeCount = filters.applied.activeCount(filters.defaultFolders)
+    val badgeCount = room.sources.filters.applied.activeCount
     PillRow(
         Modifier.padding(top = QuickViewTokens.moduleGap),
         trailing = {

@@ -110,28 +110,38 @@ class InboxFiltersTest {
     }
 
     @Test
-    fun defaultFoldersAreNotCountedUntilChangedAndBinsOptInSeparately() {
+    fun aSearchsStartingFoldersStayImpliedUntilThePickerChangesThem() {
         val folder1 = FolderRef("ada", "f1", includeSubfolders = false)
         val folder2 = FolderRef("ada", "f2", includeSubfolders = false)
         val defaults = setOf(folder1)
-        val untouched = InboxFilters(folders = defaults)
-        assertEquals(0, untouched.activeCount(defaults))
-        assertTrue(untouched.isDefault(defaults))
-        assertFalse(untouched.hasFolderOverride(defaults))
+        val untouched = InboxFilters()
+        assertEquals(setOf(folder1), untouched.withDefaultFolders(defaults).folders)
+        assertEquals(untouched, untouched.withDefaultFolders(defaults).withoutDefaultFolders(defaults))
 
-        val added = untouched.withFolder(folder2, on = true)
-        assertEquals(2, added.activeCount(defaults))
-        assertTrue(added.hasFolderOverride(defaults))
+        fun picked(edit: (InboxFilters) -> InboxFilters) =
+            edit(untouched.withDefaultFolders(defaults)).withoutDefaultFolders(defaults)
 
-        val widened = InboxFilters()
-        assertEquals(1, widened.activeCount(defaults))
-        assertTrue(widened.hasFolderOverride(defaults))
+        val added = picked { it.withFolder(folder2, on = true) }
+        assertEquals(setOf(folder1, folder2), added.folders)
+        assertEquals(2, added.activeCount)
 
+        val widened = picked { it.withFolder(folder1, on = false) }
+        assertTrue(widened.allFolders)
+        assertTrue(widened.hasFolderOverride)
+        assertEquals(1, widened.activeCount)
+        assertEquals(widened, widened.withDefaultFolders(defaults))
+        assertEquals(untouched, widened.withFolder(folder1, on = true).withoutDefaultFolders(defaults))
+    }
+
+    @Test
+    fun spamAndTrashOptInAndShareThePillOfAllFolders() {
         val withSpam = InboxFilters().withBin(MailboxRole.Junk, on = true).withBin(MailboxRole.Inbox, on = true)
         assertEquals(setOf(MailboxRole.Junk), withSpam.includedBins)
         assertEquals(1, withSpam.activeCount)
-        assertTrue(withSpam.hasFolderOverride(emptySet()))
-        assertEquals(emptySet(), withSpam.withFolder(folder1, on = true).includedBins)
+        assertTrue(withSpam.hasFolderOverride)
+        assertEquals(emptySet(), withSpam.withFolder(FolderRef("ada", "f1"), on = true).includedBins)
+        assertEquals(1, withSpam.copy(allFolders = true).withBin(MailboxRole.Trash, on = true).activeCount)
+        assertEquals(InboxFilters(), withSpam.copy(allFolders = true).withoutFolderOverride())
     }
 
     @Test

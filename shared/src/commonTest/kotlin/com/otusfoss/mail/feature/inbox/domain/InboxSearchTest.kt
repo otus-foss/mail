@@ -219,12 +219,20 @@ class InboxSearchTest {
     fun searchScopeLoadsAllNonBinMailFromInboxAndStaysInFolderUntilOverridden() {
         val folder1 = setOf(FolderRef("ada", "f1", includeSubfolders = false))
         assertEquals(MailScope.AllMail, InboxSearch().searchScope(emptySet(), InboxFilters()))
-        assertNull(InboxSearch().searchScope(folder1, InboxFilters(folders = folder1)))
+        assertNull(InboxSearch().searchScope(folder1, InboxFilters()))
         assertEquals(
             MailScope.AllMail,
             InboxSearch().searchScope(folder1, InboxFilters(folders = folder1 + FolderRef("ada", "f2", false))),
         )
-        assertEquals(MailScope.AllMail, InboxSearch().searchScope(folder1, InboxFilters()))
+        assertEquals(MailScope.AllMail, InboxSearch().searchScope(folder1, InboxFilters(allFolders = true)))
+        assertEquals(
+            MailScope.Folders(setOf(MailScope.Folder("ada", "f1"))),
+            InboxSearch(accounts = setOf("ada", "bo")).searchScope(folder1, InboxFilters()),
+        )
+        assertEquals(
+            MailScope.Folders(emptySet()),
+            InboxSearch(accounts = setOf("bo")).searchScope(folder1, InboxFilters()),
+        )
         assertEquals(
             MailScope.AllMail,
             InboxSearch().searchScope(emptySet(), InboxFilters(includedBins = setOf(MailboxRole.Junk))),

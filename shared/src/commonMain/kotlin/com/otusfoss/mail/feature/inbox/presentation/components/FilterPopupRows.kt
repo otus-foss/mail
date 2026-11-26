@@ -71,7 +71,7 @@ private fun FolderPopup(
 ) {
     var open by remember { mutableStateOf(false) }
     ValueRow(Res.drawable.symbol_folder, "Folders", foldersValue(draft, options, defaultFolders)) { open = true }
-    if (open) FolderPickerSheet(draft, options, onEdit) { open = false }
+    if (open) FolderPickerSheet(draft, options, onEdit, defaultFolders) { open = false }
 }
 
 @Composable

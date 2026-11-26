@@ -80,17 +80,27 @@ class SearchFilterChangesTest {
     }
 
     @Test
-    fun folderSearchRestoresFoldersOnCloseEvenAfterKeepingOtherFilters() {
-        val filters = InboxFilterState()
-        changes.startFolderSearch(filters.applied)
-        filters.update(InboxFilters(folders = setOf(FolderRef("ada", "f1", includeSubfolders = false))))
+    fun closingSetsTheFoldersBackToThoseTheSearchStartedWithEvenAfterShow() {
+        val archive = setOf(FolderRef("ada", "archive"))
+        val filters = InboxFilterState(InboxFilters(folders = archive))
+        changes.startSearch(filters.applied)
         filters.tapFiles()
-        filters.update(filters.applied.copy(folders = emptySet(), includedBins = setOf(MailboxRole.Junk)))
+        filters.update(
+            filters.applied.copy(folders = emptySet(), includedBins = setOf(MailboxRole.Junk), allFolders = true),
+        )
         changes.keep()
         changes.undo(filters)
         assertTrue(filters.applied.has(QuickFacet.Attachments))
-        assertEquals(emptySet(), filters.applied.folders)
+        assertEquals(archive, filters.applied.folders)
         assertEquals(emptySet(), filters.applied.includedBins)
-        assertFalse(changes.foldersInitialized)
+        assertFalse(filters.applied.allFolders)
+    }
+
+    @Test
+    fun aSearchThatChangesNothingLeavesTheFiltersAlone() {
+        val filters = InboxFilterState(onApplied = { error("nothing changed") })
+        changes.startSearch(filters.applied)
+        changes.undo(filters)
+        assertEquals(InboxFilters(), filters.applied)
     }
 }

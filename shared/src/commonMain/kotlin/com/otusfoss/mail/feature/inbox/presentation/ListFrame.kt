@@ -28,7 +28,6 @@ internal fun InboxContext.listFrame(
     topInset: Dp,
     barPadding: PaddingValues,
     collapse: CollapseLink,
-    narrowed: Boolean = false,
 ): ListFrame =
     ListFrame(
         rowLook,
@@ -37,5 +36,4 @@ internal fun InboxContext.listFrame(
         barPadding.calculateBottomPadding(),
         collapse,
         onLoadMore,
-        narrowed,
     )

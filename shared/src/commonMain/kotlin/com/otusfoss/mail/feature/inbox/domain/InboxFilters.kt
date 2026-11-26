@@ -32,17 +32,44 @@ data class InboxFilters(
     val folders: Set<FolderRef> = emptySet(),
     /** Spam or Trash roles added alongside all folders when [folders] is empty. */
     val includedBins: Set<MailboxRole> = emptySet(),
+    /**
+     * Every folder instead of the folder page's own while [folders] is empty. Only a search
+     * started on a folder page or folder pill sets it, and closing the search clears it.
+     */
+    val allFolders: Boolean = false,
     val date: DateFilter = DateFilter.Any,
     val size: SizeFilter = SizeFilter.Any,
     val sort: FilterSort = FilterSort.NewestFirst,
 ) {
     /** How many choices differ from the defaults, one per pill the row shows; the order is not one. */
     val activeCount: Int
-        get() = activeCount(emptySet())
+        get() =
+            listOf(quick, types, from, sentTo, to).sumOf { it.size } +
+                folderPills +
+                listOf(
+                    status != ReadStatus.All,
+                    account != null,
+                    receivedIn != RecipientField.Default,
+                    date != DateFilter.Any,
+                    size != SizeFilter.Any,
+                ).count { it }
 
     /** Nothing narrows the list, and it is newest first. */
     val isDefault: Boolean
-        get() = isDefault(emptySet())
+        get() = this == InboxFilters()
+
+    /** Whether folders, all folders, or an added Spam or Trash replace the page's own folders. */
+    val hasFolderOverride: Boolean
+        get() = folders.isNotEmpty() || allFolders || includedBins.isNotEmpty()
+
+    // The chosen folders count one each; all folders and added bins share one pill.
+    private val folderPills: Int
+        get() =
+            when {
+                folders.isNotEmpty() -> folders.size
+                hasFolderOverride -> 1
+                else -> 0
+            }
 
     /** Whether a choice is on that only the loaded threads can tell, so the server cannot count it. */
     val clientOnly: Boolean
@@ -110,33 +137,27 @@ data class InboxFilters(
     }
 }
 
-/** How many choices differ from the defaults, treating [defaultFolders] as the unmodified folder selection. */
-fun InboxFilters.activeCount(defaultFolders: Set<FolderRef>): Int {
-    val folderCount =
-        when {
-            folders == defaultFolders -> 0
-            folders.isNotEmpty() -> folders.size
-            else -> 1
-        }
-    val binCount = if (folders.isEmpty()) includedBins.size else 0
-    return listOf(quick, types, from, sentTo, to).sumOf { it.size } +
-        folderCount +
-        binCount +
-        listOf(
-            status != ReadStatus.All,
-            account != null,
-            receivedIn != RecipientField.Default,
-            date != DateFilter.Any,
-            size != SizeFilter.Any,
-        ).count { it }
-}
+/**
+ * These filters with an untouched folder choice spelled out as [defaults], the folders a search
+ * on a folder page starts from, so the folder picker shows them ticked.
+ */
+fun InboxFilters.withDefaultFolders(defaults: Set<FolderRef>): InboxFilters =
+    if (defaults.isNotEmpty() && !hasFolderOverride) copy(folders = defaults) else this
 
-/** Whether nothing differs from the page's default, with [defaultFolders] as its unmodified folders. */
-fun InboxFilters.isDefault(defaultFolders: Set<FolderRef>): Boolean = this == InboxFilters(folders = defaultFolders)
+/**
+ * The inverse of [withDefaultFolders]: exactly [defaults] becomes the untouched choice again, and
+ * no folder at all on a page with [defaults] becomes every folder.
+ */
+fun InboxFilters.withoutDefaultFolders(defaults: Set<FolderRef>): InboxFilters =
+    when {
+        defaults.isEmpty() -> copy(allFolders = false)
+        folders == defaults -> copy(folders = emptySet(), allFolders = false)
+        else -> copy(allFolders = folders.isEmpty())
+    }
 
-/** Whether folders or included Spam/Trash differ from [defaultFolders]. */
-fun InboxFilters.hasFolderOverride(defaultFolders: Set<FolderRef>): Boolean =
-    folders != defaultFolders || (folders.isEmpty() && includedBins.isNotEmpty())
+/** These filters back on the page's own folders, without added Spam or Trash. */
+fun InboxFilters.withoutFolderOverride(): InboxFilters =
+    copy(folders = emptySet(), includedBins = emptySet(), allFolders = false)
 
 /** Includes or excludes Spam or Trash alongside all folders; ignores non-bin roles. */
 fun InboxFilters.withBin(

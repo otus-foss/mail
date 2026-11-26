@@ -3,11 +3,7 @@ package com.otusfoss.mail.feature.inbox.presentation.components
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.SideEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.navigationevent.NavigationEventInfo
 import androidx.navigationevent.compose.NavigationBackHandler
@@ -18,7 +14,6 @@ import com.otusfoss.mail.core.messages.domain.FolderRef
 import com.otusfoss.mail.core.messages.domain.MailMessage
 import com.otusfoss.mail.feature.inbox.domain.InboxSearch
 import com.otusfoss.mail.feature.inbox.domain.countScope
-import com.otusfoss.mail.feature.inbox.domain.hasFolderOverride
 import com.otusfoss.mail.feature.inbox.presentation.InboxContext
 import com.otusfoss.mail.feature.inbox.presentation.InboxFilterState
 import com.otusfoss.mail.feature.inbox.presentation.InboxState
@@ -101,7 +96,7 @@ internal fun rememberHeaderActions(
     val typed = state.search.query.isNotBlank()
     val expansion =
         rememberInboxExpansion(page.quick, filters, roomHeight, typed) {
-            leaveSearch(state, filters, page.searchFolders, closeSearch)
+            leaveSearch(state, filters, closeSearch)
         }
     // Results showing take the cursor from the field, so a tap on it is a fresh focus again.
     LaunchedEffect(state.resultsShown) { if (state.resultsShown) focus.clearFocus() }
@@ -123,9 +118,9 @@ internal fun rememberHeaderActions(
 }
 
 /**
- * Keeps [filters]'s search-time folder defaults and count scope in sync with [searching] and
- * [searchFolders]: starting search on a folder page seeds its folders so Filters shows them, and
- * closing search restores the page's pre-search folders.
+ * Gives [filters] the folders a search starts from, [searchFolders], and the scope it counts in
+ * while [searching], and notes the page's filters as a search starts so closing it sets its folder
+ * choices back.
  */
 @Composable
 private fun SyncSearchFolders(
@@ -138,29 +133,8 @@ private fun SyncSearchFolders(
     val defaultFolders = if (searching) searchFolders else emptySet()
     val countScope = if (searching) search.countScope() else null
     SideEffect { filters.useSearchDefaults(defaultFolders, countScope) }
-    var seeded by remember { mutableStateOf<Set<FolderRef>?>(null) }
-    LaunchedEffect(searching, searchFolders) {
-        when {
-            searching && searchFolders.isNotEmpty() && !changes.foldersInitialized -> {
-                changes.startFolderSearch(filters.applied)
-                seeded = searchFolders
-                if (filters.applied.folders.isEmpty() && filters.applied.includedBins.isEmpty()) {
-                    filters.update(filters.applied.copy(folders = searchFolders))
-                }
-            }
-
-            searching && seeded != null && seeded != searchFolders -> {
-                if (filters.applied.folders == seeded && filters.applied.includedBins.isEmpty()) {
-                    filters.update(filters.applied.copy(folders = searchFolders))
-                }
-                seeded = searchFolders.takeIf { it.isNotEmpty() }
-            }
-
-            !searching -> {
-                seeded = null
-                changes.undo(filters)
-            }
-        }
+    LaunchedEffect(searching) {
+        if (searching) changes.startSearch(filters.applied) else changes.undo(filters)
     }
 }
 
@@ -168,13 +142,12 @@ private fun SyncSearchFolders(
 private fun leaveSearch(
     state: InboxState,
     filters: InboxFilterState,
-    defaultFolders: Set<FolderRef>,
     closeSearch: () -> Unit,
 ) {
     // Where the terms match narrows nothing until there are terms.
     val picked =
         state.search.copy(field = state.defaultSearch.field) != state.defaultSearch ||
-            filters.applied.hasFolderOverride(defaultFolders)
+            filters.applied.hasFolderOverride
     if (state.search.query.isBlank() && !picked) closeSearch() else state.showResults()
 }
 

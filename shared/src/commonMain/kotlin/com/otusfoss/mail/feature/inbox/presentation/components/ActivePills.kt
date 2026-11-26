@@ -60,19 +60,17 @@ internal fun toPill(
 internal fun accountPill(account: FilterAccount): ActivePill =
     { AvatarFilterChip(listOf(account.avatar), account.name, "${account.name} account", it) }
 
-/** The active folder pill: specific folders, all folders (when widened), or added Spam/Trash. */
+/** The chosen folders, or else all folders and the added Spam and Trash, such as "All + Spam". */
 internal fun folderFilterPill(
     filters: InboxFilters,
     options: FilterOptions,
-    defaultFolders: Set<FolderRef>,
 ): ActivePill {
     if (filters.folders.isNotEmpty()) return foldersPill(filters.folders.toList(), options)
-    val bins = filters.includedBins.sortedBy { it.ordinal }.joinToString(", ") { it.title }
     val label =
         when {
-            bins.isEmpty() -> "All folders"
-            defaultFolders.isNotEmpty() -> "All + $bins"
-            else -> "+ $bins"
+            filters.includedBins.isEmpty() -> "All folders"
+            filters.allFolders -> "All + ${filters.binNames}"
+            else -> "+ ${filters.binNames}"
         }
     return symbolPill(label, Res.drawable.symbol_folder)
 }
