@@ -9,7 +9,9 @@ import com.otusfoss.mail.core.messages.data.DeviceDrafts
 import com.otusfoss.mail.core.messages.data.EmailChangeQueue
 import com.otusfoss.mail.core.messages.data.JmapEmailWriter
 import com.otusfoss.mail.core.messages.data.WaitingMail
+import com.otusfoss.mail.core.messages.domain.AttachmentBlob
 import com.otusfoss.mail.core.messages.domain.Draft
+import com.otusfoss.mail.core.messages.domain.DraftAttachment
 import com.otusfoss.mail.core.messages.domain.DraftException
 import com.otusfoss.mail.core.messages.domain.DraftFailure
 import com.otusfoss.mail.core.messages.domain.DraftRepository
@@ -134,6 +136,22 @@ class WaitingDraftRowsTest {
             val shown = mailSource.cached(scope, MailQuery()).messages.map { it.emailId }
 
             assertEquals(listOf("d2"), shown)
+        }
+
+    @Test
+    fun anUnuploadedFileIsLeftOutOfTheWaitingDraftAndItsRow() =
+        runTest {
+            val offlineFile = DraftAttachment("f1", "plan.pdf", "application/pdf", 3)
+            val uploadedFile =
+                DraftAttachment("f2", "notes.pdf", "application/pdf", 4, AttachmentBlob(login.id, "b2"))
+            val id = drafts.save(written.copy(attachments = listOf(offlineFile))).getOrThrow()
+
+            val row = source.messages(scope).messages.first { it.emailId == id }
+            assertEquals(false, row.attributes.hasAttachment)
+            assertEquals(emptyList(), drafts.list.load(id)?.attachments)
+
+            drafts.save(written.copy(emailId = id, attachments = listOf(offlineFile, uploadedFile))).getOrThrow()
+            assertEquals(listOf(uploadedFile), drafts.list.load(id)?.attachments)
         }
 
     /** A Drafts folder on [server]: a save adds the new copy there and destroys the one it replaces. */

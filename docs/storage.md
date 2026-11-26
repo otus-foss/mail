@@ -189,7 +189,8 @@ or a send made with that id acts on the server's copy the draft replaces, if it 
 - While Write is open on a draft that waits, the page says so. Once the server has the draft, a
   page that still holds its device id replaces that server copy instead of adding another; this is
   remembered for the life of the process.
-- Files attached while offline are not uploaded, so they are not part of the waiting draft.
+- Files attached while offline are not uploaded, so they are not part of the waiting draft; Write
+  tells the user when it keeps a draft on the device without those files.
 - Removing an account drops its waiting drafts.
 
 Folder renames, moves, and new orders wait in `JmapFolderRepository`, in the `pending_folders`

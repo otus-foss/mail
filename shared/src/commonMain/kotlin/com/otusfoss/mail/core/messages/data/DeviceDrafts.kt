@@ -66,7 +66,7 @@ class DeviceDrafts(
                 ).then { server.save(copy.copy(emailId = it)) }
             when {
                 result.isUnreachable -> {
-                    Result.success(shelf.keep(waiting?.id ?: newId(), copy))
+                    Result.success(shelf.keep(waiting?.id ?: newId(), copy.withoutUnuploaded()))
                 }
 
                 result.isSuccess -> {
@@ -76,7 +76,7 @@ class DeviceDrafts(
 
                 // What was typed since still replaces the waiting copy, so a refusal loses none of it.
                 else -> {
-                    if (waiting != null) shelf.keep(waiting.id, copy)
+                    if (waiting != null) shelf.keep(waiting.id, copy.withoutUnuploaded())
                     result
                 }
             }
@@ -219,3 +219,6 @@ class DeviceDraftList internal constructor(
 /** Whether a save failed only because the server could not be reached, so trying again later can work. */
 private val Result<*>.isUnreachable: Boolean
     get() = ((exceptionOrNull() as? DraftException)?.failure as? DraftFailure.Mail)?.failure == MailFailure.Unreachable
+
+/** Files attached offline have no upload, so they are not kept in a waiting draft. */
+private fun Draft.withoutUnuploaded(): Draft = copy(attachments = attachments.filter { it.uploadedTo(accountId) })
