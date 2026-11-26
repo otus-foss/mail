@@ -54,24 +54,35 @@ internal fun ColumnScope.ConnectStep(
 
 /**
  * Picks how new mail reaches the device in [delivery], then asks for the permission to show
- * alerts through [onAllow], where the device needs asking.
+ * alerts through [onAllow], where the device needs asking. The step's main button agrees to the
+ * service shown as chosen, so it runs [onAccept] first; Not now only moves on.
  */
 @Composable
 internal fun ColumnScope.NotificationsStep(
     delivery: @Composable () -> Unit,
     onAllow: (() -> Unit)?,
+    onAccept: () -> Unit,
     onNext: () -> Unit,
 ) {
     OnboardingStepBody(
         "Get mail as it arrives",
         footer = {
             if (onAllow == null) {
-                ActionButton("Continue", onNext, Modifier.fillMaxWidth(), primary = true)
+                ActionButton(
+                    "Continue",
+                    {
+                        onAccept()
+                        onNext()
+                    },
+                    Modifier.fillMaxWidth(),
+                    primary = true,
+                )
             } else {
                 ActionButton(
                     "Allow notifications",
                     {
                         onAllow()
+                        onAccept()
                         onNext()
                     },
                     Modifier.fillMaxWidth(),

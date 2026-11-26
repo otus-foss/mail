@@ -1,9 +1,5 @@
 package com.otusfoss.mail
 
-import android.graphics.Bitmap
-import android.graphics.Canvas
-import android.graphics.Color
-import android.graphics.Paint
 import com.otusfoss.core.designsystem.shared.feedback.components.ToastState
 import com.otusfoss.mail.core.mail.EmailAddressKey
 import com.otusfoss.mail.core.mailbox.MailboxRole
@@ -47,6 +43,7 @@ import com.otusfoss.mail.feature.read.presentation.ReadEffects
 import com.otusfoss.mail.feature.read.presentation.ReadFiles
 import com.otusfoss.mail.feature.read.presentation.ReadFolders
 import com.otusfoss.mail.feature.read.presentation.ReadPrivacy
+import com.otusfoss.mail.feature.read.presentation.ReadSender
 import com.otusfoss.mail.feature.read.presentation.ReadServices
 import com.otusfoss.mail.feature.read.presentation.components.NewFolderSheet
 import kotlinx.coroutines.MainScope
@@ -140,6 +137,9 @@ internal object ReadViewFixtures {
         message("s", sentry, "Weekly report for Otus", DIGEST, ReceivedAt("2026-10-16", "07:00"))
             .copy(to = listOf(alex))
 
+    /** The digest from a list that takes only the one-click request. */
+    val oneClickDigest = digest.copy(id = "o")
+
     val attachments =
         listOf(
             MailAttachment("Q4-plan-v3.pdf", "application/pdf", 245_760, "b1"),
@@ -150,17 +150,18 @@ internal object ReadViewFixtures {
     /** Each message's body: the digest is HTML with a remote image and a list to leave. */
     fun content(message: MailMessage): MessageContent =
         when (message.id) {
-            "s" -> digestContent()
+            "s" -> digestContent(Unsubscribe(mail = "mailto:unsubscribe@sentry.example"))
+            "o" -> digestContent(Unsubscribe(web = "https://lists.example.org/u/1", oneClick = true))
             "g" -> MessageContent(message.body, truncated = false, html = null, attachments = attachments)
             else -> MessageContent(message.body, truncated = false, html = null)
         }
 
-    private fun digestContent() =
+    private fun digestContent(unsubscribe: Unsubscribe) =
         MessageContent(
             DIGEST,
             truncated = false,
             html = MessageHtml(DIGEST_HTML, remoteContent = true),
-            unsubscribe = Unsubscribe(mail = "mailto:unsubscribe@sentry.example"),
+            unsubscribe = unsubscribe,
             listName = "Sentry weekly digest",
         )
 
@@ -193,11 +194,11 @@ internal object ReadViewFixtures {
             ReadServices(
                 newsletters = FakeNewsletters(unsubscribed),
                 headers = MessageHeaders { emptyList() },
-                blocks = SenderBlocks { true },
                 edits = edits(writer, toasts),
                 person = null,
                 files = photoFiles(),
                 categories = null,
+                sender = ReadSender(SenderBlocks { true }),
             )
         effects = ReadEffects(toasts, launch, NewsletterSteps())
         display =
@@ -207,9 +208,9 @@ internal object ReadViewFixtures {
         block()
     }
 
-    /** Attachments that download as [photo], and a printer that prints nothing. */
+    /** Attachments that download as [twoTonePhoto], and a printer that prints nothing. */
     private fun photoFiles() =
-        ReadFiles(downloads = PhotoAttachments(::photo), saved = null, printer = MessagePrinter { _, _ -> })
+        ReadFiles(downloads = PhotoAttachments(::twoTonePhoto), saved = null, printer = MessagePrinter { _, _ -> })
 
     /** Edits that [writer] saves, run on the main thread like the app's, with their toasts in [toasts]. */
     private fun edits(
@@ -219,21 +220,6 @@ internal object ReadViewFixtures {
         val scope = MainScope()
         val feed = InboxFeedState(NoMail, scope)
         return ReadEdits(MailEdits(writer, scope, MoveToasts(toasts, scope)), feed)
-    }
-
-    /** A small two-tone picture as PNG bytes, standing in for a downloaded photo. */
-    private fun photo(): ByteArray {
-        val bitmap = Bitmap.createBitmap(PHOTO_SIZE, PHOTO_SIZE, Bitmap.Config.ARGB_8888)
-        Canvas(bitmap).apply {
-            drawColor(Color.rgb(0x3b, 0x5a, 0x6e))
-            drawCircle(
-                PHOTO_SIZE * 0.6f,
-                PHOTO_SIZE * 0.4f,
-                PHOTO_SIZE * 0.25f,
-                Paint().apply { color = Color.rgb(0xe8, 0xc4, 0x6a) },
-            )
-        }
-        return bitmap.pngBytes()
     }
 
     fun actions(targets: List<MoveTarget> = emptyList()) =
@@ -272,7 +258,6 @@ internal object ReadViewFixtures {
     }
 
     private const val OLDER = 23
-    private const val PHOTO_SIZE = 96
     private const val SHEET_TYPE = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
     private const val DIGEST_HTML =
         "<p>Your weekly digest is here.</p><p>12 new issues in mail, 3 regressions.</p>" +

@@ -5,8 +5,12 @@ import com.otusfoss.core.jmap.JmapConnections
 import com.otusfoss.core.jmap.login.InMemoryLoginStore
 import com.otusfoss.core.jmap.login.JmapLogin
 import com.otusfoss.core.jmap.login.LoginStore
+import com.otusfoss.mail.core.mailbox.MailboxRole
+import com.otusfoss.mail.core.messages.domain.FolderRef
 import com.otusfoss.mail.core.messages.domain.MailScope
 import com.otusfoss.mail.core.messages.domain.MailboxScope
+import com.otusfoss.mail.feature.inbox.domain.InboxFilters
+import com.otusfoss.mail.feature.inbox.domain.MailQuery
 import com.otusfoss.mail.testing.FakeMailServer
 import com.otusfoss.mail.testing.mailSource
 import com.otusfoss.mail.testing.stalwartLike
@@ -90,6 +94,38 @@ class JmapMailboxScopeTest {
             assertEquals(1, peak)
         }
 
+    @Test
+    fun allMailLeavesOutSpamTrashAndTheirSubfoldersUntilIncluded() =
+        runTest {
+            val server = FakeMailServer(MAILBOXES_WITH_BINS)
+            val store = InMemoryLoginStore().apply { save(ada, "secret") }
+            val source = source(stalwartLike(api = server::answer), store)
+            assertTrue(source.messages(MailScope.AllMail).unavailable.isEmpty())
+            val defaultQueried = server.bodies.filter { "Email/query" in it }
+            assertTrue(defaultQueried.any { "\"inMailbox\":\"a\"" in it })
+            assertTrue(defaultQueried.any { "\"inMailbox\":\"r\"" in it })
+            assertTrue(defaultQueried.any { "\"inMailbox\":\"s\"" in it })
+            assertTrue(defaultQueried.none { "\"inMailbox\":\"j\"" in it })
+            assertTrue(defaultQueried.none { "\"inMailbox\":\"t\"" in it })
+            assertTrue(defaultQueried.none { "\"inMailbox\":\"ts\"" in it })
+
+            val withSpam = MailQuery(InboxFilters(includedBins = setOf(MailboxRole.Junk)))
+            assertTrue(source.messages(MailScope.AllMail, withSpam).unavailable.isEmpty())
+            val afterSpam = server.bodies.filter { "Email/query" in it }
+            assertTrue(afterSpam.any { "\"inMailbox\":\"j\"" in it })
+            assertTrue(afterSpam.none { "\"inMailbox\":\"t\"" in it })
+
+            val onlyTrash =
+                MailQuery(
+                    InboxFilters(folders = setOf(FolderRef("ada", "t", includeSubfolders = false))),
+                    folderIds = mapOf("ada" to setOf("t")),
+                )
+            val beforeTrash = server.calls("Email/query").size
+            assertTrue(source.messages(MailScope.AllMail, onlyTrash).unavailable.isEmpty())
+            assertEquals(beforeTrash + 1, server.calls("Email/query").size)
+            assertTrue(server.bodies.last().contains("\"inMailbox\":\"t\""))
+        }
+
     private fun source(
         engine: MockEngine,
         store: LoginStore,
@@ -103,5 +139,9 @@ class JmapMailboxScopeTest {
             "username": "ada@example.org", "apiUrl": "/jmap/", "state": "s"}"""
         const val MAILBOXES = """{"id": "a", "name": "Posteingang", "role": "inbox"},
             {"id": "r", "name": "Receipts"}, {"id": "s", "name": "Sent", "role": "sent"}"""
+        const val MAILBOXES_WITH_BINS = """{"id": "a", "name": "Posteingang", "role": "inbox"},
+            {"id": "r", "name": "Receipts"}, {"id": "s", "name": "Sent", "role": "sent"},
+            {"id": "j", "name": "Spam", "role": "junk"}, {"id": "t", "name": "Trash", "role": "trash"},
+            {"id": "ts", "name": "Old trash", "parentId": "t"}"""
     }
 }

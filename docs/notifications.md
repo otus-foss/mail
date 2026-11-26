@@ -13,7 +13,10 @@ describe Android behavior.
 
 Settings › Notifications lists Google Play services when it is installed on the device, followed
 by installed UnifiedPush apps. Google delivery needs no extra app or Firebase project setup.
-The user chooses the service; periodic checks remain the default until they do.
+The user chooses the service; periodic checks remain the default until they do. The first run's
+Notifications step marks one service as chosen: an installed UnifiedPush app under private
+settings, and Google otherwise. Nothing registers until the user taps a service or goes on with
+Continue or Allow notifications. Not now, going back, or closing the app leaves periodic checks on.
 
 The embedded distributor is `org.unifiedpush.android:embedded-fcm-distributor:3.1.0`. It uses
 Play services on the device and contains no proprietary Google SDK, so the same dependency is
@@ -49,7 +52,9 @@ Choosing a service registers each account as its own instance, keyed by login id
    every push that arrived before it started.
 
 The UnifiedPush connector decrypts pushes from either service. A push holds only account ids
-and state strings, never mail, so the push app and its server see encrypted change notices only. A server that
+and state strings, never mail, so the push app and its server see encrypted change notices only.
+Each account registers with the label "Otus Mail", which the push app shows in its list, so the
+push app never sees an account name. A server that
 refuses push subscriptions shows "The server can't push" and keeps the 15-minute check.
 Choosing Off unregisters every account and deletes its server subscription. The periodic run
 renews subscriptions before they expire and registers accounts added later.
@@ -141,7 +146,8 @@ An alert that shows its message offers up to three buttons. A "New mail only" al
 locked version of an alert offer none, because the user cannot see which message they would
 change. A device set to show full alerts on its lock screen shows the buttons there too, so every
 button that changes mail asks the user to unlock first (`setAuthenticationRequired`, Android 12
-and later). Settings › Notifications › **Buttons** › **Alert buttons** picks them and their order
+and later). Android 11 and older cannot ask, so `AlertActionReceiver` ignores the press while the
+phone is locked: the alert stays, and the button works once the user unlocks. Settings › Notifications › **Buttons** › **Alert buttons** picks them and their order
 in the same `OrderedChoiceSheet` the Quick views use; see [settings](settings.md#kinds-of-setting). The
 choice is `MailBehavior.notificationActions`, saved with the other behavior settings under
 `notification_actions`. The default is **Delete**, **Archive**, **Mark read**, in that order.
@@ -224,7 +230,9 @@ the choice. `AlertActionsTest` checks that tapping an alert names its message an
 none, that only alerts that show the message have buttons, that they are the chosen ones the
 account can run, that Reply opens Mail on a reply, that every button but Reply asks to unlock,
 that a button clears its alert and queues the change, that a failed change brings the alert back
-saying so, and that a change for a removed account stops without one. `EmailShortcutsTest` checks
+saying so, and that a change for a removed account stops without one. `AlertButtonLockTest` checks
+that on Android 11 a button on a locked phone keeps its alert and queues nothing, that it acts once
+unlocked, and that Android 12 and later never check the lock. `EmailShortcutsTest` checks
 the `Email/set` patches against a mock server, an account without an Archive, Trash, or Spam
 folder, and a removed login. `MessageListingTest` checks finding the row of a
 message inside a conversation. `AlertRemovalTest` checks that removing an account clears only its

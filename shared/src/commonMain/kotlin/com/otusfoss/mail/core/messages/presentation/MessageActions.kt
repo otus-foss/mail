@@ -35,6 +35,7 @@ data class MoveTarget(
     val own: Boolean = false,
     val path: List<String>? = null,
     val color: String? = null,
+    val accountId: String? = null,
 ) {
     /** The full path as text, such as "Clients / Acme". */
     val label: String

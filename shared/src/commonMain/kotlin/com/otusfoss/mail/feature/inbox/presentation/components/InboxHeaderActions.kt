@@ -2,6 +2,7 @@ package com.otusfoss.mail.feature.inbox.presentation.components
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.navigationevent.NavigationEventInfo
@@ -9,7 +10,10 @@ import androidx.navigationevent.compose.NavigationBackHandler
 import androidx.navigationevent.compose.rememberNavigationEventState
 import com.otusfoss.core.dateformat.DateFormatter
 import com.otusfoss.core.designsystem.shared.panels.components.PanelExpansion
+import com.otusfoss.mail.core.messages.domain.FolderRef
 import com.otusfoss.mail.core.messages.domain.MailMessage
+import com.otusfoss.mail.feature.inbox.domain.InboxSearch
+import com.otusfoss.mail.feature.inbox.domain.countScope
 import com.otusfoss.mail.feature.inbox.presentation.InboxContext
 import com.otusfoss.mail.feature.inbox.presentation.InboxFilterState
 import com.otusfoss.mail.feature.inbox.presentation.InboxState
@@ -86,10 +90,14 @@ internal fun rememberHeaderActions(
 ): InboxHeaderActions {
     val focus = LocalFocusManager.current
     val changes = rememberSaveable(saver = SearchFilterChanges.saver) { SearchFilterChanges() }
+    SyncSearchFolders(state.searching, page.searchFolders, state.search, filters, changes)
     val closeSearch = searchCloser(state, filters, changes)
     val roomHeight = if (state.searchSurfaceOpen) searchRoomHeight(state.search.query.isNotBlank()) else null
     val typed = state.search.query.isNotBlank()
-    val expansion = rememberInboxExpansion(page.quick, filters, roomHeight, typed) { leaveSearch(state, closeSearch) }
+    val expansion =
+        rememberInboxExpansion(page.quick, filters, roomHeight, typed) {
+            leaveSearch(state, filters, closeSearch)
+        }
     // Results showing take the cursor from the field, so a tap on it is a fresh focus again.
     LaunchedEffect(state.resultsShown) { if (state.resultsShown) focus.clearFocus() }
     val overlays = rememberInboxOverlays(filters)
@@ -109,13 +117,37 @@ internal fun rememberHeaderActions(
     )
 }
 
+/**
+ * Gives [filters] the folders a search starts from, [searchFolders], and the scope it counts in
+ * while [searching], and notes the page's filters as a search starts so closing it sets its folder
+ * choices back.
+ */
+@Composable
+private fun SyncSearchFolders(
+    searching: Boolean,
+    searchFolders: Set<FolderRef>,
+    search: InboxSearch,
+    filters: InboxFilterState,
+    changes: SearchFilterChanges,
+) {
+    val defaultFolders = if (searching) searchFolders else emptySet()
+    val countScope = if (searching) search.countScope() else null
+    SideEffect { filters.useSearchDefaults(defaultFolders, countScope) }
+    LaunchedEffect(searching) {
+        if (searching) changes.startSearch(filters.applied) else changes.undo(filters)
+    }
+}
+
 /** Shows the search's results once the room closes, or ends a search with nothing typed or picked. */
 private fun leaveSearch(
     state: InboxState,
+    filters: InboxFilterState,
     closeSearch: () -> Unit,
 ) {
     // Where the terms match narrows nothing until there are terms.
-    val picked = state.search.copy(field = state.defaultSearch.field) != state.defaultSearch
+    val picked =
+        state.search.copy(field = state.defaultSearch.field) != state.defaultSearch ||
+            filters.applied.hasFolderOverride
     if (state.search.query.isBlank() && !picked) closeSearch() else state.showResults()
 }
 

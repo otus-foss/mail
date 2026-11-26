@@ -88,7 +88,7 @@ class PanelHeaderAlignmentTest {
         val originalIcon = navigation("Open navigation")
         val originalBaseline = baseline(prompt())
         compose.mainClock.autoAdvance = false
-        compose.onNodeWithContentDescription("Search Inbox").performClick()
+        compose.onNodeWithContentDescription("Search mail").performClick()
         repeat(20) { frame ->
             compose.mainClock.advanceTimeByFrame()
             compose.waitForIdle()
@@ -119,7 +119,7 @@ class PanelHeaderAlignmentTest {
         compose.mainClock.autoAdvance = true
         val height =
             compose
-                .onNodeWithContentDescription("Search Inbox")
+                .onNodeWithContentDescription("Search mail")
                 .fetchSemanticsNode()
                 .boundsInRoot.height
         assertTrue(
@@ -128,9 +128,9 @@ class PanelHeaderAlignmentTest {
         )
     }
 
-    private fun prompt(): SemanticsNodeInteraction = compose.onNodeWithText("Search Inbox", useUnmergedTree = true)
+    private fun prompt(): SemanticsNodeInteraction = compose.onNodeWithText("Search mail", useUnmergedTree = true)
 
-    private fun placeholder(): SemanticsNodeInteraction = compose.onNodeWithText("Search Inbox", useUnmergedTree = true)
+    private fun placeholder(): SemanticsNodeInteraction = compose.onNodeWithText("Search mail", useUnmergedTree = true)
 
     private fun field(): SemanticsNodeInteraction = compose.searchField()
 

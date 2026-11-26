@@ -97,8 +97,13 @@ class JmapConversationMessages(
         val role = if (inRow) row.location.mailboxRole else folders[listed]?.role
         val place = row.location.copy(mailbox = mailbox, mailboxId = listed, mailboxRole = role)
         val page = toMessage(place, zone(), sites.known(row.location.accountId))
-        // The list already found the row sender's photo; pages from the same address reuse it.
-        val sender = if (page.sender.address.equals(row.sender.address, ignoreCase = true)) row.sender else page.sender
+        // The list already found the row sender's photo; pages from the same address reuse it. Each
+        // page keeps its own server's verdict, since another email can claim the same address.
+        val sender =
+            row.sender
+                .copy(brandDomain = page.sender.brandDomain)
+                .takeIf { page.sender.address.equals(row.sender.address, ignoreCase = true) }
+                ?: page.sender
         return page.copy(sender = sender)
     }
 }

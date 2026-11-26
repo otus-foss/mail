@@ -23,6 +23,7 @@ import com.otusfoss.core.designsystem.shared.selection.components.PickRow
 import com.otusfoss.core.designsystem.shared.selection.components.PickStyle
 import com.otusfoss.core.designsystem.theme.tokens.people.AvatarTokens
 import com.otusfoss.mail.core.messages.domain.DateFilter
+import com.otusfoss.mail.core.messages.domain.FolderRef
 import com.otusfoss.mail.core.messages.presentation.icon
 import com.otusfoss.mail.core.messages.presentation.label
 import com.otusfoss.mail.core.settings.presentation.icon
@@ -42,6 +43,7 @@ internal fun PopupRows(
     options: FilterOptions,
     dateFormatter: DateFormatter,
     onEdit: FilterEdit,
+    defaultFolders: Set<FolderRef> = emptySet(),
 ) {
     val rows =
         buildList<@Composable () -> Unit> {
@@ -53,7 +55,7 @@ internal fun PopupRows(
                 }
             }
             if (options.folders) {
-                add { FolderPopup(draft, options, onEdit) }
+                add { FolderPopup(draft, options, onEdit, defaultFolders) }
             }
             add { DatePopup(draft, dateFormatter, onEdit) }
         }
@@ -65,10 +67,11 @@ private fun FolderPopup(
     draft: InboxFilters,
     options: FilterOptions,
     onEdit: FilterEdit,
+    defaultFolders: Set<FolderRef>,
 ) {
     var open by remember { mutableStateOf(false) }
-    ValueRow(Res.drawable.symbol_folder, "Folders", foldersValue(draft, options)) { open = true }
-    if (open) FolderPickerSheet(draft, options, onEdit) { open = false }
+    ValueRow(Res.drawable.symbol_folder, "Folders", foldersValue(draft, options, defaultFolders)) { open = true }
+    if (open) FolderPickerSheet(draft, options, onEdit, defaultFolders) { open = false }
 }
 
 @Composable

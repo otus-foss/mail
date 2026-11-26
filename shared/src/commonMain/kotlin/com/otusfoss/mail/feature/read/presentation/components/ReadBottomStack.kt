@@ -141,7 +141,7 @@ private fun FilesStrip(
 }
 
 /** How many messages [row]'s Read view pages through; until the pages load, the row's count says. */
-private fun ReadState.messageCount(row: MailMessage): Int =
+internal fun ReadState.messageCount(row: MailMessage): Int =
     if (loaded) pages.size else row.conversation?.messageCount ?: 1
 
 /**

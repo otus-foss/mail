@@ -12,6 +12,8 @@ import com.otusfoss.mail.core.mailbox.folderTree
 import com.otusfoss.mail.core.mailbox.presentation.symbol
 import com.otusfoss.mail.core.mailbox.subtreeIds
 import com.otusfoss.mail.core.messages.domain.AccountAddresses
+import com.otusfoss.mail.core.messages.domain.FolderRef
+import com.otusfoss.mail.core.messages.domain.MailScope
 import com.otusfoss.mail.core.messages.domain.MailScopeChoice
 import com.otusfoss.mail.core.messages.domain.OwnAddress
 import com.otusfoss.mail.core.settings.domain.FilterLayout
@@ -68,6 +70,35 @@ fun mailQuery(
         logins = logins,
     )
 }
+
+/**
+ * The folders [this] scope shows among the [accounts] [choice] keeps, for a folder page's search
+ * to start from. Empty for scopes that already span all mail.
+ */
+fun MailScope.defaultFolderRefs(
+    accounts: List<AccountFolders>,
+    choice: MailScopeChoice = MailScopeChoice.All,
+): Set<FolderRef> {
+    val shown = accounts.filter { choice.accountId == null || it.accountId == choice.accountId }
+    return when (this) {
+        is MailScope.Folder -> setOf(FolderRef(accountId, folderId, includeSubfolders = false))
+        is MailScope.Folders -> folderRefs(choice)
+        is MailScope.Role -> shown.folderRefs { it.role == role }
+        is MailScope.Roles -> shown.folderRefs { it.role in roles || (ownFolders && it.isCustom) }
+        MailScope.AllMail, MailScope.AllMailboxes, is MailScope.Mailboxes -> emptySet()
+    }
+}
+
+private fun MailScope.Folders.folderRefs(choice: MailScopeChoice): Set<FolderRef> =
+    folders
+        .filter { choice.accountId == null || it.accountId == choice.accountId }
+        .map { FolderRef(it.accountId, it.folderId, includeSubfolders = false) }
+        .toSet()
+
+private fun List<AccountFolders>.folderRefs(keep: (MailFolder) -> Boolean): Set<FolderRef> =
+    flatMap { account ->
+        account.folders.filter(keep).map { FolderRef(account.accountId, it.id, includeSubfolders = false) }
+    }.toSet()
 
 private fun filterAddresses(
     addresses: List<AccountAddresses>,

@@ -1,24 +1,20 @@
 package com.otusfoss.mail.core.messages.data
 
 import com.otusfoss.core.jmap.JmapConnections
-import com.otusfoss.core.jmap.JmapException
 import com.otusfoss.core.jmap.jmapPatch
-import com.otusfoss.core.jmap.login.LoginStoreException
-import com.otusfoss.mail.core.cache.CacheStorageException
 import com.otusfoss.mail.core.cache.MailCache
 import com.otusfoss.mail.core.mail.Keywords
 import com.otusfoss.mail.core.mail.keywordPatch
-import com.otusfoss.mail.core.mail.mailAccount
 import com.otusfoss.mail.core.mail.mailboxPatch
 import com.otusfoss.mail.core.mail.movePatch
 import com.otusfoss.mail.core.mail.refilePatch
-import com.otusfoss.mail.core.mailbox.MailFolder
 import com.otusfoss.mail.core.mailbox.MailboxRole
-import com.otusfoss.mail.core.mailbox.Mailboxes
 import com.otusfoss.mail.core.messages.domain.Deletion
 import com.otusfoss.mail.core.messages.domain.EmailWriter
 import com.otusfoss.mail.core.messages.domain.MailMessage
 import com.otusfoss.mail.core.messages.domain.MessageFlag
+import com.otusfoss.mail.core.messages.domain.WaitingDraftList
+import com.otusfoss.mail.core.messages.domain.isDeviceDraftId
 import com.otusfoss.mail.core.messages.domain.memberMailboxes
 import kotlinx.serialization.json.JsonPrimitive
 
@@ -28,12 +24,15 @@ import kotlinx.serialization.json.JsonPrimitive
  * keyword; a cleared keyword is removed, because keyword values must be true. Moves name only the
  * mailboxes that change, so a message keeps any other mailbox it is in. Deleting for good first
  * sends the waiting changes and stops while any still wait, so it never destroys a message the
- * user moved out of the folder offline, then goes straight to the server; see [EmailRemoval].
+ * user moved out of the folder offline, then goes straight to the server; see [EmailRemoval]. A
+ * draft that waits on the device in [drafts] is no Email yet: moving it out of Drafts or deleting
+ * it drops it there.
  */
 class JmapEmailWriter(
     connections: JmapConnections,
     cache: MailCache,
     private val queue: EmailChangeQueue,
+    private val drafts: WaitingDraftList? = null,
 ) : EmailWriter {
     private val removal = EmailRemoval(connections, cache)
     private val muting = ConversationMuting(connections, cache)
@@ -44,19 +43,41 @@ class JmapEmailWriter(
         on: Boolean,
     ): Set<String> = queue.updateRows(messages, keywordPatch(flag.keyword, on))
 
+    /**
+     * Builds one patch per member from the folders of [leaving] that member is in, and skips
+     * members that are in none of them so a merged row leaves other folders untouched.
+     */
     override suspend fun move(
         message: MailMessage,
         folderId: String,
         leaving: Set<String>,
     ): Boolean {
         val left = leaving - folderId - ""
-        if (left.isEmpty()) return false
-        return queue.updateRow(message, movePatch(left, folderId))
+        return when {
+            left.isEmpty() || message.emailId.isEmpty() -> {
+                false
+            }
+
+            // A draft that waits on the device is in no folder yet, so it cannot move.
+            isDeviceDraftId(message.emailId) -> {
+                false
+            }
+
+            else -> {
+                val patches =
+                    message.memberMailboxes
+                        .mapNotNull { (emailId, before) ->
+                            val removed = if (before.isEmpty()) left else left.intersect(before)
+                            removed.takeIf { it.isNotEmpty() }?.let { emailId to movePatch(it, folderId) }
+                        }.toMap()
+                patches.isNotEmpty() && queue.update(message.location.accountId, patches).containsAll(patches.keys)
+            }
+        }
     }
 
     /**
      * Each email of the row goes back only to the folders of [returning] it was in before the move,
-     * so a conversation whose emails were in different folders does not end up in all of them.
+     * and emails that were in none of them are left untouched.
      */
     override suspend fun moveBack(
         message: MailMessage,
@@ -64,16 +85,21 @@ class JmapEmailWriter(
         returning: Set<String>,
     ): Boolean {
         val back = returning - folderId - ""
+        if (back.isEmpty() || message.emailId.isEmpty()) return false
         val patches =
             message.memberMailboxes
-                .takeIf { back.isNotEmpty() }
-                .orEmpty()
-                .mapValues { (_, before) ->
-                    jmapPatch {
-                        if (folderId !in before) remove("mailboxIds", folderId)
-                        back.intersect(before.ifEmpty { back }).forEach { set(JsonPrimitive(true), "mailboxIds", it) }
+                .mapNotNull { (emailId, before) ->
+                    val restored = if (before.isEmpty()) back else back.intersect(before)
+                    if (restored.isEmpty()) {
+                        null
+                    } else {
+                        emailId to
+                            jmapPatch {
+                                if (folderId !in before) remove("mailboxIds", folderId)
+                                restored.forEach { set(JsonPrimitive(true), "mailboxIds", it) }
+                            }
                     }
-                }
+                }.toMap()
         return patches.isNotEmpty() && queue.update(message.location.accountId, patches).containsAll(patches.keys)
     }
 
@@ -100,7 +126,7 @@ class JmapEmailWriter(
         return if (patches.isEmpty()) unchanged else queue.update(accountId, patches) + unchanged
     }
 
-    /** Each listed email of the row leaves the Spam folder it is in; with keywords, `$notjunk` replaces `$junk`. */
+    /** Each listed email of the row in Spam leaves it; with keywords, `$notjunk` replaces `$junk`. */
     override suspend fun notSpam(
         message: MailMessage,
         inboxId: String,
@@ -109,34 +135,47 @@ class JmapEmailWriter(
         val shown = message.location.mailboxId
         if (shown.isEmpty() || shown == inboxId || message.emailId.isEmpty()) return false
         val patches =
-            message.listedMembers().associate { member ->
-                member.emailId to
-                    jmapPatch {
-                        include(movePatch(listOf(member.folderId), inboxId))
-                        if (keywords) {
-                            remove("keywords", Keywords.JUNK)
-                            set(JsonPrimitive(true), "keywords", Keywords.NOT_JUNK)
+            message
+                .listedMembers()
+                .filter { it.folderId == shown || it.folderRole == MailboxRole.Junk }
+                .associate { member ->
+                    member.emailId to
+                        jmapPatch {
+                            include(movePatch(listOf(member.folderId), inboxId))
+                            if (keywords) {
+                                remove("keywords", Keywords.JUNK)
+                                set(JsonPrimitive(true), "keywords", Keywords.NOT_JUNK)
+                            }
                         }
-                    }
-            }
-        return queue.update(message.location.accountId, patches).containsAll(patches.keys)
+                }
+        return patches.isNotEmpty() && queue.update(message.location.accountId, patches).containsAll(patches.keys)
     }
 
     override suspend fun delete(messages: List<MailMessage>): Set<String> =
         messages
             .filter { it.emailId.isNotEmpty() && it.location.mailboxId.isNotEmpty() }
+            .filterNot { isDeviceDraftId(it.emailId) }
             .groupBy { it.location.accountId }
             .flatMap { (loginId, group) ->
-                val stored = group.flatMap { it.listedMembers() }.distinctBy { it.emailId }
-                val removed = queue.afterSending(loginId) { removal.remove(loginId) { stored } }?.emailIds.orEmpty()
-                group.filter { row -> removed.containsAll(row.listedMembers().map { it.emailId }) }.map { it.id }
-            }.toSet()
+                val targets = group.associateWith { row -> row.listedMembers().filter { it.folderRole?.isBin == true } }
+                val stored = targets.values.flatten().distinctBy { it.emailId }
+                if (stored.isEmpty()) {
+                    emptyList()
+                } else {
+                    val removed = queue.afterSending(loginId) { removal.remove(loginId) { stored } }?.emailIds.orEmpty()
+                    targets
+                        .filter { (_, members) ->
+                            members.isNotEmpty() && removed.containsAll(members.map { it.emailId })
+                        }.keys
+                        .map { it.id }
+                }
+            }.toSet() + drafts.dropped(messages)
 
     override suspend fun empty(
         accountId: String,
         folderId: String,
     ): Deletion =
-        queue.afterSending(accountId) { removal.remove(accountId) { folderEmails(folderId) } }
+        queue.afterSending(accountId) { removal.empty(accountId, folderId) }
             ?: Deletion(emptySet(), complete = false)
 
     override suspend fun isMuted(message: MailMessage): Boolean = muting.isMuted(message)
@@ -157,3 +196,10 @@ internal val MessageFlag.keyword: String
             MessageFlag.Read -> Keywords.SEEN
             MessageFlag.Flagged -> Keywords.FLAGGED
         }
+
+/** The rows of [messages] that were drafts waiting on the device, which are dropped there. */
+private suspend fun WaitingDraftList?.dropped(messages: List<MailMessage>): Set<String> =
+    messages
+        .filter { isDeviceDraftId(it.emailId) && this?.drop(it.emailId) == true }
+        .map { it.id }
+        .toSet()

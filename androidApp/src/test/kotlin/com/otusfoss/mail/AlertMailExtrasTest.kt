@@ -7,11 +7,13 @@ import android.content.Intent
 import androidx.test.core.app.ApplicationProvider
 import androidx.work.Data
 import androidx.work.WorkManager
+import androidx.work.testing.WorkManagerTestInitHelper
 import com.otusfoss.mail.core.mailbox.MailboxRole
 import com.otusfoss.mail.core.messages.domain.MailAction
 import com.otusfoss.mail.feature.notifications.domain.NewMail
 import com.otusfoss.mail.feature.notifications.domain.PreviewChoices
 import org.junit.Assert.assertEquals
+import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
@@ -27,6 +29,12 @@ import kotlin.time.Instant
 @Config(sdk = [35])
 class AlertMailExtrasTest {
     private val app = ApplicationProvider.getApplicationContext<OtusMailApplication>()
+
+    /** Each test counts only the work it queued itself, whatever ran before it. */
+    @Before
+    fun freshWork() {
+        WorkManagerTestInitHelper.initializeTestWorkManager(app)
+    }
 
     private val mail =
         NewMail(

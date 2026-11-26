@@ -34,6 +34,13 @@ interface MessageBodies {
      * once they download. A single null when the server could not be reached.
      */
     fun content(message: MailMessage): Flow<MessageContent?>
+
+    /**
+     * Brings the bodies of the first of [messages] to the device ahead of their opening, so a
+     * listed message opens without a download. It skips bodies the device has and large ones, and
+     * a failure only leaves a body to load when it opens.
+     */
+    suspend fun prefetch(messages: List<MailMessage>) {}
 }
 
 /**

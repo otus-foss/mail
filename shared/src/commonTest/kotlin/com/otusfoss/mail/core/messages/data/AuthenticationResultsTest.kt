@@ -1,5 +1,7 @@
 package com.otusfoss.mail.core.messages.data
 
+import com.otusfoss.mail.core.mail.EmailObject
+import com.otusfoss.mail.core.mail.decoded
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
@@ -59,5 +61,38 @@ class AuthenticationResultsTest {
         assertNull(passOf("mx.example.net; spf=pass smtp.mailfrom=\"a; dmarc=pass header.from=shop.com; b\"@evil.com"))
         assertNull(passOf("mx.example.net; spf=pass (x; dmarc=pass header.from=shop.com) smtp.mailfrom=evil.com"))
         assertNull(passOf("mx.example.net; dmarc=pass header.from=evil.com reason=\"x header.from=shop.com y\""))
+    }
+
+    @Test
+    fun aFoldedRawFieldStillCounts() {
+        val field = " mail.example.org;\r\n\tspf=pass smtp.mailfrom=a@shop.com;\r\n\tdmarc=pass header.from=shop.com"
+        assertEquals("shop.com", dmarcPassDomain(listOf(field), "news@shop.com", "example.org"))
+    }
+
+    @Test
+    fun aResultInsideABalancedQuotedStringDoesNotCount() {
+        assertNull(passOf("mx.example.net; spf=pass reason=\"x; dmarc=pass header.from=shop.com\""))
+    }
+
+    @Test
+    fun anUnclosedQuoteCountsAsNoPass() {
+        val field =
+            "mx.example.net; spf=pass smtp.helo=x; dmarc=pass header.from=shop.com; " +
+                "y=\"; dmarc=fail header.from=shop.com"
+        assertNull(passOf(field))
+    }
+
+    @Test
+    fun anUnclosedCommentCountsAsNoPass() {
+        assertNull(passOf("$server; dmarc=pass header.from=shop.com (x; dmarc=fail header.from=shop.com"))
+    }
+
+    @Test
+    fun anEmailCachedWithTheTextFormDecodesUnverified() {
+        val json =
+            """{"id":"e1","receivedAt":"2026-11-01T00:00:00Z",""" +
+                """"header:Authentication-Results:asText:all":["mx.example.net; dmarc=pass header.from=shop.com"]}"""
+        val email = mapOf("e1" to json).decoded(EmailObject.serializer()).getValue("e1")
+        assertNull(email.authenticationResults)
     }
 }

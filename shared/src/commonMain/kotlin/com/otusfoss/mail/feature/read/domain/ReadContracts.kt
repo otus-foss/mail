@@ -24,10 +24,10 @@ fun interface KnownPeople {
 
 /** What unsubscribing did. */
 sealed interface UnsubscribeResult {
-    /** The app sent the unsubscribe email. */
+    /** The app sent the list's request, as mail or as a one-click POST the list accepted. */
     data object Done : UnsubscribeResult
 
-    /** The list takes no request from the app; the user finishes at [url]. */
+    /** The list takes no request from the app, or refused it; the user finishes at [url]. */
     data class OpenLink(
         val url: String,
     ) : UnsubscribeResult

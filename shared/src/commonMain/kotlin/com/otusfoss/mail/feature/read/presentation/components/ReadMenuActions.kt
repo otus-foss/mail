@@ -46,6 +46,7 @@ internal class ReadMenuActions(
     private val row = subject.messages.single()
     private val edits = read.services.edits
     private val headers = read.services.headers != null
+    private val blocks = read.services.sender.blocks
 
     /** Whether the app offers something for a person: their card, or ways to save the address. */
     private val people = read.services.person != null

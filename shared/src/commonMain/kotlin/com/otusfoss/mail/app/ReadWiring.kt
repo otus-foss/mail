@@ -24,6 +24,8 @@ import com.otusfoss.mail.feature.read.presentation.ReadFiles
 import com.otusfoss.mail.feature.read.presentation.ReadLoads
 import com.otusfoss.mail.feature.read.presentation.ReadPrivacy
 import com.otusfoss.mail.feature.read.presentation.ReadReplies
+import com.otusfoss.mail.feature.read.presentation.ReadSender
+import com.otusfoss.mail.feature.read.presentation.ReadSenderMail
 import com.otusfoss.mail.feature.read.presentation.ReadServices
 import com.otusfoss.mail.feature.read.presentation.components.NewFolderSheet
 import com.otusfoss.mail.feature.read.presentation.components.PersonSheet
@@ -91,13 +93,14 @@ internal class ReadWiring(
                 ReadServices(
                     services.newsletters,
                     services.headers,
-                    services.blocks,
                     ReadEdits(edits, feed),
                     person,
                     files,
                     categories.takeIf { sorted },
-                    services.senderMails,
-                    services.requests::openMessage,
+                    ReadSender(
+                        services.blocks,
+                        ReadSenderMail(services.senderMails, services.requests::openMessage),
+                    ),
                 ),
             effects = effects,
             display =

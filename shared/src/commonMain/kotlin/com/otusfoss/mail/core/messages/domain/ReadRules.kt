@@ -4,12 +4,14 @@ import com.otusfoss.mail.core.mail.EmailAddressKey
 
 /**
  * Whether a message's remote images load before the user asks. Never in Spam, whatever the
- * [setting]. With [RemoteImages.Known], only when the [sender] is in [known] (contacts and people
- * the user wrote to) or in [allowed]. Addresses compare without case.
+ * [setting]. With [RemoteImages.Known], only when the [sender] is [verified], its address is usable
+ * ([isUsableAddress]), and it is in [known] (contacts and people the user wrote to) or in [allowed].
+ * Addresses compare without case.
  */
 fun showsRemoteImages(
     setting: RemoteImages,
     sender: String,
+    verified: Boolean,
     known: Set<EmailAddressKey>,
     allowed: List<String>,
     inSpam: Boolean,
@@ -19,9 +21,18 @@ fun showsRemoteImages(
         inSpam -> false
         setting == RemoteImages.Always -> true
         setting == RemoteImages.Never -> false
-        else -> address in known || allowed.any { EmailAddressKey(it) == address }
+        !sender.isUsableAddress() -> false
+        else -> verified && (address in known || allowed.any { EmailAddressKey(it) == address })
     }
 }
+
+/**
+ * Whether the user's own server confirmed this sender: it reported a DMARC pass for the domain of
+ * [MailSender.address]. Anyone can write any From address, so only a confirmed one may stand for
+ * a contact.
+ */
+val MailSender.isVerified: Boolean
+    get() = brandDomain?.equals(address.substringAfterLast('@', ""), ignoreCase = true) == true
 
 /**
  * The reply the Read view's big button offers: [MailAction.ReplyAll] when more than one other

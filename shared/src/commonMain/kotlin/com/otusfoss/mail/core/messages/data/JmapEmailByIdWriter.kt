@@ -1,12 +1,16 @@
 package com.otusfoss.mail.core.messages.data
 
+import com.otusfoss.core.jmap.GetMethod
 import com.otusfoss.core.jmap.JmapConnections
 import com.otusfoss.core.jmap.JmapException
+import com.otusfoss.core.jmap.JmapIds
 import com.otusfoss.core.jmap.jmapCallOr
 import com.otusfoss.core.jmap.jmapPatch
 import com.otusfoss.core.jmap.login.LoginStoreException
 import com.otusfoss.mail.core.cache.CacheStorageException
 import com.otusfoss.mail.core.cache.MailCache
+import com.otusfoss.mail.core.mail.EMAIL_FOLDERS_PROPERTIES
+import com.otusfoss.mail.core.mail.EmailFoldersType
 import com.otusfoss.mail.core.mail.Keywords
 import com.otusfoss.mail.core.mail.keywordPatch
 import com.otusfoss.mail.core.mail.mailAccount
@@ -42,7 +46,11 @@ class JmapEmailByIdWriter(
         emailId: String,
     ): Boolean = updateOne(loginId, emailId, keywordPatch(Keywords.FLAGGED, true))
 
-    /** Takes the email out of the Inbox and into Archive; any other mailbox, such as Read later, stays. */
+    /**
+     * Takes the email out of the Inbox and into Archive; any other mailbox, such as Read later, stays.
+     * An alert can be older than a move made on another device, so an email the server no longer
+     * holds in an Inbox is left alone and counts as done. Offline, the change waits as made.
+     */
     override suspend fun archive(
         loginId: String,
         emailId: String,
@@ -50,7 +58,10 @@ class JmapEmailByIdWriter(
         val folders = folders(loginId)
         val archive = folders.withRole(MailboxRole.Archive) ?: return false
         val inboxes = folders.filter { it.role == MailboxRole.Inbox }.map { it.id }
-        return updateOne(loginId, emailId, movePatch(inboxes, archive.id))
+        return when (mailboxesOf(loginId, emailId)?.none { it in inboxes }) {
+            true -> true
+            else -> updateOne(loginId, emailId, movePatch(inboxes, archive.id))
+        }
     }
 
     override suspend fun trash(
@@ -101,6 +112,31 @@ class JmapEmailByIdWriter(
         emailId: String,
         patch: JsonObject,
     ): Boolean = emailId in queue.update(loginId, mapOf(emailId to patch))
+
+    /** The mailboxes [emailId] is in on the server now; empty when it is gone, null when the server cannot say. */
+    private suspend fun mailboxesOf(
+        loginId: String,
+        emailId: String,
+    ): Set<String>? =
+        try {
+            jmapCallOr(null) {
+                connections.mailAccount(loginId)?.let { account ->
+                    account.connection
+                        .call(
+                            GetMethod(
+                                EmailFoldersType,
+                                account.id,
+                                JmapIds.Of(listOf(emailId)),
+                                EMAIL_FOLDERS_PROPERTIES,
+                            ),
+                        ).list
+                        .flatMap { it.mailboxIds.filterValues { kept -> kept }.keys }
+                        .toSet()
+                }
+            }
+        } catch (expected: LoginStoreException) {
+            null
+        }
 
     private fun List<MailFolder>.withRole(role: MailboxRole): MailFolder? = firstOrNull { it.role == role }
 

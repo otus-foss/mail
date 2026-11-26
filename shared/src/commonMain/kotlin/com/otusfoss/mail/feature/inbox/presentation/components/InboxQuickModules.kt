@@ -20,6 +20,7 @@ import com.otusfoss.mail.core.messages.domain.MailAttachment
 import com.otusfoss.mail.core.messages.domain.MailScopeChoice
 import com.otusfoss.mail.core.messages.domain.QuickFacet
 import com.otusfoss.mail.core.messages.domain.SenderKey
+import com.otusfoss.mail.core.messages.domain.shownName
 import com.otusfoss.mail.core.messages.presentation.components.chipAvatar
 import com.otusfoss.mail.core.messages.presentation.components.firstName
 import com.otusfoss.mail.core.messages.presentation.icon
@@ -61,7 +62,7 @@ internal fun QuickPeopleModule(sources: QuickSources) {
         people.map { (person, unread) ->
             QuickFace(
                 person.firstName,
-                "Mail from ${person.name.ifBlank { person.address }}" + if (unread) ", unread" else "",
+                "Mail from ${person.shownName}" + if (unread) ", unread" else "",
                 QuickFaceLook.Person(person.chipAvatar),
                 { sources.show(InboxFilters(from = setOf(SenderKey(person.name, setOf(person.address))))) },
                 unread = unread,
@@ -114,7 +115,7 @@ internal fun QuickFilesModule(sources: QuickSources) {
         files.map { (message, name) ->
             QuickFace(
                 name,
-                "$name, from ${message.sender.name.ifBlank { message.sender.address }}",
+                "$name, from ${message.sender.shownName}",
                 QuickFaceLook.File(fileKind(name)),
                 {
                     sources.close()

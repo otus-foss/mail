@@ -144,7 +144,7 @@ data class EmailObject(
     /** Every `X-Original-To` header's addresses, which some servers write in place of `Delivered-To`. */
     @SerialName(ORIGINAL_TO_PROPERTY)
     val originalTo: List<List<EmailAddress>?>? = null,
-    /** Every `Authentication-Results` field (RFC 8601), topmost first, which tell a DMARC pass. */
+    /** Every `Authentication-Results` field (RFC 8601), raw and topmost first, which tell a DMARC pass. */
     @SerialName(AUTHENTICATION_RESULTS_PROPERTY)
     val authenticationResults: List<String>? = null,
     /** The automation and bulk headers the Inbox's categories read. */
@@ -194,7 +194,7 @@ data class EmailObject(
 
 /** The `Email/get` properties that read a mailing list's headers, which mark newsletters. */
 const val LIST_ID_PROPERTY = "header:List-Id:asText"
-const val AUTHENTICATION_RESULTS_PROPERTY = "header:Authentication-Results:asText:all"
+const val AUTHENTICATION_RESULTS_PROPERTY = "header:Authentication-Results:asRaw:all"
 const val LIST_UNSUBSCRIBE_PROPERTY = "header:List-Unsubscribe:asURLs"
 
 /** The `Email/get` properties that read the delivery headers behind [EmailObject.deliveredAddresses]. */

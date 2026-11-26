@@ -9,6 +9,7 @@ import com.otusfoss.mail.core.messages.domain.OwnAddresses
 import com.otusfoss.mail.core.messages.domain.isOwn
 import com.otusfoss.mail.core.messages.domain.otherReply
 import com.otusfoss.mail.core.messages.domain.replyAction
+import com.otusfoss.mail.core.messages.domain.shownName
 import com.otusfoss.mail.core.messages.presentation.detail
 import com.otusfoss.mail.feature.read.domain.Participant
 
@@ -192,4 +193,4 @@ private val ReadPage.fromUser: Boolean
     get() = message.isOwn(own, message.sender)
 
 private val ReadPage.senderName: String
-    get() = message.sender.name.ifBlank { message.sender.address }
+    get() = message.sender.shownName

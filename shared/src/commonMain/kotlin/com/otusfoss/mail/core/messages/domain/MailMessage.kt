@@ -74,7 +74,18 @@ data class MailSender(
 
 /** The sender's name, or the address when the name is blank. */
 internal val MailSender.shownName: String
-    get() = name.ifBlank { address }
+    get() = shownName(name, address)
+
+/**
+ * The name to show for [address]: the [name], or the address when the name is blank or is itself
+ * a different address, so a name cannot pass for someone else's address.
+ */
+internal fun shownName(
+    name: String,
+    address: String,
+): String =
+    name.takeUnless { it.isBlank() || ('@' in it && !it.trim().equals(address.trim(), ignoreCase = true)) }
+        ?: address
 
 /** ISO calendar date (YYYY-MM-DD) and 24-hour time (HH:mm), supplied by the data source. */
 data class ReceivedAt(

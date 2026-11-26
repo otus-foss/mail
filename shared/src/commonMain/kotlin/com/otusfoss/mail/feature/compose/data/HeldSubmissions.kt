@@ -17,6 +17,7 @@ import com.otusfoss.mail.core.messages.data.EmailChangeQueue
 import com.otusfoss.mail.core.messages.domain.DraftRestoreException
 import com.otusfoss.mail.core.messages.domain.SendCancel
 import com.otusfoss.mail.core.messages.domain.SendFailure
+import com.otusfoss.mail.core.messages.domain.SendTime
 import com.otusfoss.mail.core.messages.domain.SentMessage
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonPrimitive
@@ -38,23 +39,18 @@ internal suspend fun MailAccount.cancelSubmission(message: SentMessage): SendFai
         ?: SendFailure.Mail(MailFailure.ServerProblem).takeIf { message.submissionId !in undone.updated }
 }
 
-/** Submits [message]'s stored copy again, without a hold; why the server refused, or null. */
+/**
+ * Submits [message]'s stored copy again, without a hold; why the server refused, or null. Like a
+ * first send, the submission files the copy as sent, since an earlier try may have made it a
+ * draft in Drafts again.
+ */
 internal suspend fun MailAccount.resubmit(message: SentMessage): SetError? =
-    connection
-        .call(
-            SetMethod(
-                EmailSubmissionType,
-                id,
-                create =
-                    mapOf(
-                        RESUBMISSION to
-                            buildJsonObject {
-                                put("emailId", message.emailId)
-                                put("identityId", message.identityId)
-                            },
-                    ),
-            ),
-        ).notCreated[RESUBMISSION]
+    submitCopy(
+        SendRoute(message.identityId, message.draftsId, message.sentId),
+        folder = message.draftsId ?: message.sentId.orEmpty(),
+        copy = message.emailId,
+        time = SendTime.Now,
+    ).notCreated[SUBMISSION]
 
 /**
  * Whether the server holds or sent a submission of [emailId] that nobody canceled (RFC 8621,
@@ -62,6 +58,19 @@ internal suspend fun MailAccount.resubmit(message: SentMessage): SetError? =
  */
 internal suspend fun MailAccount.isSubmitted(emailId: String): Boolean? =
     jmapCallOr(null) { liveSubmissions(listOf(emailId), limit = 1).isNotEmpty() }
+
+/**
+ * Whether canceled submissions are all the server has of [emailId], so the copy can be submitted
+ * again after a cancel the server did not confirm. False when a submission nobody canceled is
+ * left, which went or goes at its time. A server may destroy a submission once it is sent
+ * (RFC 8621, section 7), so a copy without any submission may have gone: that fails as
+ * unconfirmed, and a server that cannot be asked as unreachable.
+ */
+internal suspend fun MailAccount.onlyCanceled(emailId: String): Boolean {
+    val state = jmapCallOr(null) { copyState(emailId) } ?: failUnreachable()
+    if (state.statuses.isEmpty()) failSend(SendFailure.Unconfirmed)
+    return state.live.isEmpty()
+}
 
 /**
  * Cancels every submission of [emailIds] that nobody canceled yet. True when there was one and the
@@ -132,4 +141,5 @@ internal suspend fun MailAccount.restoredAfterCancel(
     return SendCancel.Stopped
 }
 
-private const val RESUBMISSION = "send"
+/** Fails a call whose server could not be asked, so a later run tries it again. */
+internal fun failUnreachable(): Nothing = failSend(SendFailure.Mail(MailFailure.Unreachable))

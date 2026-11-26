@@ -4,6 +4,7 @@ import com.otusfoss.mail.core.mailbox.AccountFolders
 import com.otusfoss.mail.core.mailbox.MailboxRole
 import com.otusfoss.mail.core.messages.domain.MailMessage
 import com.otusfoss.mail.core.messages.domain.SenderBlocks
+import com.otusfoss.mail.core.messages.domain.isUsableAddress
 
 /**
  * Blocks a sender with a folder rule that files their mail into the account's Junk folder, so the
@@ -16,7 +17,7 @@ internal class RuleSenderBlocks(
 ) : SenderBlocks {
     override suspend fun block(message: MailMessage): Boolean {
         val address = message.sender.address.trim()
-        if (address.isEmpty()) return false
+        if (!address.isUsableAddress()) return false
         return try {
             block(message.location.accountId, address)
         } catch (expected: FolderStorageException) {

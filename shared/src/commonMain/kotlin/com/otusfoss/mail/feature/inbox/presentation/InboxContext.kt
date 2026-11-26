@@ -2,6 +2,7 @@ package com.otusfoss.mail.feature.inbox.presentation
 
 import com.otusfoss.mail.core.categories.domain.InboxCategories
 import com.otusfoss.mail.core.messages.domain.ComposeRequest
+import com.otusfoss.mail.core.messages.domain.FolderRef
 import com.otusfoss.mail.core.messages.domain.MailMessage
 import com.otusfoss.mail.core.messages.presentation.ListNudge
 import com.otusfoss.mail.core.messages.presentation.components.MailScopeSwitch
@@ -51,10 +52,11 @@ data class InboxContext(
     val folderPill: FolderPillOption? = null,
     /** Opens the page of the shared folder at a lower-case path; null while no account has that folder. */
     val folderPage: (key: List<String>) -> (() -> Unit)? = { null },
+    /** The search pill's prompt, such as "Search mail" on Inbox or "Search <folder>" on a folder page. */
+    val searchPrompt: String = "Search $title",
+    /** Folders a search starts scoped to on this page; empty on Inbox to search all non-bin mail. */
+    val searchFolders: Set<FolderRef> = emptySet(),
 ) {
-    val searchPrompt: String
-        get() = "Search $title"
-
     val allowsMailboxSelection: Boolean
         get() = folderPill == null && defaultSearch.mailboxes.isNotEmpty()
 }

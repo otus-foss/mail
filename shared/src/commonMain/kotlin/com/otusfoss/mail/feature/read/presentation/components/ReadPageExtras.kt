@@ -57,7 +57,7 @@ private fun ReadParts.muteSwitch(): ActionSwitch? {
 
 /** Sends mail from [page]'s sender to Spam from now on, and says how it went; null for the user's own message. */
 private fun ReadParts.blockSender(page: MailMessage): (() -> Unit)? {
-    val blocks = read.services.blocks ?: return null
+    val blocks = read.services.sender.blocks ?: return null
     if (page.isOwn(read.replies.own, page.sender)) return null
     return {
         val name = page.sender.shownName

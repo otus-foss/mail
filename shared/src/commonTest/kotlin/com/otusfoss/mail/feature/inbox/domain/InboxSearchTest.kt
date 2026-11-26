@@ -2,6 +2,7 @@ package com.otusfoss.mail.feature.inbox.domain
 
 import com.otusfoss.mail.core.mailbox.MailboxRole
 import com.otusfoss.mail.core.messages.domain.FilterSort
+import com.otusfoss.mail.core.messages.domain.FolderRef
 import com.otusfoss.mail.core.messages.domain.MailAttributes
 import com.otusfoss.mail.core.messages.domain.MailConversation
 import com.otusfoss.mail.core.messages.domain.MailLocation
@@ -51,23 +52,23 @@ class InboxSearchTest {
         )
 
     @Test
-    fun blankQueryReturnsInboxNewestFirst() {
-        assertEquals(listOf("newer", "older"), results(InboxSearch(query = "  ")))
+    fun blankQueryReturnsAllMailNewestFirst() {
+        assertEquals(listOf("newer", "archive", "older"), results(InboxSearch(query = "  ")))
     }
 
     @Test
     fun caseInsensitiveTermsCanSpanSenderSubjectAndBody() {
-        assertEquals(listOf("older"), results(InboxSearch(query = " ALEX \t DESIGN  prototype ")))
+        assertEquals(listOf("archive", "older"), results(InboxSearch(query = " ALEX \t DESIGN  prototype ")))
         assertEquals(listOf("newer"), results(InboxSearch(query = "sam@example.com")))
     }
 
     @Test
     fun aFieldLimitsWhereTermsMatchAndTogglesBackToAnywhere() {
         val subject = InboxSearch(query = "design").toggled(SearchField.Subject)
-        assertEquals(listOf("older"), results(subject))
+        assertEquals(listOf("archive", "older"), results(subject))
         assertTrue(results(subject.copy(query = "prototype")).isEmpty())
         val body = subject.toggled(SearchField.Body)
-        assertEquals(listOf("older"), results(body.copy(query = "prototype")))
+        assertEquals(listOf("archive", "older"), results(body.copy(query = "prototype")))
         assertTrue(results(body.copy(query = "alex")).isEmpty())
         assertEquals(SearchField.Anywhere, body.toggled(SearchField.Body).field)
     }
@@ -156,8 +157,8 @@ class InboxSearchTest {
                 dateStart = "2026-10-01",
                 dateEnd = "2026-10-03",
             )
-        assertEquals(listOf("newer", "older"), results(criteria))
-        assertEquals(listOf("older"), results(criteria.copy(accounts = setOf("Work"))))
+        assertEquals(listOf("newer", "archive", "older"), results(criteria))
+        assertEquals(listOf("archive", "older"), results(criteria.copy(accounts = setOf("Work"))))
         assertEquals(listOf("newer"), results(criteria.copy(dateStart = "2026-10-03")))
     }
 
@@ -195,7 +196,7 @@ class InboxSearchTest {
 
     @Test
     fun mailboxAndAccountChoicesKeepTheirRemoteScope() {
-        val default = InboxSearch()
+        val default = InboxSearch(mailboxes = setOf(MailboxScope.Inbox))
         assertNull(default.copy(query = "plans").scopeToLoad(default))
         assertEquals(
             MailScope.Mailboxes(default.mailboxes, setOf("Work")),
@@ -206,11 +207,39 @@ class InboxSearchTest {
             MailScope.Mailboxes(setOf(MailboxScope.Inbox, MailboxScope(null, "Archive"))),
             withArchive.scopeToLoad(default),
         )
-        assertEquals(MailScope.AllMailboxes, default.copy(mailboxes = emptySet()).scopeToLoad(default))
+        assertEquals(MailScope.AllMail, default.copy(mailboxes = emptySet()).scopeToLoad(default))
         val accountMailbox = setOf(MailboxScope("Work", "Inbox", MailboxRole.Inbox))
         assertEquals(
             MailScope.Mailboxes(accountMailbox),
             default.copy(mailboxes = accountMailbox).scopeToLoad(default),
+        )
+    }
+
+    @Test
+    fun searchScopeLoadsAllNonBinMailFromInboxAndStaysInFolderUntilOverridden() {
+        val folder1 = setOf(FolderRef("ada", "f1", includeSubfolders = false))
+        assertEquals(MailScope.AllMail, InboxSearch().searchScope(emptySet(), InboxFilters()))
+        assertNull(InboxSearch().searchScope(folder1, InboxFilters()))
+        assertEquals(
+            MailScope.AllMail,
+            InboxSearch().searchScope(folder1, InboxFilters(folders = folder1 + FolderRef("ada", "f2", false))),
+        )
+        assertEquals(MailScope.AllMail, InboxSearch().searchScope(folder1, InboxFilters(allFolders = true)))
+        assertEquals(
+            MailScope.Folders(setOf(MailScope.Folder("ada", "f1"))),
+            InboxSearch(accounts = setOf("ada", "bo")).searchScope(folder1, InboxFilters()),
+        )
+        assertEquals(
+            MailScope.Folders(emptySet()),
+            InboxSearch(accounts = setOf("bo")).searchScope(folder1, InboxFilters()),
+        )
+        assertEquals(
+            MailScope.AllMail,
+            InboxSearch().searchScope(emptySet(), InboxFilters(includedBins = setOf(MailboxRole.Junk))),
+        )
+        assertEquals(
+            MailScope.Mailboxes(emptySet(), setOf("Work")),
+            InboxSearch(accounts = setOf("Work")).searchScope(emptySet(), InboxFilters()),
         )
     }
 

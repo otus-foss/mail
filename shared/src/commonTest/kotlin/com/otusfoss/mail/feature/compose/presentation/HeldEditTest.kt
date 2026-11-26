@@ -132,52 +132,6 @@ internal class HeldEditTest : OutgoingMailFixture() {
         }
 
     @Test
-    fun discardCancelsTheScheduledSendBeforeItDeletesTheCopy() =
-        runTest {
-            var deleted = 0
-            edits().discard(held) { deleted++ }
-            runCurrent()
-            assertEquals(listOf(held), cancelled)
-            assertEquals(1, deleted)
-
-            edits().discard(held = null) { deleted++ }
-            assertEquals(2, deleted)
-        }
-
-    @Test
-    fun aDiscardWhoseSendStillWaitsSaysSoAndRetries() =
-        runTest {
-            cancelOutcome = SendCancel.Waiting
-            var deleted = 0
-            edits().discard(held) { deleted++ }
-            runCurrent()
-            assertEquals(0, deleted, "A copy whose send still waits stays")
-            val toast = toasts.messages.single()
-            assertEquals(MAY_STILL_SEND, toast.text)
-            assertTrue(toast.sticky)
-
-            cancelOutcome = SendCancel.Stopped
-            assertNotNull(toast.action).onClick()
-            runCurrent()
-            assertEquals(1, deleted)
-        }
-
-    @Test
-    fun discardKeepsTheCopyOfAMailThatWentOrMayHave() =
-        runTest {
-            var deleted = 0
-            cancelOutcome = SendCancel.Final
-            edits().discard(held) { deleted++ }
-            runCurrent()
-            cancelOutcome = SendCancel.Unknown
-            edits().discard(held) { deleted++ }
-            runCurrent()
-            assertEquals(0, deleted, "The copy is the sent message, or may be")
-            assertEquals(listOf(ALREADY_SENT, NOT_CONFIRMED), toasts.messages.map { it.text })
-            assertEquals(listOf("a1"), filedSent)
-        }
-
-    @Test
     fun editKeepsTheMessageOpenAndSendNowTakesItAway() {
         val ran = mutableListOf<String>()
         val actions = ScheduledActions(edit = { ran += "edit" }, sendNow = { ran += "now" })

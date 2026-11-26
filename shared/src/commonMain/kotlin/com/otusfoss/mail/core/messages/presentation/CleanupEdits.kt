@@ -36,10 +36,16 @@ internal fun MailEdits.delete(
         val deleted = writer.delete(messages)
         settle(shown.entries.associate { (message, edit) -> edit to (message.id in deleted) })
         val kept = messages.size - deleted.size
-        if (kept > 0) {
-            feed.refresh()
-            feed.report("Couldn't finish deleting ${countText(kept)}. Try again.")
-        }
+        val surviving =
+            messages.any { row ->
+                row.id in deleted &&
+                    row.conversation
+                        ?.members
+                        .orEmpty()
+                        .any { it.mailboxRole?.isBin != true }
+            }
+        if (kept > 0 || surviving) feed.refresh()
+        if (kept > 0) feed.report("Couldn't finish deleting ${countText(kept)}. Try again.")
     }
 }
 
