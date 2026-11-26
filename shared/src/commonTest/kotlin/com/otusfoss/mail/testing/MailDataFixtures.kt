@@ -23,5 +23,5 @@ internal fun composeMail(
 ): JmapComposeMail {
     val cache = InMemoryMailCache()
     val changes = EmailChangeQueue(connections, cache, store = null)
-    return JmapComposeMail(connections, Mailboxes(cache), changes, newMessageId)
+    return JmapComposeMail(connections, Mailboxes(cache), changes, cache, newMessageId = newMessageId)
 }

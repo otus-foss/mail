@@ -1,10 +1,12 @@
 package com.otusfoss.mail.core.messages.domain
 import com.otusfoss.mail.core.mail.EmailAddressKey
+import kotlinx.serialization.Serializable
 
 /**
  * An address an account may send from: a JMAP Identity (RFC 8621, section 6). [sender] carries the
  * account in its `accountKey`. Each identity has one signature, as plain text and as HTML.
  */
+@Serializable
 data class SendIdentity(
     val id: String,
     val sender: MailSender,

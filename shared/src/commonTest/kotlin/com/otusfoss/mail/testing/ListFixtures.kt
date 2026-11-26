@@ -7,6 +7,7 @@ import com.otusfoss.mail.core.cache.InMemoryMailCache
 import com.otusfoss.mail.core.cache.MailCache
 import com.otusfoss.mail.core.mailbox.Mailboxes
 import com.otusfoss.mail.core.messages.data.EmailChangeQueue
+import com.otusfoss.mail.core.messages.data.WaitingMail
 import com.otusfoss.mail.core.messages.domain.MailConversation
 import com.otusfoss.mail.core.messages.domain.MailSender
 import com.otusfoss.mail.core.messages.domain.ReceivedAt
@@ -25,7 +26,7 @@ internal fun mailSource(
     limit: Int = PAGE,
     zone: () -> TimeZone = { TimeZone.currentSystemDefault() },
     queue: EmailChangeQueue = EmailChangeQueue(connections, cache, store = null),
-): JmapMailSource = JmapMailSource(connections, cache, queue, Mailboxes(cache), limit, zone)
+): JmapMailSource = JmapMailSource(connections, cache, WaitingMail(queue), Mailboxes(cache), limit, zone)
 
 /** A mail source that reads this server, which offers [session], for the saved logins of [store], in UTC. */
 internal fun FakeMailServer.source(

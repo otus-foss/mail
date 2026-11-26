@@ -4,12 +4,18 @@ import com.otusfoss.core.jmap.GetMethod
 import com.otusfoss.core.jmap.JmapCapability
 import com.otusfoss.core.jmap.JmapConnections
 import com.otusfoss.core.jmap.JmapException
+import com.otusfoss.core.jmap.JmapIds
+import com.otusfoss.core.jmap.JmapJson
 import com.otusfoss.core.jmap.SetError
 import com.otusfoss.core.jmap.SetMethod
 import com.otusfoss.core.jmap.jmapCallOr
 import com.otusfoss.core.jmap.login.LoginStoreException
+import com.otusfoss.mail.core.cache.CacheStorageException
+import com.otusfoss.mail.core.cache.MailCache
+import com.otusfoss.mail.core.cache.withAccount
 import com.otusfoss.mail.core.mail.EmailType
 import com.otusfoss.mail.core.mail.IdentityType
+import com.otusfoss.mail.core.mail.Keywords
 import com.otusfoss.mail.core.mail.MailAccount
 import com.otusfoss.mail.core.mail.MailFailure
 import com.otusfoss.mail.core.mail.mailAccount
@@ -20,7 +26,11 @@ import com.otusfoss.mail.core.messages.domain.DraftFailure
 import com.otusfoss.mail.core.messages.domain.DraftRepository
 import com.otusfoss.mail.core.messages.domain.MailSender
 import com.otusfoss.mail.core.messages.domain.SendIdentity
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.NonCancellable
+import kotlinx.coroutines.withContext
 import kotlinx.serialization.SerializationException
+import kotlinx.serialization.builtins.ListSerializer
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
 
@@ -34,27 +44,40 @@ import kotlin.uuid.Uuid
 internal class JmapDraftRepository(
     private val connections: JmapConnections,
     private val copies: DraftCopies,
+    private val cache: MailCache,
     private val newMessageId: () -> String,
 ) : DraftRepository {
+    /**
+     * The server's identities, which the device keeps, so a message can be written and signed
+     * offline. When the server does not answer, the kept ones come back.
+     */
     override suspend fun identities(accountId: String): List<SendIdentity> =
-        jmapCallOr(emptyList()) {
-            connections
-                .mailAccount(accountId)
-                ?.takeIf { it.mayUse(JmapCapability.SUBMISSION) }
-                ?.let { account ->
-                    account.connection
-                        .call(GetMethod(IdentityType, account.id, properties = IDENTITY_PROPERTIES))
-                        .list
-                        .map {
-                            SendIdentity(
-                                it.id,
-                                MailSender(it.name.ifBlank { it.email }, it.email, accountId),
-                                it.textSignature,
-                                it.htmlSignature,
-                            )
-                        }
-                }.orEmpty()
+        cache.withAccount(accountId) { kept ->
+            val loaded = jmapCallOr(null) { loadIdentities(accountId) }
+            try {
+                if (loaded == null) kept.identities(accountId) else loaded.also { kept.keepIdentities(accountId, it) }
+            } catch (expected: CacheStorageException) {
+                loaded.orEmpty()
+            }
         }
+
+    private suspend fun loadIdentities(accountId: String): List<SendIdentity> =
+        connections
+            .mailAccount(accountId)
+            ?.takeIf { it.mayUse(JmapCapability.SUBMISSION) }
+            ?.let { account ->
+                account.connection
+                    .call(GetMethod(IdentityType, account.id, properties = IDENTITY_PROPERTIES))
+                    .list
+                    .map {
+                        SendIdentity(
+                            it.id,
+                            MailSender(it.name.ifBlank { it.email }, it.email, accountId),
+                            it.textSignature,
+                            it.htmlSignature,
+                        )
+                    }
+            }.orEmpty()
 
     override suspend fun save(draft: Draft): Result<String> =
         attempt(draft.accountId) { account ->
@@ -72,16 +95,35 @@ internal class JmapDraftRepository(
                     // Without an answer the server may have stored the copy, so a later save removes it.
                     copies.unanswered.remember(account.login.id, messageId)
                     throw error
+                } catch (cancelled: CancellationException) {
+                    withContext(NonCancellable) { copies.unanswered.remember(account.login.id, messageId) }
+                    throw cancelled
                 }
             val failure = result.notCreated[CREATION_ID]
             if (failure != null) throw DraftException(failure.toDraftFailure())
             val id = result.createdId(CREATION_ID) ?: throw DraftException(DraftFailure.Mail(MailFailure.ServerProblem))
             // Each operation of one call succeeds or fails alone (RFC 8620, section 5.3), so the old
             // copy is destroyed only once the server has stored the new one.
-            val previous = draft.emailId
-            if (previous != null) account.destroyReplaced(previous)
-            copies.unanswered.destroy(account, drafts, kept = id)
+            try {
+                val previous = draft.emailId
+                if (previous != null) account.destroyReplaced(previous)
+                copies.unanswered.destroy(account, drafts, kept = id)
+            } catch (cancelled: CancellationException) {
+                withContext(NonCancellable) { copies.unanswered.remember(account.login.id, messageId) }
+                throw cancelled
+            }
             id
+        }
+
+    override suspend fun isDraft(
+        accountId: String,
+        emailId: String,
+    ): Result<Boolean> =
+        attempt(accountId) { account ->
+            account.connection
+                .call(GetMethod(EmailType, account.id, JmapIds.Of(listOf(emailId)), KEYWORD_PROPERTIES))
+                .list
+                .any { Keywords.DRAFT in it.keywords }
         }
 
     override suspend fun discard(
@@ -132,6 +174,29 @@ internal class JmapDraftRepository(
         const val CREATION_ID = "draft"
     }
 }
+
+/** The identities kept for [loginId]; none when none were kept or they no longer read. */
+private suspend fun MailCache.identities(loginId: String): List<SendIdentity> =
+    value(loginId, IDENTITIES_VALUE)
+        ?.let { text ->
+            try {
+                JmapJson.decodeFromString(IDENTITIES, text)
+            } catch (expected: SerializationException) {
+                null
+            }
+        }.orEmpty()
+
+private suspend fun MailCache.keepIdentities(
+    loginId: String,
+    identities: List<SendIdentity>,
+) {
+    val text = JmapJson.encodeToString(IDENTITIES, identities)
+    if (value(loginId, IDENTITIES_VALUE) != text) write(loginId) { putValue(IDENTITIES_VALUE, text) }
+}
+
+private val IDENTITIES = ListSerializer(SendIdentity.serializer())
+
+private const val IDENTITIES_VALUE = "identities"
 
 /** A Message-ID of its own for a saved copy of a draft. */
 @OptIn(ExperimentalUuidApi::class)

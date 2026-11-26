@@ -13,6 +13,7 @@ import com.otusfoss.mail.core.mail.QueueFailure
 import com.otusfoss.mail.core.mail.QueueTries
 import com.otusfoss.mail.core.mail.mailAccount
 import com.otusfoss.mail.core.mail.queueFailure
+import com.otusfoss.mail.core.messages.domain.isDeviceDraftId
 import com.otusfoss.mail.core.storage.DeviceStore
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
@@ -52,20 +53,24 @@ class EmailChangeQueue(
     /**
      * Queues [patches] of [loginId]'s emails and sends every change the login has waiting. Returns
      * the emails whose change the server made or that wait for it, which show in the cache at
-     * once; the server refused the others.
+     * once; the server refused the others. A draft waiting on the device has no Email on the
+     * server, and its id is not a valid JMAP id, so its change is never queued and counts as refused.
      */
     internal suspend fun update(
         loginId: String,
         patches: Map<String, JsonObject>,
-    ): Set<String> =
-        locks.of(loginId).withLock {
-            tries[loginId]?.reset(patches.keys)
-            write(loginId, pending(loginId).merged(patches))
+    ): Set<String> {
+        val sendable = patches.filterKeys { !isDeviceDraftId(it) }
+        if (sendable.isEmpty()) return emptySet()
+        return locks.of(loginId).withLock {
+            tries[loginId]?.reset(sendable.keys)
+            write(loginId, pending(loginId).merged(sendable))
             val refused = send(loginId).refused
-            val shown = patches.keys - refused
-            cache.show(loginId, patches.filterKeys { it in shown })
+            val shown = sendable.keys - refused
+            cache.show(loginId, sendable.filterKeys { it in shown })
             shown
         }
+    }
 
     /**
      * Sends [loginId]'s waiting changes, then runs [sync], which rewrites the login's cached mail

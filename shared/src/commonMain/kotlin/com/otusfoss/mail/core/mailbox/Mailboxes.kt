@@ -1,12 +1,16 @@
 package com.otusfoss.mail.core.mailbox
 
+import com.otusfoss.core.jmap.JmapJson
 import com.otusfoss.core.jmap.JmapRequestBuilder
 import com.otusfoss.core.jmap.JmapResponse
+import com.otusfoss.mail.core.cache.CacheKind
 import com.otusfoss.mail.core.cache.CacheStorageException
 import com.otusfoss.mail.core.cache.MailCache
 import com.otusfoss.mail.core.cache.withAccount
 import com.otusfoss.mail.core.mail.MailAccount
 import com.otusfoss.mail.core.mail.MailboxObject
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.jsonObject
 
 /**
  * Each login's own mailboxes as folders, and the one keeper of them and the `Mailbox` state they
@@ -58,6 +62,37 @@ class Mailboxes(
         val loginId = account.login.id
         val saved = cache.withAccount(loginId) { keptOrNull { it.savedMailboxes(loginId) } }
         return request(account, saved, reportStorage, calls)
+    }
+
+    /**
+     * Shows [patches], whole properties by mailbox id, in the kept folders at once, as for a rename
+     * or a move that waits for the server. A mailbox the device does not keep is left out.
+     */
+    internal suspend fun patchKept(
+        loginId: String,
+        patches: Map<String, JsonObject>,
+    ) {
+        cache.withAccount(loginId) { accountCache ->
+            keptOrNull {
+                val kept = accountCache.read(loginId, CacheKind.Mailbox, patches.keys)
+                accountCache.write(loginId) {
+                    kept.forEach { (id, json) ->
+                        val patched = JsonObject(JmapJson.parseToJsonElement(json).jsonObject + patches.getValue(id))
+                        put(CacheKind.Mailbox, id, JmapJson.encodeToString(JsonObject.serializer(), patched))
+                    }
+                }
+            }
+        }
+    }
+
+    /**
+     * Has the next load read every mailbox again instead of the changes since the kept ones, which
+     * no longer match the server after a change shown on the device was sent or refused.
+     */
+    internal suspend fun rereadNext(loginId: String) {
+        cache.withAccount(loginId) { accountCache ->
+            keptOrNull { accountCache.write(loginId) { forgetMailboxState() } }
+        }
     }
 
     private suspend fun request(
