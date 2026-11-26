@@ -56,9 +56,12 @@ internal class OutboxEntries(
         offered = offered + entry.id
     }
 
-    /** The messages that need the user and were not offered before in this process, now offered. */
+    /**
+     * The messages that need the user and were not offered before in this process, now offered. One
+     * that may have gone waits for its lookup first.
+     */
     suspend fun unoffered(): List<OutboxEntry> {
-        val found = all().filter { it.problem != null && it.id !in offered }
+        val found = all().filter { it.problem != null && !it.mayHaveGone && it.id !in offered }
         offered = offered + found.map { it.id }
         return found
     }

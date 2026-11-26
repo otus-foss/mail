@@ -27,8 +27,12 @@ internal class OutboxSends(
         entry: OutboxEntry,
         holdUntil: Instant?,
     ): Result<SentMessage?> {
-        val earlier = if (entry.attempted) earlierTry(entry) else null
-        if (earlier != null) return earlier
+        when (if (entry.attempted) earlierTry(entry) else SendCheck.NotSent) {
+            SendCheck.Unreachable -> return sendFailure(SendFailure.Mail(MailFailure.Unreachable))
+            SendCheck.Sent -> return entries.gone(entry)
+            SendCheck.Unconfirmable -> return entries.unconfirmed(entry)
+            SendCheck.NotSent -> Unit
+        }
         var trying = entry.copy(attempted = true, problem = null, storedCopy = null)
         entries.replace(trying)
         val time = entry.sendAt?.let(SendTime::Scheduled) ?: holdUntil?.let(SendTime::Held) ?: SendTime.Now
@@ -61,23 +65,33 @@ internal class OutboxSends(
     }
 
     /**
-     * What the server says of an earlier try decides the outcome; null when the message can go. A
-     * try that stored its copy is asked about only [SETTLE_TIME] after that, so a submission the
-     * server is still working on when the answer was lost is not taken for a missing one.
+     * Asks the server about [entry], whose failed send may have gone all the same, before anyone
+     * offers it as not sent. A message that went leaves. One that did not stays for the user, and
+     * its next try needs no lookup. While the server cannot be asked, it stays as it is.
      */
-    private suspend fun earlierTry(entry: OutboxEntry): Result<SentMessage?>? {
+    suspend fun confirm(entry: OutboxEntry) {
+        when (earlierTry(entry)) {
+            SendCheck.Unreachable -> Unit
+            SendCheck.Sent -> entries.remove(entry.id)
+            SendCheck.NotSent -> entries.replace(entry.copy(attempted = false, storedCopy = null))
+            SendCheck.Unconfirmable -> entries.replace(entry.copy(problem = OutboxProblem.Unconfirmed))
+        }
+    }
+
+    /**
+     * What the server says of [entry]'s earlier try. A try that stored its copy is asked about only
+     * [SETTLE_TIME] after that, so a submission the server is still working on when the answer was
+     * lost is not taken for a missing one; until then, and while the server cannot be reached, a
+     * background run is asked for.
+     */
+    private suspend fun earlierTry(entry: OutboxEntry): SendCheck {
         val unsettled =
             entry.storedCopy
                 ?.let { Instant.fromEpochMilliseconds(it.atMillis) + SETTLE_TIME }
                 ?.takeIf { now() < it }
         val check = if (unsettled != null) SendCheck.Unreachable else checker.lookUp(entry)
         if (check == SendCheck.Unreachable) wake(unsettled ?: now())
-        return when (check) {
-            SendCheck.Unreachable -> sendFailure(SendFailure.Mail(MailFailure.Unreachable))
-            SendCheck.Sent -> entries.gone(entry)
-            SendCheck.NotSent -> null
-            SendCheck.Unconfirmable -> entries.unconfirmed(entry)
-        }
+        return check
     }
 }
 

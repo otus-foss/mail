@@ -48,8 +48,11 @@ data class OutboxEntry(
     /** Whether the server holds it and the user asked nothing more of it, so it goes by itself. */
     val goesByItself: Boolean get() = held != null && !withdrawn && !sendNow
 
+    /** Whether its send failed in a way that may hide a lost answer, so only a lookup tells whether it went. */
+    val mayHaveGone: Boolean get() = attempted && problem == OutboxProblem.Refused
+
     /** Whether it waits for the server to answer, so a background run should try again. */
-    val awaitsServer: Boolean get() = problem == null && attempted && !goesByItself
+    val awaitsServer: Boolean get() = mayHaveGone || (problem == null && attempted && !goesByItself)
 }
 
 /** The Email [emailId] a send stored on the server at [atMillis], before it submitted that copy. */

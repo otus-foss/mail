@@ -237,17 +237,27 @@ class MailOutboxTest {
                     throw IllegalArgumentException("Not base64")
                 }
             val outbox = MailOutbox(outboxStore, throwing, checker, held, now = { now })
-            val id = outbox.add(draft, null, NOW)
+            outbox.add(draft, null, NOW)
             outbox.resume()
             val restarted = MailOutbox(outboxStore, throwing, checker, held, now = { now })
             restarted.resume()
             assertEquals(OutboxProblem.Refused, restarted.offers().single().problem)
             assertEquals(1, tries, "It does not go again by itself")
+            assertEquals(1, checks.size, "The start asks the server before it offers the message")
+        }
 
-            check = SendCheck.Sent
+    @Test
+    fun aLookupThatThrowsNeverLetsTheMessageGoAgain() =
+        runTest {
+            val outbox = outbox()
+            val id = outbox.add(draft, null, NOW)
+            failure = SendFailure.Mail(MailFailure.ServerProblem)
+            outbox.send(id)
+
+            failure = null
             val unsure = MailOutbox(outboxStore, sender, { _, _, _ -> error("Unreadable answer") }, held, now = { now })
             assertEquals(SendFailure.Unconfirmed, (unsure.send(id).exceptionOrNull() as SendException).failure)
-            assertTrue(sent.isEmpty(), "A lookup that throws never lets the message go again")
+            assertEquals(1, sent.size)
         }
 
     @Test

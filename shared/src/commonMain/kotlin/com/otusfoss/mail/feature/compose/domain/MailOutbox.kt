@@ -117,7 +117,8 @@ class MailOutbox(
     /**
      * Takes the next step of each message that needs no user, as after the app was closed or
      * offline. It sends what is due, asks the server again about a message the user took back or
-     * wanted sent at once, and forgets a held message once its hold is over.
+     * wanted sent at once, and forgets a held message once its hold is over. A failed send that
+     * may have gone is looked up, so [offers] names only messages the server does not have.
      */
     suspend fun resume() {
         entries.all().forEach { listed -> lock.withLock { entries.find(listed.id)?.let { step(it) } } }
@@ -137,6 +138,7 @@ class MailOutbox(
     private suspend fun step(entry: OutboxEntry) {
         val due = entry.due <= now()
         when {
+            entry.mayHaveGone -> sends.confirm(entry)
             entry.problem != null -> Unit
             entry.withdrawn -> if (due) takeBack(entry)
             entry.held != null -> holds.resume(entry)

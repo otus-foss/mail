@@ -233,7 +233,9 @@ gets its own Message-ID, `<id>@otus.mail`, which every try reuses.
   sending" toast offers to open it, at once or after the next start. A server down for now is
   asked again later.
 - A failed send that may hide a lost answer, such as a gateway error, is looked up before Retry
-  sends it. Only a clear refusal, such as an unknown recipient, lets Retry skip the lookup.
+  sends it. Only a clear refusal, such as an unknown recipient, lets Retry skip the lookup. After
+  a restart the same lookup runs before the message is offered. One that went leaves the outbox,
+  and "Couldn't send" shows only once the server says it did not go.
 - A message the server holds for Undo stays until the hold is over, with the ids of its copy and
   its submission. Undo and the swipe that sends it at once are written to it before their request
   goes out. When the app closes or the server cannot be reached first, the next start or
