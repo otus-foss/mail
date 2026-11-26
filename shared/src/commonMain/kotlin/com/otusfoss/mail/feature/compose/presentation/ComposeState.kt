@@ -16,6 +16,7 @@ import com.otusfoss.mail.core.messages.domain.SendIdentity
 import com.otusfoss.mail.core.messages.domain.Signature
 import com.otusfoss.mail.core.messages.domain.answered
 import com.otusfoss.mail.core.messages.domain.answeredOriginal
+import com.otusfoss.mail.core.messages.domain.isDeviceDraftId
 import com.otusfoss.mail.feature.compose.domain.preferredIdentity
 import com.otusfoss.mail.feature.compose.domain.startDraft
 import kotlinx.coroutines.CoroutineScope
@@ -259,7 +260,8 @@ class ComposeState(
                     savedHere = true
                     // The user may have moved the draft to another account while it saved.
                     if (draft.accountId == current.accountId) draft = draft.copy(emailId = id)
-                    notice = null
+                    val unuploaded = current.attachments.any { !it.uploadedTo(current.accountId) }
+                    notice = waitingDraftNotice(unuploaded).takeIf { isDeviceDraftId(id) }
                     previous?.takeIf { it.accountId != current.accountId }?.discardCopy(drafts)
                 },
                 onFailure = {

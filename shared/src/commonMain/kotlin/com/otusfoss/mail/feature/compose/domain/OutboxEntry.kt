@@ -39,6 +39,8 @@ data class OutboxEntry(
     val storedCopy: StoredCopy? = null,
     val held: SentMessage? = null,
     val sendNow: Boolean = false,
+    /** The device id the draft waited under before it was sent, so Undo can put it back. */
+    val deviceDraftId: String? = null,
 ) {
     /** The time the message was given, or null when it goes as soon as it is due. */
     val sendAt: Instant? get() = sendAtMillis?.let(Instant::fromEpochMilliseconds)

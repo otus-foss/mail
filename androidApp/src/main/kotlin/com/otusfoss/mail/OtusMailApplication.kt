@@ -6,13 +6,18 @@ import androidx.work.Configuration
 import com.otusfoss.core.avatar.FileAvatarStore
 import com.otusfoss.core.jmap.login.AndroidLoginStore
 import com.otusfoss.core.jmap.push.PushSubscriptions
+import com.otusfoss.core.storage.KeystoreTextCipher
 import com.otusfoss.core.storage.PreferenceMap
+import com.otusfoss.core.storage.SealedMapStore
+import com.otusfoss.core.storage.StringMapStore
+import com.otusfoss.core.storage.TextCipher
 import com.otusfoss.mail.app.MailDeviceStores
 import com.otusfoss.mail.app.MailPickers
 import com.otusfoss.mail.app.MailPlatform
 import com.otusfoss.mail.app.MailServices
 import com.otusfoss.mail.app.NightlyUpdates
 import com.otusfoss.mail.app.trimCache
+import com.otusfoss.mail.core.cache.SealedMailCache
 import com.otusfoss.mail.core.cache.SqlMailCache
 import com.otusfoss.mail.core.files.FileDownloadFolder
 import com.otusfoss.mail.core.messages.domain.DevicePrivacy
@@ -36,15 +41,34 @@ open class OtusMailApplication :
     override val workManagerConfiguration: Configuration
         get() = Configuration.Builder().build()
 
+    /**
+     * Seals the mail cache and the device stores; see docs/storage.md. One per process, so the
+     * key is read from the Keystore once.
+     */
+    val storageCipher: TextCipher by lazy { KeystoreTextCipher(this) }
+
     val stores: MailDeviceStores by lazy {
+        // The cache of releases that kept mail unsealed. Sync fills the sealed one again.
+        deleteDatabase(UNSEALED_CACHE_DATABASE)
+        // Built with the other sealed stores, so the first start takes in what an unsealed release saved.
+        pushStore
         MailDeviceStores.named(
-            { name, commit -> mailPreferences(this, name, commit) },
-            SqlMailCache(mailCacheDriver(this, CACHE_DATABASE)),
+            { name, commit -> sealedPreferences(name, commit) },
+            SealedMailCache(SqlMailCache(mailCacheDriver(this, CACHE_DATABASE)), storageCipher),
             // Matches the `files-path` in `res/xml/shared_files.xml`, so Open can lend these files.
             FileDownloadFolder(File(filesDir, "attachments").absolutePath),
             AndroidNotificationPreviewStore(this),
         )
     }
+
+    /**
+     * The device store [name], sealed. What a release before sealing saved in it is taken in only
+     * when the store is built on the device's first start with a key; see `SealedMapStore`.
+     */
+    fun sealedPreferences(
+        name: String,
+        commit: Boolean = false,
+    ): StringMapStore = SealedMapStore(mailPreferences(this, name, commit), storageCipher, name)
 
     val services: MailServices by lazy {
         // Names kept from the first release so saved accounts keep working.
@@ -90,8 +114,10 @@ open class OtusMailApplication :
 
     /** One per process, so its lock covers the push service, the workers, and the settings page. */
     val push: PushSubscriptions by lazy {
-        services.pushSubscriptions(PreferenceMap(this, "otus_mail_push"), deviceClientId(), MailPush.Changes)
+        services.pushSubscriptions(pushStore, deviceClientId(), MailPush.Changes)
     }
+
+    private val pushStore: StringMapStore by lazy { sealedPreferences("push") }
 
     /** Work that outlives any screen, such as cache upkeep. It ends with the process. */
     private val processScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
@@ -118,7 +144,8 @@ open class OtusMailApplication :
 
     private companion object {
         const val DEVICE_ID = "deviceClientId"
-        const val CACHE_DATABASE = "otus_mail_cache.db"
+        const val CACHE_DATABASE = "otus_mail_sealed_cache.db"
+        const val UNSEALED_CACHE_DATABASE = "otus_mail_cache.db"
     }
 }
 
