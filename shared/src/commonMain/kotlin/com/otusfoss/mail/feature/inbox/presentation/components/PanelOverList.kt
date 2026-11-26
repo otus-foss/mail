@@ -22,7 +22,8 @@ import com.otusfoss.core.designsystem.shared.panels.components.PanelScrim
  * list gets the expanded panel's height as its top inset and hands its scroll through a
  * [CollapseLink], whose progress collapses the panel. The inset keeps the expanded height while
  * the panel collapses, so rows never jump as it shrinks. While [holdInset], such as while rows are
- * selected and the panel shows a shorter header, the inset keeps its height too. While the
+ * selected and the panel shows a shorter header, the inset keeps its height too, and the panel gets
+ * it as its held height to fill. While the
  * panel's [expansion] grows it, the inset keeps its height and a scrim dims the list; a tap on the
  * scrim brings the panel back.
  *
@@ -36,7 +37,7 @@ internal fun PanelOverList(
     onRefresh: () -> Unit,
     holdInset: Boolean = false,
     expansion: PanelExpansion? = null,
-    panel: @Composable (collapse: () -> Float, modifier: Modifier) -> Unit,
+    panel: @Composable (collapse: () -> Float, heldHeight: Dp, modifier: Modifier) -> Unit,
     list: @Composable (topInset: Dp, collapse: CollapseLink) -> Unit,
 ) {
     val collapse = remember { CollapseLink() }
@@ -59,6 +60,7 @@ internal fun PanelOverList(
         expansion?.let { PanelScrim(it) }
         panel(
             collapse::progress,
+            if (holdInset) panelHeight else 0.dp,
             Modifier.onSizeChanged {
                 val still = !holdInset && collapse.progress() == 0f && expansion?.expanded != true
                 if (still) panelHeight = with(density) { it.height.toDp() }

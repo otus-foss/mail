@@ -18,13 +18,14 @@ import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.dp
 import com.otusfoss.core.dateformat.DateFormatter
 import com.otusfoss.core.designsystem.resources.Res
 import com.otusfoss.core.designsystem.resources.symbol_filter_list
 import com.otusfoss.core.designsystem.shared.controls.elements.IconButton
 import com.otusfoss.core.designsystem.shared.controls.elements.IconButtonLook
 import com.otusfoss.core.designsystem.shared.controls.elements.Symbol
-import com.otusfoss.core.designsystem.shared.overlays.components.SheetHeaderAction
 import com.otusfoss.core.designsystem.shared.panels.components.AccountStack
 import com.otusfoss.core.designsystem.shared.panels.components.ChipPlacement
 import com.otusfoss.core.designsystem.shared.panels.components.ContextPanel
@@ -34,6 +35,7 @@ import com.otusfoss.core.designsystem.shared.panels.components.PanelSearchPill
 import com.otusfoss.core.designsystem.shared.panels.components.PillSearch
 import com.otusfoss.core.designsystem.shared.panels.elements.PanelNavigation
 import com.otusfoss.core.designsystem.shared.panels.elements.PanelNavigationIcon
+import com.otusfoss.core.designsystem.shared.panels.elements.PanelTextAction
 import com.otusfoss.core.designsystem.shared.panels.elements.PanelTitle
 import com.otusfoss.core.designsystem.theme.tokens.layout.PanelTokens
 import com.otusfoss.mail.core.messages.presentation.components.MailScopeSwitch
@@ -60,7 +62,7 @@ fun InboxPanel(
 ) {
     val selecting = look.selecting
     if (selecting != null) {
-        SelectionPanel(selecting)
+        SelectionPanel(selecting, look)
         return
     }
     // While the panel grows a search room it keeps its pills; the search's own chips come with the results.
@@ -156,18 +158,19 @@ private fun InboxAccountStack(
     AccountStack(header.avatars, "Showing mail from ${header.title}. Change", onOpen, collapse = collapse)
 }
 
-/** The panel while rows are selected: ✕ to stop, the count, and Select all. */
+/** The panel while rows are selected: ✕ to stop, the count, and Select all, filling the pills' room. */
 @Composable
-private fun SelectionPanel(selecting: PanelSelection) {
+private fun SelectionPanel(
+    selecting: PanelSelection,
+    look: PanelLook,
+) {
     ContextPanel(
         placement = ChipPlacement.None,
         navigation = { PanelNavigation("Stop selecting", selecting.onClear, icon = PanelNavigationIcon.Close) },
-    ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            PanelTitle("${selecting.count} selected", Modifier.weight(1f).padding(start = PanelTokens.titleStart))
-            SheetHeaderAction("Select all", selecting.onSelectAll)
-        }
-    }
+        trailingAction = { PanelTextAction("Select all", selecting.onSelectAll) },
+        motion = PanelMotion(look.collapse),
+        minHeight = look.minHeight,
+    ) { PanelTitle("${selecting.count} selected", Modifier.padding(start = PanelTokens.titleStart)) }
 }
 
 @Composable
@@ -219,7 +222,8 @@ private fun searchFieldModifier(
  * [unreadCount] shows on the Unread pill; [filters] are the page's active filters, which lead the
  * pill row and count on the filter button; [categories] are the Inbox's category pills, which lead
  * the row while they are on; [selecting] is set while rows are selected; and [searchFocused] puts
- * the keyboard in the panel's search field.
+ * the keyboard in the panel's search field. [minHeight] keeps the panel at least that tall, such as
+ * to fill the pills' room while rows are selected.
  */
 data class PanelLook(
     val collapse: () -> Float = { 0f },
@@ -230,6 +234,7 @@ data class PanelLook(
     val searchFocused: Boolean = false,
     val expansion: PanelExpansion? = null,
     val expanded: @Composable () -> Unit = {},
+    val minHeight: Dp = 0.dp,
 )
 
 /**

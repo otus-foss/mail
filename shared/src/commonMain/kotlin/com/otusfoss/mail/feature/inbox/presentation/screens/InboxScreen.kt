@@ -95,14 +95,21 @@ fun InboxScreen(
                         onRefresh,
                         holdInset = selecting != null,
                         expansion = headerActions.expansion,
-                        panel = { collapse, modifier ->
+                        panel = { collapse, heldHeight, modifier ->
                             InboxHeader(
                                 messages,
                                 state,
                                 page,
                                 dateFormatter,
                                 headerActions,
-                                PanelLook(collapse, unreadCount, activeFilters, sorted.tabs, selecting),
+                                PanelLook(
+                                    collapse,
+                                    unreadCount,
+                                    activeFilters,
+                                    sorted.tabs,
+                                    selecting,
+                                    minHeight = heldHeight,
+                                ),
                                 Modifier
                                     .onSizeChanged { panelHeight = with(density) { it.height.toDp() } }
                                     .then(modifier),
