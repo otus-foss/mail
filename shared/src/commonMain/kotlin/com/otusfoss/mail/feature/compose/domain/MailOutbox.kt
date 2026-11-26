@@ -95,7 +95,8 @@ class MailOutbox(
      * may have sent is looked for first. The result holds the server's copy, or null when it went
      * before; a missing message counts as sent, and so does one the server holds or the user took
      * back, which this call leaves alone. A message stays after a failure: on a dropped connection
-     * to go again by itself, otherwise with a [OutboxProblem] until the user acts.
+     * to go again by itself, otherwise with a [OutboxProblem] until the user acts. The caller shows
+     * that failure, so [offers] leaves the message out for the rest of this process.
      */
     suspend fun send(
         id: String,
@@ -103,16 +104,16 @@ class MailOutbox(
     ): Result<SentMessage?> =
         lock.withLock {
             val entry = entries.find(id)?.takeUnless { it.withdrawn || it.held != null }
-            if (entry == null) Result.success(null) else sends.deliver(entry, holdUntil)
+            if (entry == null) Result.success(null) else shown(id, sends.deliver(entry, holdUntil))
         }
 
     /**
      * Sends message [id], which the server holds for Undo, at once. The request is kept first, so
      * [resume] tries again until the server answers. A missing message went. A refused one stays
-     * with a [OutboxProblem] and its copy, a draft again, to open.
+     * with a [OutboxProblem] and its copy, a draft again, to open; as in [send], the caller shows that.
      */
     suspend fun sendNow(id: String): Result<Unit> =
-        lock.withLock { entries.find(id)?.let { holds.sendNow(it) } ?: Result.success(Unit) }
+        lock.withLock { entries.find(id)?.let { shown(id, holds.sendNow(it)) } ?: Result.success(Unit) }
 
     /**
      * Takes the next step of each message that needs no user, as after the app was closed or
@@ -124,7 +125,10 @@ class MailOutbox(
         entries.all().forEach { listed -> lock.withLock { entries.find(listed.id)?.let { step(it) } } }
     }
 
-    /** The messages that need the user and were not offered before in this process, to offer now. */
+    /**
+     * The messages that need the user and were not offered before in this process, to offer now.
+     * That includes one a [resume] could not send, which had nobody to tell.
+     */
     suspend fun offers(): List<OutboxEntry> = lock.withLock { entries.unoffered() }
 
     /** Drops [accountId]'s messages, as when the account is removed. */
@@ -144,6 +148,15 @@ class MailOutbox(
             entry.held != null -> holds.resume(entry)
             due -> sends.deliver(entry, holdUntil = null)
         }
+    }
+
+    /** [result] of a step whose caller shows its failure to the user. */
+    private suspend fun <T> shown(
+        id: String,
+        result: Result<T>,
+    ): Result<T> {
+        if (result.isFailure) entries.shown(id)
+        return result
     }
 
     private suspend fun takeBack(entry: OutboxEntry) {

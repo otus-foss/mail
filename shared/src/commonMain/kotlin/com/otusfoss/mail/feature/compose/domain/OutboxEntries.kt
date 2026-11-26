@@ -47,13 +47,15 @@ internal class OutboxEntries(
 
     suspend fun removeIf(predicate: (OutboxEntry) -> Boolean) = save(all().filterNot(predicate))
 
-    /** Keeps [entry] with [problem]. The failed send's caller tells the user, so it is not offered again. */
+    /** Keeps [entry] with [problem], for the user. */
     suspend fun fail(
         entry: OutboxEntry,
         problem: OutboxProblem,
-    ) {
-        replace(entry.copy(problem = problem))
-        offered = offered + entry.id
+    ) = replace(entry.copy(problem = problem))
+
+    /** Counts message [id] as offered when it waits for the user, since a caller that shows its failure tells them. */
+    suspend fun shown(id: String) {
+        if (find(id)?.problem != null) offered = offered + id
     }
 
     /**

@@ -241,7 +241,9 @@ gets its own Message-ID, `<id>@otus.mail`, which every try reuses.
   goes out. When the app closes or the server cannot be reached first, the next start or
   `OutboxWorker` finishes them from that record.
 - A refused message stays too. After a restart a "Couldn't send" toast offers to open it, and
-  opening it takes it out of the outbox once its page shows. A send or lookup that fails in an
+  opening it takes it out of the outbox once its page shows. A message that an app start or the
+  background job tried and the server refused had no toast of its own, so it is offered the same
+  way the next time Mail opens, also in the process that job left running. A send or lookup that fails in an
   unexpected way, rather than with an answer from the server, counts as a server problem or an
   unconfirmed send, so the message waits for the user instead of stopping the app at every start.
 - On Android, `OutboxWorker` runs the outbox 30 seconds after a message is due, and again once the
