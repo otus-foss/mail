@@ -84,6 +84,53 @@ class MoveToOffersTest {
         assertEquals(listOf("1" to "ada-a"), moved)
     }
 
+    @Test
+    fun suggestedMoveLeavesMailOfAnotherAccountOutOfThatAccountsFolderWithTheSameId() {
+        val sharedIdTargets =
+            mapOf(
+                "ada" to listOf(MoveTarget("f", listOf("Receipts"), own = true, path = listOf("Receipts"))),
+                "grace" to listOf(MoveTarget("f", listOf("Family"), own = true, path = listOf("Family"))),
+            )
+        val movedNames = mutableListOf<Pair<String, String>>()
+        val multiActions =
+            offerActions(
+                targets = { sharedIdTargets[it.location.accountId].orEmpty() },
+                onMove = { message, target -> movedNames += message.id to target.name },
+            )
+        val suggestion = sharedIdTargets.getValue("ada").single()
+        val offered =
+            assertNotNull(
+                ActionSubject(multiActions, fromBoth, moves = MoveOptions(suggestion = suggestion))
+                    .offer(MailAction.SuggestedMove),
+            )
+        assertEquals("Move to Receipts", offered.label)
+        offered.run()
+        assertEquals(listOf("1" to "Receipts"), movedNames)
+    }
+
+    @Test
+    fun suggestedMoveUsesTheTargetsAccountWhenNamed() {
+        val sharedIdTargets =
+            mapOf(
+                "ada" to listOf(MoveTarget("f", listOf("Receipts"), own = true, accountId = "ada")),
+                "grace" to listOf(MoveTarget("f", listOf("Family"), own = true, accountId = "grace")),
+            )
+        val movedNames = mutableListOf<Pair<String, String>>()
+        val multiActions =
+            offerActions(
+                targets = { sharedIdTargets[it.location.accountId].orEmpty() },
+                onMove = { message, target -> movedNames += message.id to target.name },
+            )
+        val suggestion = sharedIdTargets.getValue("grace").single()
+        val offered =
+            assertNotNull(
+                ActionSubject(multiActions, fromBoth, moves = MoveOptions(suggestion = suggestion))
+                    .offer(MailAction.SuggestedMove),
+            )
+        offered.run()
+        assertEquals(listOf("2" to "Family"), movedNames)
+    }
+
     private val acme = MoveTo(listOf("Clients", "Acme"))
 
     /** One message in each account. */
