@@ -50,7 +50,7 @@ class JmapNewsletters(
     private val mailboxes: Mailboxes,
     domains: AvatarDomainResolver,
 ) : Newsletters {
-    private val unsubscriber = ListUnsubscriber(drafts, sender, domains)
+    private val unsubscriber = ListUnsubscriber(drafts, sender, domains, OneClickPost())
 
     override suspend fun list(message: MailMessage): MailingList? =
         jmapCallOr(null) {

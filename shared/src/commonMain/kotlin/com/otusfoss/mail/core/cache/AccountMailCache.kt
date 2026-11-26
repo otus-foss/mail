@@ -55,7 +55,7 @@ internal class AccountMailCache(
      * Replacing credentials starts a new generation even when the login ID is unchanged. The login ID
      * names the same user on the same server, so the cached mail stays and nothing touches storage.
      */
-    override suspend fun connected(loginId: String) = invalidate(loginId) { it.active = true }
+    override suspend fun connected(loginId: String) = invalidate(loginId, activeAfter = true)
 
     override suspend fun removing(loginId: String) {
         try {
@@ -71,17 +71,24 @@ internal class AccountMailCache(
         account.lock.withLock { account.active = true }
     }
 
+    /**
+     * Starts a new generation, which is active only with [activeAfter], and runs [then] before any
+     * later write.
+     */
     private suspend fun invalidate(
         loginId: String,
-        then: suspend (Account) -> Unit,
+        activeAfter: Boolean = false,
+        then: suspend (Account) -> Unit = {},
     ) {
         withContext(NonCancellable) {
             val account = account(loginId)
-            account.lock.withLock {
-                account.generation += 1
-                account.active = false
-                account.jobs.forEach { it.cancel(CancellationException("Account changed")) }
-                account.jobs.clear()
+            account.writes.withLock {
+                account.lock.withLock {
+                    account.generation += 1
+                    account.active = activeAfter
+                    account.jobs.forEach { it.cancel(CancellationException("Account changed")) }
+                    account.jobs.clear()
+                }
                 then(account)
             }
         }
@@ -89,8 +96,13 @@ internal class AccountMailCache(
 
     private suspend fun account(loginId: String): Account = lock.withLock { accounts.getOrPut(loginId) { Account() } }
 
+    /**
+     * [lock] guards only the fields, for a moment; [writes] is held while a write or an account
+     * change reaches the storage, which a read does not wait for.
+     */
     private class Account {
         val lock = Mutex()
+        val writes = Mutex()
         val jobs = mutableSetOf<Job>()
         var generation = 0L
         var active = true
@@ -109,38 +121,54 @@ internal class AccountMailCache(
             loginId: String,
             kind: CacheKind,
             ids: Collection<String>,
-        ): Map<String, String> = guarded(loginId) { storage.read(loginId, kind, ids) }
+        ): Map<String, String> = reading(loginId) { storage.read(loginId, kind, ids) }
 
         override suspend fun readAll(
             loginId: String,
             kind: CacheKind,
-        ): Map<String, String> = guarded(loginId) { storage.readAll(loginId, kind) }
+        ): Map<String, String> = reading(loginId) { storage.readAll(loginId, kind) }
 
         override suspend fun value(
             loginId: String,
             key: String,
-        ): String? = guarded(loginId) { storage.value(loginId, key) }
+        ): String? = reading(loginId) { storage.value(loginId, key) }
 
         override suspend fun write(
             loginId: String,
             changes: CacheWrite.() -> Unit,
-        ) = guarded(loginId) { storage.write(loginId, changes) }
+        ) = writing(loginId) { storage.write(loginId, changes) }
 
         override suspend fun forget(loginId: String) {
             require(loginId == this.loginId)
             this@AccountMailCache.forget(loginId)
         }
 
-        private suspend fun <T> guarded(
+        /**
+         * A read checks the account and then runs without a lock, so it never waits for a write
+         * to finish. One that an account change overtakes is dropped when its operation ends.
+         */
+        private suspend fun <T> reading(
             loginId: String,
             operation: suspend () -> T,
         ): T {
-            require(loginId == this.loginId)
-            return account.lock.withLock {
-                account.requireActive(generation)
-                currentCoroutineContext().ensureActive()
+            requireCurrent(loginId)
+            return operation()
+        }
+
+        /** A write holds the account's writes, so none lands after the account changed. */
+        private suspend fun <T> writing(
+            loginId: String,
+            operation: suspend () -> T,
+        ): T =
+            account.writes.withLock {
+                requireCurrent(loginId)
                 operation()
             }
+
+        private suspend fun requireCurrent(loginId: String) {
+            require(loginId == this.loginId)
+            account.lock.withLock { account.requireActive(generation) }
+            currentCoroutineContext().ensureActive()
         }
     }
 }

@@ -24,6 +24,7 @@ import com.otusfoss.mail.core.messages.domain.FilterSort
 import com.otusfoss.mail.core.messages.domain.MailLocation
 import com.otusfoss.mail.core.messages.domain.MailMessage
 import com.otusfoss.mail.core.messages.domain.MailScope
+import com.otusfoss.mail.core.messages.domain.WaitingDraft
 import com.otusfoss.mail.feature.inbox.domain.MailQuery
 import kotlinx.datetime.TimeZone
 import kotlin.time.Instant
@@ -50,17 +51,19 @@ private fun MailFolder.listing(
  * [ServerSites]). A mailbox without a saved list for [query] shows the rows of its unfiltered list
  * that the device can check against [query] at [now], or nothing when it cannot. None show when
  * the query reads none of the login's mail. A row whose email has left the mailbox since, such
- * as after a move, is left out. A row that no longer reads leaves the login out.
+ * as after a move, is left out. A row that no longer reads leaves the login out. The Drafts list
+ * also shows the [waiting] drafts, which the server does not have yet, in place of the copies
+ * they replace.
  */
 internal suspend fun MailCache.cachedPages(
     login: JmapLogin,
     mailboxes: List<MailFolder>,
     scope: MailScope,
     query: MailQuery,
-    now: Instant,
-    zone: TimeZone,
-    serverSite: String,
+    view: CachedView,
+    waiting: List<WaitingDraft> = emptyList(),
 ): List<ListingPage<ListedRow>> {
+    val (now, zone, serverSite) = view
     val conditions = emailConditions(query, login.id, now, zone) ?: return emptyList()
     val check = localCheck(query, login.id, now, zone)
     val chosen = scope.chosen(mailboxes, login.id, query)
@@ -85,17 +88,33 @@ internal suspend fun MailCache.cachedPages(
                 val mailbox = chosen[index]
                 val list = ListedMailbox(login, mailbox, scope.nameOf(mailbox), view, zone, serverSite)
                 val listing = listings[queries[index].key]
-                when {
-                    listing != null -> held.page(listing, list)
-                    check != null -> listings[unfiltered[index].key]?.let { held.page(it, list, check) }
-                    else -> null
-                }
+                val page =
+                    when {
+                        listing != null -> held.page(listing, list)
+                        check != null -> listings[unfiltered[index].key]?.let { held.page(it, list, check) }
+                        else -> null
+                    }
+                // Only a list the device can check shows the drafts the server never saw.
+                val checked = conditions.isEmpty() || check != null
+                val ownDrafts = waiting.takeIf { mailbox.role == MailboxRole.Drafts && checked }
+                val sort = query.filters.sort
+                if (ownDrafts.isNullOrEmpty()) page else held.withWaiting(page, ownDrafts, list, check, sort)
             }
         }
     } catch (expected: JmapException.NotJmap) {
         emptyList()
     }
 }
+
+/**
+ * When and where cached rows are read: [now] and [zone] decide what a date filter keeps and how
+ * dates show, and DMARC results count only from [serverSite] (see [ServerSites]).
+ */
+internal data class CachedView(
+    val now: Instant,
+    val zone: TimeZone,
+    val serverSite: String,
+)
 
 /** A list row, with when its email arrived, which orders rows across lists. */
 internal class ListedRow(
@@ -160,6 +179,30 @@ private class HeldMail(
                 ).inConversation(row, thread, list.mailbox.id, list.view, list.zone)
         return ListedRow(message, row.receivedTime)
     }
+}
+
+/**
+ * [page] with the rows of the [waiting] drafts, each where its save time puts it in [sort] order,
+ * and without the rows of the copies they replace. A list that has not loaded yet shows them alone.
+ */
+private fun HeldMail.withWaiting(
+    page: ListingPage<ListedRow>?,
+    waiting: List<WaitingDraft>,
+    list: ListedMailbox,
+    check: ((ListedRow) -> Boolean)?,
+    sort: FilterSort,
+): ListingPage<ListedRow> {
+    val replaced = waiting.mapNotNull { it.draft.emailId }.map { "${list.login.id}/$it" }.toSet()
+    val own =
+        waiting
+            .filterNot { it.discarded }
+            .map { HeldMail(mapOf(it.id to it.toEmail(list.mailbox.id)), emptyMap(), emptyMap()).row(it.id, list) }
+            .filterNotNull()
+            .filter { check?.invoke(it) ?: true }
+    val rows = page?.rows.orEmpty().filter { it.message.id !in replaced } + own
+    val oldestFirst = rows.sortedBy { it.receivedAt }
+    val ordered = if (sort == FilterSort.OldestFirst) oldestFirst else oldestFirst.reversed()
+    return ListingPage(ordered, page?.hasMore ?: false)
 }
 
 /** Thread emails come from the member objects, or from row objects for emails that are rows too. */

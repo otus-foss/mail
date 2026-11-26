@@ -80,7 +80,7 @@ class InboxPickerTest {
 
     @Test
     fun accountsSheetSearchesAccountsAndNarrowsTheResults() {
-        compose.onNodeWithContentDescription("All accounts, Inbox").performScrollTo().performClick()
+        compose.onNodeWithText("All accounts").performScrollTo().performClick()
         compose.pickerSearch("accounts").performTextInput("Personal")
         compose.pickRow("Personal").performClick()
         compose.onNodeWithText("Done").performClick()
@@ -88,12 +88,12 @@ class InboxPickerTest {
         compose.assertListed(1)
         compose.onNodeWithText("Meeting plans").assertIsDisplayed()
         compose.searchField().performClick()
-        compose.onNodeWithContentDescription("Personal account, Inbox").performScrollTo().performClick()
+        compose.onNodeWithContentDescription("Personal account").performScrollTo().performClick()
         compose.pickRow("Work").performClick()
         compose.onNodeWithText("Done").performClick()
         compose.showSearchResults()
         compose.assertListed(2)
-        compose.onNodeWithContentDescription("2 accounts, Inbox").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithContentDescription("2 accounts").performScrollTo().assertIsDisplayed()
     }
 
     @Test

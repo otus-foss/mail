@@ -91,7 +91,7 @@ class GooglePushRegistrationTest {
             val request = requests().single()
             assertEquals(KEY, request.getStringExtra("vapid"))
             assertEquals(app.packageName, request.`package`)
-            assertEquals("Otus Mail: Ada", request.getStringExtra("message"))
+            assertEquals("Otus Mail", request.getStringExtra("message"))
             registration.register(login, app.packageName, retry = false)
             assertEquals(1, requests().size)
         }

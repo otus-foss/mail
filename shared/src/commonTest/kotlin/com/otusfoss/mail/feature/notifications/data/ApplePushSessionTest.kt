@@ -82,6 +82,43 @@ class ApplePushSessionTest {
             http.close()
         }
 
+    @Test
+    fun anUnreadablePushIsAcknowledgedAndTheRouteStillRenewed() =
+        runTest {
+            val host = TestApplePlatform()
+            host.saved["enabled"] = "true"
+            host.decrypted = "x"
+            val paths = mutableListOf<String>()
+            val http = fakeBridge(paths, verifies = false)
+            val jmap = fakePushServer()
+            val session =
+                ApplePushSession(host, "https://push.example", http) {
+                    MailServices(adaLogins(), createClient = { jmap })
+                }
+            assertTrue(session.syncSafely())
+            assertTrue(paths.any { it.startsWith("DELETE ") && "/messages/" in it }, "The push is acknowledged")
+            assertTrue("PATCH /v1/routes/$FAKE_ROUTE" in paths, "The route is renewed")
+            http.close()
+        }
+
+    @Test
+    fun oneLoginsBridgeFailureStillRenewsTheOtherLogins() =
+        runTest {
+            val host = TestApplePlatform()
+            host.saved["enabled"] = "true"
+            val paths = mutableListOf<String>()
+            val http = busyFirstBridge(paths)
+            val jmap = fakePushServer()
+            val session =
+                ApplePushSession(host, "https://push.example", http) {
+                    MailServices(adaAndBobLogins(), createClient = { jmap })
+                }
+            assertTrue(session.syncSafely())
+            assertEquals(PushDeliveryStatus.Unavailable, session.results["ada"])
+            assertTrue("PATCH /v1/routes/$SECOND_ROUTE" in paths, "Bob's route is renewed")
+            http.close()
+        }
+
     private companion object {
         const val FOREGROUND_CHECKS = 240
     }

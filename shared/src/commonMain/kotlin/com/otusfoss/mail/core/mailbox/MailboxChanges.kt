@@ -88,6 +88,9 @@ internal fun CacheWrite.saveMailboxes(list: MailboxList) {
     putValue(MAILBOX_STATE, list.state)
 }
 
+/** Forgets the state the cached mailboxes match, so the next load reads every mailbox again. */
+internal fun CacheWrite.forgetMailboxState() = putValue(MAILBOX_STATE, null)
+
 /** The login's cached mailboxes, as the last load saved them. */
 internal suspend fun MailCache.mailboxes(loginId: String): List<MailboxObject> =
     allObjects(loginId, CacheKind.Mailbox, MailboxObject.serializer()).values.toList()

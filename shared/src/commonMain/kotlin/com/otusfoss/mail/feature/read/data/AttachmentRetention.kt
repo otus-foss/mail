@@ -15,7 +15,7 @@ import com.otusfoss.mail.core.files.StoredKey
  */
 class AttachmentRetention(
     private val folder: DownloadFolder,
-    private val budgetBytes: Long = UNKEPT_BUDGET_BYTES,
+    val budgetBytes: Long = UNKEPT_BUDGET_BYTES,
 ) : LoginLifecycle {
     /**
      * Deletes partial files left by an earlier process, unkept files last used before

@@ -19,6 +19,7 @@ import com.otusfoss.mail.core.messages.domain.MailScope
 import com.otusfoss.mail.core.messages.domain.MailSender
 import com.otusfoss.mail.core.messages.domain.MailboxScope
 import com.otusfoss.mail.core.messages.domain.ReceivedAt
+import com.otusfoss.mail.feature.inbox.domain.InboxSearch
 import com.otusfoss.mail.feature.inbox.presentation.MailboxSearch
 import com.otusfoss.mail.feature.inbox.presentation.screens.InboxScreen
 import org.junit.Assert.assertEquals
@@ -48,7 +49,16 @@ class MailboxPickerTest {
             }
         compose.runOnUiThread {
             compose.activity.setContent {
-                OtusTheme { InboxScreen(fixtures, context = inboxContext { mailboxSearch = search }) }
+                OtusTheme {
+                    InboxScreen(
+                        fixtures,
+                        context =
+                            inboxContext {
+                                defaultSearch = InboxSearch(mailboxes = setOf(MailboxScope.Inbox))
+                                mailboxSearch = search
+                            },
+                    )
+                }
             }
         }
         compose.openSearch()

@@ -3,11 +3,14 @@ package com.otusfoss.mail.feature.inbox.presentation
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import com.otusfoss.mail.core.messages.domain.FolderRef
 import com.otusfoss.mail.core.messages.domain.FoundPerson
+import com.otusfoss.mail.core.messages.domain.MailScope
 import com.otusfoss.mail.core.messages.domain.PeopleField
 import com.otusfoss.mail.core.text.TYPING_PAUSE_MILLIS
 import com.otusfoss.mail.feature.inbox.domain.InboxFilters
 import com.otusfoss.mail.feature.inbox.domain.InboxStorageException
+import com.otusfoss.mail.feature.inbox.domain.withDefaultFolders
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -30,14 +33,15 @@ sealed interface FilterCount {
  * [draft] while it is open, which the panel and its popups edit. Opening copies the applied
  * filters into the draft; Show applies the draft, and closing drops it. Every
  * draft change counts its messages again with [counter] in [scope], [TYPING_PAUSE_MILLIS] after
- * the last change, cancelling a count still running.
+ * the last change, cancelling a count still running. The counter gets the mail scope a search
+ * counts in, or null for the page's own.
  * [onApplied] hears every new applied value, so the page can load it and keep it. [senders] and
  * [recipients] search people for the panel's From and To lines with [findPeople].
  */
 class InboxFilterState(
     applied: InboxFilters = InboxFilters(),
     private val scope: CoroutineScope? = null,
-    private val counter: suspend (InboxFilters) -> Long? = { null },
+    private val counter: suspend (InboxFilters, MailScope?) -> Long? = { _, _ -> null },
     private val onApplied: (InboxFilters) -> Unit = {},
     findPeople: suspend (PeopleField, String) -> List<FoundPerson> = { _, _ -> emptyList() },
 ) {
@@ -50,6 +54,12 @@ class InboxFilterState(
     var count by mutableStateOf<FilterCount>(FilterCount.Unknown)
         private set
 
+    /** The folders a search on a folder page or folder pill starts from; empty otherwise. */
+    var defaultFolders by mutableStateOf<Set<FolderRef>>(emptySet())
+        private set
+
+    private var countScope: MailScope? = null
+
     val senders = FilterPeopleSearch(PeopleField.From, scope, findPeople)
 
     val recipients = FilterPeopleSearch(PeopleField.To, scope, findPeople)
@@ -58,6 +68,17 @@ class InboxFilterState(
         get() = draft != null
 
     private var counting: Job? = null
+
+    /** Uses a search's starting [folders] and counts in its [scope]; empty and null outside search. */
+    fun useSearchDefaults(
+        folders: Set<FolderRef>,
+        scope: MailScope?,
+    ) {
+        if (folders == defaultFolders && scope == countScope) return
+        defaultFolders = folders
+        countScope = scope
+        if (isOpen) recount()
+    }
 
     fun open() {
         draft = applied
@@ -92,7 +113,7 @@ class InboxFilterState(
     /** How many conversations [filters] would show; null while the count is not known. */
     suspend fun countOf(filters: InboxFilters): Long? =
         try {
-            counter(filters)
+            counter(filters.withDefaultFolders(defaultFolders), countScope)
         } catch (expected: InboxStorageException) {
             null
         }

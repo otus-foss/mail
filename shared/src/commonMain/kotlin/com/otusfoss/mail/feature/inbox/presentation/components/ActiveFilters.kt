@@ -25,6 +25,7 @@ import com.otusfoss.mail.core.messages.presentation.label
 import com.otusfoss.mail.core.settings.presentation.icon
 import com.otusfoss.mail.core.settings.presentation.label
 import com.otusfoss.mail.feature.inbox.domain.InboxFilters
+import com.otusfoss.mail.feature.inbox.domain.withoutFolderOverride
 import com.otusfoss.mail.feature.inbox.presentation.FilterOptions
 import com.otusfoss.mail.feature.inbox.presentation.InboxFilterState
 
@@ -78,9 +79,9 @@ class ActiveFilters(
                         options.account(id)?.let(::accountPill) ?: symbolPill(id, Res.drawable.symbol_account_circle)
                     add(removing(InboxFilters::account, pill) { it.copy(account = null) })
                 }
-                if (applied.folders.isNotEmpty()) {
-                    val pill = foldersPill(applied.folders.toList(), options)
-                    add(removing(InboxFilters::folders, pill) { it.copy(folders = emptySet()) })
+                if (applied.hasFolderOverride) {
+                    val pill = folderFilterPill(applied, options)
+                    add(removing(InboxFilters::folders, pill) { it.withoutFolderOverride() })
                 }
                 if (applied.date != DateFilter.Any) {
                     val pill = symbolPill(dateValue(applied.date, dateFormatter), Res.drawable.symbol_calendar_today)

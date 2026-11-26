@@ -7,7 +7,7 @@ self-hosted Stalwart. It is part of the Otus suite with
 [Otus Calendar](https://github.com/otus-foss/calendar), built on [Otus Core](https://github.com/otus-foss/core).
 
 > [!WARNING]
-> Otus Mail is still in development. Expect bugs, missing features, and changes that break your
+> Otus Mail is still in development. Expect bugs, missing features, and changes that break you and your
 > settings between builds.
 
 ## Install

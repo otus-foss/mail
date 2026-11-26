@@ -91,6 +91,8 @@ class AttachmentCache(
     /**
      * Streams [file] into [append]. A server that sends more than the size the message gives,
      * which is the decoded size (RFC 8621, section 4.1.4), is stopped, so it cannot fill the disk.
+     * A size of 0 or less means the server did not give one. Such a file may take up to the
+     * retention budget, since a larger one would push every other unkept file out anyway.
      */
     private suspend fun receive(
         message: MailMessage,
@@ -98,11 +100,12 @@ class AttachmentCache(
         append: suspend (ByteArray) -> Unit,
         progress: (Long) -> Unit,
     ) {
+        val limit = file.size.takeIf { it > 0 } ?: retention.budgetBytes
         var received = 0L
         val reached =
             stream.stream(message, file) { piece ->
                 received += piece.size
-                if (file.size > 0 && received > file.size) throw TransferFailed()
+                if (received > limit) throw TransferFailed()
                 append(piece)
                 progress(received)
             }

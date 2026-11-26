@@ -1,5 +1,7 @@
 package com.otusfoss.mail.core.messages.domain
 
+import com.otusfoss.mail.core.mailbox.MailboxRole
+
 /**
  * Folders [added] to and [removed] from every email of a conversation, which the list shows as
  * [row]. [before] holds each email's mailboxes by Email id. JMAP keeps an email only while it is
@@ -42,3 +44,42 @@ fun MailMessage.withMailboxes(mailboxes: Map<String, Set<String>>): MailMessage 
                 thread.copy(members = members)
             },
     )
+
+/**
+ * The folders a move to [shortcut] (or a regular folder when null) takes this row out of. Trash
+ * and Spam leave every folder of the row. Archive leaves the listed folders outside Sent, Drafts,
+ * Scheduled, Trash, and Spam, plus [inboxId] when the row is in it. Other moves leave those same
+ * listed folders, or only the shown bin folder when the row is shown in Trash or Spam. Falls back
+ * to the shown folder when none else applies.
+ */
+fun MailMessage.leavingFolders(
+    shortcut: MailboxRole?,
+    inboxId: String? = null,
+    roleOf: (String) -> MailboxRole? = { null },
+): Set<String> {
+    val shown = setOf(location.mailboxId) - ""
+    val folderIds = location.mailboxIds
+    val shownRole = location.mailboxRole ?: roleOf(location.mailboxId)
+    return when (shortcut) {
+        MailboxRole.Trash, MailboxRole.Junk -> shown + folderIds
+        MailboxRole.Archive -> filingFolders(shown, roleOf) + setOfNotNull(inboxId?.takeIf { it in folderIds })
+        else -> if (shownRole?.isBin == true) shown else filingFolders(shown, roleOf)
+    }
+}
+
+private fun MailMessage.filingFolders(
+    shown: Set<String>,
+    roleOf: (String) -> MailboxRole?,
+): Set<String> {
+    val listed =
+        conversation
+            ?.members
+            ?.filter { member ->
+                val role = member.mailboxRole ?: roleOf(member.mailboxId)
+                role?.isBin != true && role?.holdsOwnMail != true
+            }?.map { it.mailboxId }
+            ?.filter { it.isNotEmpty() }
+            ?.toSet()
+            .orEmpty()
+    return listed.ifEmpty { shown }
+}

@@ -19,6 +19,7 @@ import com.otusfoss.core.designsystem.resources.Res
 import com.otusfoss.core.designsystem.resources.symbol_hide_image
 import com.otusfoss.core.designsystem.resources.symbol_image
 import com.otusfoss.core.designsystem.shared.controls.elements.UiAction
+import com.otusfoss.core.designsystem.shared.feedback.components.ToastMessage
 import com.otusfoss.core.designsystem.shared.pages.elements.holdsSpace
 import com.otusfoss.core.designsystem.shared.pages.elements.turnDim
 import com.otusfoss.core.designsystem.shared.pages.elements.turnSeam
@@ -31,6 +32,7 @@ import com.otusfoss.mail.core.messages.domain.MessageContent
 import com.otusfoss.mail.core.messages.domain.MessageFolder
 import com.otusfoss.mail.core.messages.domain.RemoteImages
 import com.otusfoss.mail.core.messages.domain.inJunk
+import com.otusfoss.mail.core.messages.domain.isVerified
 import com.otusfoss.mail.core.messages.domain.orderedFolders
 import com.otusfoss.mail.core.messages.domain.showsRemoteImages
 import com.otusfoss.mail.core.messages.presentation.fullLabel
@@ -62,7 +64,14 @@ internal class ReadPageLook(
         val people = known ?: if (setting == RemoteImages.Known) return null else emptySet()
         val boxes = page.location.mailboxIds + page.location.mailboxId + row.location.mailboxId - ""
         val inSpam = inJunk(boxes, folders) || boxes.any { it !in folders }
-        return showsRemoteImages(setting, page.sender.address, people, read.privacy.allowed(), inSpam)
+        return showsRemoteImages(
+            setting,
+            page.sender.address,
+            page.sender.isVerified,
+            people,
+            read.privacy.allowed(),
+            inSpam,
+        )
     }
 
     private fun hasRemote(body: PageBody): Boolean = (body as? PageBody.Loaded)?.content?.html?.remoteContent == true
@@ -72,31 +81,44 @@ internal class ReadPageLook(
         body: PageBody,
     ): PageImages {
         val load = allowed(page) == true || state.bodies.imagesShown(page)
-        val onShow = { state.bodies.showImages(page) }.takeIf { !load && hasRemote(body) && allowed(page) != null }
-        return PageImages(load, onShow)
+        val onPlaceholder = { askToShow(page) }.takeIf { !load && hasRemote(body) }
+        return PageImages(load, onPlaceholder)
     }
 
     /**
+     * Asks in a toast whether to show [page]'s images, since a placeholder sits inside the message,
+     * whose own styles can stretch it unseen over the text. The app draws the toast above the page,
+     * so its Show is the user's choice. Another tap replaces the toast instead of adding one.
+     */
+    private fun askToShow(page: MailMessage) =
+        read.effects.toasts.show(
+            ToastMessage("Images blocked", UiAction("Show") { state.bodies.showImages(page) }, group = ImagesPrompt),
+        )
+
+    /**
      * Whether [page]'s sender is not allowed to show remote images, so the ⋯ menu offers to always
-     * show them, also after the user showed them this time.
+     * show them, also after the user showed them this time. Not for a sender the server did not
+     * confirm, since allowing that address would not load its images.
      */
     fun blocked(
         page: MailMessage,
         body: PageBody,
-    ): Boolean = hasRemote(body) && allowed(page) == false
+    ): Boolean = hasRemote(body) && allowed(page) == false && page.sender.isVerified
 
     /**
      * The banner above [page]'s text, below the sender details: images blocked with Show, or shown
-     * this time with Hide and Always for its sender; nothing once they are allowed. Zen mode hides
-     * it but keeps its space, so the text does not move and reload, and a tap on an image's
-     * placeholder still shows them.
+     * this time with Hide, and Always for a confirmed sender; nothing once they are allowed. It
+     * shows while the rule that may allow them is still loading too, when they are blocked all the
+     * same, so the text below it does not move and reload once the rule answers. Zen mode hides it
+     * but keeps its space, so the text does not move and reload; there a tap on an image's
+     * placeholder asks in a toast, whose Show loads them.
      */
     @Composable
     fun Banner(
         page: MailMessage,
         body: PageBody,
     ) {
-        if (!hasRemote(body) || allowed(page) != false) return
+        if (!hasRemote(body) || allowed(page) == true) return
         val bodies = state.bodies
         Dismissible(page, Modifier.holdsSpace(read.display.zen())) {
             if (!bodies.imagesShown(page)) {
@@ -110,9 +132,10 @@ internal class ReadPageLook(
                 ImageBanner(
                     Res.drawable.symbol_image,
                     "Images shown",
-                    listOf(
+                    listOfNotNull(
                         UiAction("Hide") { bodies.hideImages(page) },
-                        UiAction("Always") { read.privacy.allowSender(page.sender.address) },
+                        UiAction("Always") { read.privacy.allowSender(page.sender.address) }
+                            .takeIf { page.sender.isVerified },
                     ),
                 )
             }
@@ -121,7 +144,7 @@ internal class ReadPageLook(
 
     /**
      * [banner], which swipes away like a toast, in either state; the images stay as they are, and
-     * their placeholders still show them. Once gone, its space stays, so the text the page leaves
+     * a tap on their placeholders still asks to show them. Once gone, its space stays, so the text the page leaves
      * room for does not move and reload.
      */
     @Composable
@@ -141,9 +164,10 @@ internal class ReadPageLook(
 
     /**
      * Whether the page at [index] leaves its quoted text out: unless the user shows quotes, a page
-     * with older pages in its conversation does, since a swipe shows them.
+     * with older pages in its conversation does, since a swipe shows them. Until the pages load,
+     * the row's count says whether there are older ones, so the page's HTML is not loaded twice.
      */
-    fun hidesQuote(index: Int): Boolean = !read.display.showQuotes() && index < state.pages.lastIndex
+    fun hidesQuote(index: Int): Boolean = !read.display.showQuotes() && index < state.messageCount(row) - 1
 
     /** [page]'s full record, with every folder it is in, the one shown included. */
     @Composable
@@ -199,10 +223,15 @@ private fun MailMessage.shows(address: String): Boolean =
     (listOf(sender) + to + cc).any { it.address.equals(address, ignoreCase = true) }
 
 /**
- * Whether a page's remote images [load]; [onShow] loads them on a placeholder tap, null while
- * they load or the page has none.
+ * Whether a page's remote images [load]; [onPlaceholder] runs on a placeholder tap and asks to
+ * load them, null while they load or the page has none. The placeholders show from the start,
+ * also while the rule that may allow the images is still loading, so a page whose images stay
+ * blocked loads once.
  */
 internal class PageImages(
     val load: Boolean,
-    val onShow: (() -> Unit)?,
+    val onPlaceholder: (() -> Unit)?,
 )
+
+/** The group of the toast that asks to show images, so repeated taps keep one toast. */
+private object ImagesPrompt

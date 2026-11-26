@@ -50,4 +50,11 @@ class SortConditionsTest {
         assertNull(subjectKeyword("Re: this is just for you"))
         assertNull(subjectKeyword("A1B2 2026"))
     }
+
+    @Test
+    fun anUnusableAddressOffersNoSenderDomainOrRecipientRule() {
+        val conditions = sortConditions("ada@corp\\u{200E}.example.com", "me\\u{007F}@home.example", "Invoice due")
+
+        assertEquals(listOf(SortBy.Subject), conditions.map { it.kind })
+    }
 }

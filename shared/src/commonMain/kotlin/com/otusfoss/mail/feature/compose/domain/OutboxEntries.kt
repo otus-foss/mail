@@ -39,22 +39,40 @@ internal class OutboxEntries(
         withContext(io) { saved.update { it + OutboxStore.ENTRIES.entry(entries) } }
     }
 
+    suspend fun find(id: String): OutboxEntry? = all().firstOrNull { it.id == id }
+
+    suspend fun add(entry: OutboxEntry) = save(all() + entry)
+
     suspend fun replace(entry: OutboxEntry) = save(all().map { if (it.id == entry.id) entry else it })
+
+    suspend fun remove(id: String) = removeIf { it.id == id }
 
     suspend fun removeIf(predicate: (OutboxEntry) -> Boolean) = save(all().filterNot(predicate))
 
-    /** Keeps [entry] with [problem]. The failed send's caller tells the user, so it is not offered again. */
+    /** Keeps [entry] with [problem], for the user. */
     suspend fun fail(
         entry: OutboxEntry,
         problem: OutboxProblem,
-    ) {
-        replace(entry.copy(problem = problem))
-        offered = offered + entry.id
+    ) = replace(entry.copy(problem = problem))
+
+    /**
+     * [result] of a step on message [id] whose caller shows its failure. A message that failure
+     * left for the user counts as offered, since that caller tells them.
+     */
+    suspend fun <T> shown(
+        id: String,
+        result: Result<T>,
+    ): Result<T> {
+        if (result.isFailure && find(id)?.problem != null) offered = offered + id
+        return result
     }
 
-    /** The messages that need the user and were not offered before in this process, now offered. */
+    /**
+     * The messages that need the user and were not offered before in this process, now offered. One
+     * that may have gone waits for its lookup first.
+     */
     suspend fun unoffered(): List<OutboxEntry> {
-        val found = all().filter { it.problem != null && it.id !in offered }
+        val found = all().filter { it.problem != null && !it.mayHaveGone && it.id !in offered }
         offered = offered + found.map { it.id }
         return found
     }

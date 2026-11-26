@@ -43,7 +43,9 @@ Tapping a row opens the message as a page over the list (`MessageScreen`). The h
 chevron and system Back close the page. `MessageBody` shows the sender, the body, a note when only
 its start was loaded, and the attachment names, and stays clear of the bar. The text body shows at
 once. When the message has an HTML body, it replaces the text in the shared `HtmlView`, which
-scrolls on its own. Remote images stay hidden until the user taps **Show images**, and a tapped
+scrolls on its own. Remote images stay hidden until the user taps **Show** on the banner above the
+message. A tap on a blocked image's placeholder only asks, with an "Images blocked" toast whose
+**Show** loads them, since the placeholder sits inside the message's own HTML. A tapped
 link opens in the browser or mail app. While the page is open, accessibility services skip the list under it.
 
 The bar shows the **Open message** layout. **More actions** opens a menu in sections: what acts on

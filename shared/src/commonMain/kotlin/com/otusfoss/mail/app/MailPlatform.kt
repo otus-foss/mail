@@ -1,6 +1,7 @@
 package com.otusfoss.mail.app
 
 import com.otusfoss.mail.core.messages.domain.DevicePrivacy
+import com.otusfoss.mail.core.messages.domain.NetworkCost
 import com.otusfoss.mail.feature.notifications.domain.InstantPush
 import com.otusfoss.mail.feature.notifications.domain.MailAlerts
 import kotlin.time.Instant
@@ -12,7 +13,8 @@ import kotlin.time.Instant
  * [instantPush] delivers pushes through the selected service; null where the platform has none.
  * [categoriesOn] reads whether the user has Inbox categories on, from the settings the process
  * keeps, so lists sort before any screen shows; see docs/categories.md. [alerts] are the device's
- * new-mail alerts, which go with their account; null where the platform posts none.
+ * new-mail alerts, which go with their account; null where the platform posts none. [network] is
+ * what the device says its connection costs, which holds downloads ahead of need back.
  */
 class MailPlatform(
     internal val nightly: NightlyUpdates = NightlyUpdates(),
@@ -21,4 +23,5 @@ class MailPlatform(
     internal val instantPush: InstantPush? = null,
     internal val categoriesOn: () -> Boolean = { false },
     internal val alerts: MailAlerts? = null,
+    internal val network: NetworkCost = NetworkCost.Free,
 )

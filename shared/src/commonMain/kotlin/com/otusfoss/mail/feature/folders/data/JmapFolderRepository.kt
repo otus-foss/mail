@@ -8,6 +8,7 @@ import com.otusfoss.core.jmap.SetMethod
 import com.otusfoss.core.jmap.jmapDecoding
 import com.otusfoss.core.jmap.login.JmapLogin
 import com.otusfoss.core.jmap.login.LoginStore
+import com.otusfoss.mail.core.cache.CacheStorageException
 import com.otusfoss.mail.core.mail.MAILBOX_PROPERTIES
 import com.otusfoss.mail.core.mail.MailAccount
 import com.otusfoss.mail.core.mail.MailCapability
@@ -36,10 +37,16 @@ import kotlinx.serialization.json.JsonPrimitive
  * and fail alone. Each login also loads the mailboxes other users share with it, from every session
  * account with mail and `isPersonal: false` (RFC 8620, section 2); a shared account that fails is
  * left out. A change shows once the folders load again, which reads it as a `Mailbox` change.
+ *
+ * A rename, a move, or a new order of the login's own folders that the server cannot be reached
+ * for waits in [waiting], shows in the kept folders at once, and counts as made. The waiting
+ * changes go first, in order, before the next load or change. Creating and deleting a folder still
+ * need the server. A login that cannot load shows the folders the device keeps.
  */
 class JmapFolderRepository(
     private val connections: JmapConnections,
     private val mailboxes: Mailboxes,
+    private val waiting: WaitingFolderChanges = WaitingFolderChanges(connections, mailboxes),
 ) : FolderRepository {
     override suspend fun accounts(): List<AccountFolders> =
         coroutineScope { folderStorage { connections.savedLogins() }.map { async { load(it) } }.awaitAll() }
@@ -52,6 +59,7 @@ class JmapFolderRepository(
     private suspend fun load(login: JmapLogin): AccountFolders =
         try {
             val account = connections.mailAccount(login)
+            waiting.send(account)
             coroutineScope {
                 val shared = account.sharedAccountIds().map { async { account.loadShared(it) } }
                 AccountFolders(
@@ -64,7 +72,14 @@ class JmapFolderRepository(
                 )
             }
         } catch (error: JmapException) {
-            AccountFolders(login.id, login.name, failure = error.toFolderFailure())
+            AccountFolders(login.id, login.name, keptFolders(login.id), failure = error.toFolderFailure())
+        }
+
+    private suspend fun keptFolders(loginId: String): List<MailFolder> =
+        try {
+            mailboxes.cached(loginId)
+        } catch (expected: CacheStorageException) {
+            emptyList()
         }
 
     override suspend fun create(
@@ -112,10 +127,14 @@ class JmapFolderRepository(
     private suspend fun update(
         folder: MailFolder,
         patches: Map<String, Map<String, JsonElement>>,
-    ): FolderOutcome =
-        change(folder.accountId, folder.sharedIn, folder.id) {
-            SetMethod(MailboxType, it, update = patches.mapValues { (_, patch) -> JsonObject(patch) })
-        }
+    ): FolderOutcome {
+        val update = patches.mapValues { (_, patch) -> JsonObject(patch) }
+        val outcome =
+            change(folder.accountId, folder.sharedIn, folder.id) { SetMethod(MailboxType, it, update = update) }
+        if (folder.sharedIn != null || outcome != UNREACHABLE) return outcome
+        waiting.keep(folder.accountId, update)
+        return FolderOutcome.Done(folder.id)
+    }
 
     /**
      * Sends one `Mailbox/set` to [jmapAccountId], or to the login's own mail account when it is
@@ -131,6 +150,8 @@ class JmapFolderRepository(
             val account =
                 folderStorage { connections.mailAccount(loginId) }
                     ?: return FolderOutcome.Failed(FolderFailure.NotFound)
+            // Earlier changes that wait go first, so the server sees them in the order they were made.
+            if (jmapAccountId == null) waiting.send(account)
             val result = account.connection.call(method(jmapAccountId ?: account.id))
             val error = result.firstError
             when {
@@ -144,6 +165,7 @@ class JmapFolderRepository(
 
     private companion object {
         const val CREATION_ID = "folder"
+        val UNREACHABLE = FolderOutcome.Failed(FolderFailure.Mail(MailFailure.Unreachable))
     }
 }
 

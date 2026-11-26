@@ -85,7 +85,7 @@ class AndroidPushRegistration(
         if (changed) stop(login.id, distributor)
         val needsRetry = retry && (status == null || status == PushStatus.Off || login.id in problems.read())
         if (!changed && login.id in saved && !needsRetry) return
-        UnifiedPush.register(context, login.id, "Otus Mail: ${login.name}", vapid = key, keyManager = keyManager)
+        UnifiedPush.register(context, login.id, PUSH_APP_LABEL, vapid = key, keyManager = keyManager)
         keys.write(keys.read() + (login.id to key.orEmpty()))
         connected(login.id)
     }
@@ -115,5 +115,8 @@ class AndroidPushRegistration(
 
     private companion object {
         val VAPID_KEY = Regex("^[A-Za-z0-9_-]{87}$")
+
+        /** The push app lists registrations by this label; it names no account, so the push app never learns one. */
+        const val PUSH_APP_LABEL = "Otus Mail"
     }
 }

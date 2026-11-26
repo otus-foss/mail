@@ -7,8 +7,10 @@ import com.otusfoss.mail.core.mail.isSeen
 import com.otusfoss.mail.core.mail.received
 import com.otusfoss.mail.core.mailbox.MailFolder
 import com.otusfoss.mail.core.mailbox.MailboxRole
+import com.otusfoss.mail.core.messages.domain.displayAddress
 import com.otusfoss.mail.core.messages.domain.displayLine
 import com.otusfoss.mail.core.messages.domain.displayText
+import com.otusfoss.mail.core.messages.domain.shownName
 import com.otusfoss.mail.feature.notifications.domain.NewMail
 import kotlin.time.Clock
 
@@ -32,10 +34,10 @@ internal fun EmailObject.toNewMail(account: MailAccount): NewMail {
         accountName = account.login.name,
         emailId = id,
         sender =
-            listOfNotNull(from?.name, from?.email)
-                .map { it.displayLine() }
-                .firstOrNull { it.isNotBlank() }
-                .orEmpty(),
+            shownName(
+                from?.name.orEmpty().displayLine(),
+                from?.email.orEmpty().displayAddress(),
+            ),
         subject = subject.orEmpty().displayLine(),
         preview = preview.displayText(),
         // One malformed date must not stop every later check.

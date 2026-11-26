@@ -7,7 +7,7 @@ import kotlin.test.assertEquals
 
 class ContactWriteFailuresTest {
     @Test
-    fun noConnectionOrSignInWaits() {
+    fun noConnectionSignInOrBusyServerWaits() {
         val offline =
             listOf(
                 JmapException.Unreachable(IllegalStateException("timeout")),
@@ -15,6 +15,8 @@ class ContactWriteFailuresTest {
                 JmapException.CredentialsUnavailable("ada"),
                 JmapException.RequestFailed(status = 429, type = null),
                 JmapException.RequestFailed(status = 503, type = null),
+                JmapException.RequestFailed(400, "urn:ietf:params:jmap:error:limit", "maxConcurrentRequests"),
+                JmapException.NotJmap("a captive portal's page"),
             )
         assertEquals(List(offline.size) { ContactWriteFailure.Offline }, offline.map { it.writeFailure() })
     }
@@ -30,6 +32,5 @@ class ContactWriteFailuresTest {
     @Test
     fun anAnswerThatSaysNothingClearIsFailing() {
         assertEquals(ContactWriteFailure.Failing, JmapException.RequestFailed(status = 500, type = null).writeFailure())
-        assertEquals(ContactWriteFailure.Failing, JmapException.NotJmap("no methodResponses").writeFailure())
     }
 }

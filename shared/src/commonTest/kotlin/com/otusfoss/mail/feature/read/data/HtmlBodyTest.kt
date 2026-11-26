@@ -10,6 +10,8 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
+import kotlin.time.Duration.Companion.seconds
+import kotlin.time.measureTime
 
 class HtmlBodyTest {
     private fun html(vararg parts: Pair<String?, EmailBodyValue?>): MessageHtml? =
@@ -71,6 +73,19 @@ class HtmlBodyTest {
         // Each `<use` was searched to the end of the body again, which takes minutes for a large one.
         listOf("<use ", "<image href=").forEach {
             assertFalse(html("text/html" to EmailBodyValue(it.repeat(100_000)))!!.remoteContent, it)
+        }
+    }
+
+    @Test
+    fun longRunsOfSpacesAreReadInOnePass() {
+        // Reading each run once takes milliseconds; trying every split of it would take minutes.
+        listOf("<img src=", "<p style=\"background:url(", "<style>@import ").forEach { start ->
+            assertTrue(
+                measureTime {
+                    assertFalse(html("text/html" to EmailBodyValue(start + " ".repeat(200_000)))!!.remoteContent, start)
+                } < 5.seconds,
+                start,
+            )
         }
     }
 

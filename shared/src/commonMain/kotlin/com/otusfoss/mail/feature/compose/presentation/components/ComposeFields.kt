@@ -92,7 +92,7 @@ private fun SuggestedRecipient(
 ) {
     PersonPickRow(
         person.shownName,
-        person.address.takeIf { person.name.isNotBlank() },
+        person.address.takeIf { person.shownName != it },
         PickMark(false, style = PickStyle.Card),
         onSelect,
     ) { PersonAvatar(person.chipAvatar, AvatarTokens.menuSize) }

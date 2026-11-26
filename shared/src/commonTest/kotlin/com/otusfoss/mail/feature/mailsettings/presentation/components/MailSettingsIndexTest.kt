@@ -63,9 +63,14 @@ class MailSettingsIndexTest {
     }
 
     @Test
-    fun bothQuickViewsAreFoundOnTheirOwnPages() {
+    fun theQuickViewIsFoundOnTheFilterPanelPage() {
         val paths = index().search("quick view").map { it.page?.path }
-        assertEquals(listOf(listOf("Mail behavior", "Filter panel"), listOf("Mail behavior")), paths)
+        assertEquals(listOf(listOf("Mail behavior", "Filter panel")), paths)
+    }
+
+    @Test
+    fun downloadingMailAheadIsFoundUnderMailBehavior() {
+        assertEquals(listOf("Mail behavior"), index().path("Download mail ahead"))
     }
 
     @Test

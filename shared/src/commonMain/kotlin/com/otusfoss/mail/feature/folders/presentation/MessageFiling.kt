@@ -10,6 +10,7 @@ import com.otusfoss.mail.core.messages.domain.FolderKind
 import com.otusfoss.mail.core.messages.domain.MailMessage
 import com.otusfoss.mail.core.messages.domain.MessageFlag
 import com.otusfoss.mail.core.messages.domain.RowFolder
+import com.otusfoss.mail.core.messages.domain.leavingFolders
 import com.otusfoss.mail.core.messages.presentation.EditedList
 import com.otusfoss.mail.core.messages.presentation.MailEdits
 import com.otusfoss.mail.core.messages.presentation.MoveTarget
@@ -80,6 +81,7 @@ internal class MessageFiling(
                     own = ownNode != null,
                     path = paths[node.folder.id],
                     color = colors.colorOf(node.folder),
+                    accountId = account.accountId,
                 )
             }
     }
@@ -143,21 +145,13 @@ internal class MessageFiling(
         edits.move(feed, message, target, leaving(message, target.shortcut))
     }
 
-    /**
-     * The folders a move takes the message out of: the one it is shown in, the inbox too when it
-     * is archived, and every folder when it is trashed or marked spam, so it leaves Read later as well.
-     */
     private fun leaving(
         message: MailMessage,
         shortcut: MailboxRole?,
     ): Set<String> {
-        val shown = setOf(message.location.mailboxId)
-        val folderIds = message.location.mailboxIds
-        val inbox = folders.account(message.location.accountId)?.inbox?.id
-        return when (shortcut) {
-            MailboxRole.Trash, MailboxRole.Junk -> shown + folderIds
-            MailboxRole.Archive -> shown + setOfNotNull(inbox?.takeIf { it in folderIds })
-            else -> shown
+        val account = folders.account(message.location.accountId)
+        return message.leavingFolders(shortcut, account?.inbox?.id) { folderId ->
+            folders.folder(message.location.accountId, folderId)?.role
         }
     }
 }

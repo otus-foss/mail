@@ -2,7 +2,8 @@ package com.otusfoss.mail.core.messages.domain
 
 /**
  * The new message a `mailto:` [link] asks for (RFC 6068): the addresses before `?` and in `to`
- * fields go to To, and `cc`, `bcc`, `subject`, and `body` fields fill in the rest. Field names
+ * fields go to To, and `cc`, `bcc`, `subject`, and `body` fields fill in the rest. Addresses lose
+ * any display name, and the subject becomes one line. Field names
  * ignore case, and values are percent-decoded as UTF-8; `+` stays a plus sign. Repeated address
  * fields add up, while the first `subject` and `body` count. Other fields, such as `from` or
  * `in-reply-to`, are left out, as section 6 advises for headers a link should not set. Null when
@@ -19,10 +20,10 @@ fun mailtoRequest(link: String): ComposeRequest.New? {
             .filter { it.isNotEmpty() }
             .map(::mailtoField)
     return ComposeRequest.New(
-        to = parseRecipients(target.substringBefore('?').percentDecoded()) + fields.recipients(TO),
+        to = linkRecipients(target.substringBefore('?').percentDecoded()) + fields.recipients(TO),
         cc = fields.recipients(CC),
         bcc = fields.recipients(BCC),
-        subject = fields.firstValue(SUBJECT).orEmpty(),
+        subject = fields.firstValue(SUBJECT).orEmpty().displayLine(),
         body = fields.firstValue(BODY)?.withPlainLineBreaks().orEmpty(),
     )
 }
@@ -39,8 +40,10 @@ private fun mailtoField(text: String): MailtoField =
 private fun List<MailtoField>.decodedValues(name: String): List<String> =
     filter { it.name.equals(name, ignoreCase = true) }.map { it.value.percentDecoded() }
 
-private fun List<MailtoField>.recipients(name: String): List<MailSender> =
-    decodedValues(name).flatMap(::parseRecipients)
+private fun List<MailtoField>.recipients(name: String): List<MailSender> = decodedValues(name).flatMap(::linkRecipients)
+
+/** A link's recipients without their display names, since the page that wrote the link chose them. */
+private fun linkRecipients(text: String): List<MailSender> = parseRecipients(text).map { it.copy(name = "") }
 
 private fun List<MailtoField>.firstValue(name: String): String? = decodedValues(name).firstOrNull()
 

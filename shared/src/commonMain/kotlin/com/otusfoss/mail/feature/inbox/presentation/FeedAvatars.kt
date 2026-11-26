@@ -8,6 +8,7 @@ import com.otusfoss.core.avatar.avatarEmailKey
 import com.otusfoss.core.avatar.generatedAvatar
 import com.otusfoss.mail.core.messages.domain.MailMessage
 import com.otusfoss.mail.core.messages.domain.MailSender
+import com.otusfoss.mail.core.messages.domain.isUsableAddress
 import com.otusfoss.mail.core.messages.presentation.avatar
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
@@ -46,8 +47,10 @@ internal class FeedAvatars(
             val sender = message.sender
             val key = sender.key()
             if (key !in restored) {
-                val cached = avatars.cached(sender.avatarRequest(), options)
-                restored[key] = keepIdenticalImage(cached, previous[key])
+                restored[key] =
+                    sender
+                        .avatarRequest()
+                        ?.let { keepIdenticalImage(avatars.cached(it, options), previous[key]) }
             }
             val avatar = restored[key]?.copy(fallback = generatedAvatar(sender.name, sender.address))
             val location = message.location.copy(accountAvatar = accounts[message.location.accountId])
@@ -111,8 +114,9 @@ internal class FeedAvatars(
                 .map { it.sender }
                 .distinctBy { it.key() }
                 .forEach { sender ->
+                    val request = sender.avatarRequest() ?: return@forEach
                     launch {
-                        val resolved = service.resolve(sender.avatarRequest(), options)
+                        val resolved = service.resolve(request, options)
                         if (!isCurrent()) return@launch
                         val avatar = keepIdenticalImage(resolved, sender.avatar) ?: resolved
                         edit { message -> message.withSenderAvatar(sender, avatar) }
@@ -152,7 +156,9 @@ private data class SenderKey(
 
 private fun MailSender.key() = SenderKey(accountKey, avatarEmailKey(address), brandDomain)
 
-private fun MailSender.avatarRequest() = AvatarRequest(accountKey, address, name, brandDomain)
+/** Null for an address that is not usable, so it never loads another person's photo or website icon. */
+private fun MailSender.avatarRequest() =
+    AvatarRequest(accountKey, address, name, brandDomain).takeIf { address.isUsableAddress() }
 
 /** Disk restoration may allocate new bytes. Keep a displayed image's identity when its content matches. */
 private fun keepIdenticalImage(

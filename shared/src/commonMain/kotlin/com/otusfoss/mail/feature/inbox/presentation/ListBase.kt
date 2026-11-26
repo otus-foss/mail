@@ -3,7 +3,6 @@ package com.otusfoss.mail.feature.inbox.presentation
 import com.otusfoss.mail.core.categories.domain.InboxCategories
 import com.otusfoss.mail.core.mailbox.MailboxRole
 import com.otusfoss.mail.core.messages.domain.MailScope
-import com.otusfoss.mail.core.messages.domain.MailboxScope
 import com.otusfoss.mail.core.messages.domain.QuickFacet
 import com.otusfoss.mail.core.settings.domain.InboxContents
 import com.otusfoss.mail.core.settings.domain.InboxPill
@@ -15,10 +14,10 @@ import com.otusfoss.mail.feature.inbox.domain.InboxSearch
 import com.otusfoss.mail.feature.inbox.domain.ListKind
 
 /**
- * What a list page calls itself, by [title] and when it is empty by [emptyTitle], what its search
- * starts from and can widen to, its row of [pills], the filters it opens with, the [kind] of list
- * that decides which filters it offers, and the [categories] that sort its mail into pills, null on
- * a page that shows none.
+ * What a list page calls itself, by [title], [searchPrompt], and when it is empty by [emptyTitle],
+ * what its search starts from and can widen to, its row of [pills], the filters it opens with, the
+ * [kind] of list that decides which filters it offers, and the [categories] that sort its mail into
+ * pills, null on a page that shows none.
  */
 data class ListBase(
     val title: String,
@@ -29,15 +28,14 @@ data class ListBase(
     val startingFilters: InboxFilters = InboxFilters(),
     val kind: ListKind = ListKind.Folder,
     val categories: InboxCategories? = null,
+    val searchPrompt: String = "Search $title",
 ) {
     companion object {
         /**
-         * The Inbox, holding what the user chose in the Inbox settings, [contents]. Only it filters
-         * by folder, as a folder's page already shows one, and sorts into [categories] while they
-         * are on.
+         * The Inbox. Search starts across all non-bin mail and prompts "Search mail". Categories
+         * sort its mail while on.
          */
         fun inbox(
-            contents: InboxContents,
             pills: InboxPills,
             mailboxSearch: MailboxSearch,
             categories: InboxCategories,
@@ -45,11 +43,12 @@ data class ListBase(
             ListBase(
                 title = MailboxRole.Inbox.title,
                 emptyTitle = "Your inbox is empty",
-                defaultSearch = InboxSearch(mailboxes = contents.mailboxScopes().toSet()),
+                defaultSearch = InboxSearch(mailboxes = emptySet()),
                 mailboxSearch = mailboxSearch,
                 pills = pills,
                 kind = ListKind.Inbox,
                 categories = categories.takeIf { it.enabled },
+                searchPrompt = "Search mail",
             )
 
         /**
@@ -99,10 +98,3 @@ fun InboxContents.mailScope(): MailScope =
     } else {
         MailScope.Roles(roles, ownFolders)
     }
-
-/**
- * The names the page's messages are filed under, which its default search shows. Own folders have
- * the user's names, so with them on the search starts from every mailbox the page loaded.
- */
-private fun InboxContents.mailboxScopes(): List<MailboxScope> =
-    if (ownFolders) emptyList() else roles.map { MailboxScope(null, it.title, it) }

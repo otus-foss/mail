@@ -9,6 +9,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import com.otusfoss.core.designsystem.mail.launch.components.MailLaunch
+import com.otusfoss.core.designsystem.mail.read.elements.HtmlViewWarmUp
 import com.otusfoss.core.designsystem.theme.brand.AppIconStyle
 import com.otusfoss.mail.feature.inbox.presentation.InboxFeedState
 import kotlinx.coroutines.flow.dropWhile
@@ -18,6 +19,7 @@ import kotlinx.coroutines.flow.first
  * Covers the app with the launch animation, once per launch, until the inbox shows mail: the
  * device's copy, which comes before the server answers, or the first load's result. When Mail
  * opens on another page, not the [inbox], the inbox does not load, so the animation plays once.
+ * Once it has played, the web engine starts ahead of the first opened message.
  */
 @Composable
 fun LaunchCover(
@@ -33,5 +35,10 @@ fun LaunchCover(
             .first { (loading, shown) -> shown || !loading }
         inboxLoaded = true
     }
-    if (launching) MailLaunch(style, loading = inbox && !inboxLoaded, onFinished = { launching = false })
+    if (launching) {
+        MailLaunch(style, loading = inbox && !inboxLoaded, onFinished = { launching = false })
+    } else {
+        // Only once the app is on screen and drawn; a process started for an alert never gets here.
+        HtmlViewWarmUp()
+    }
 }

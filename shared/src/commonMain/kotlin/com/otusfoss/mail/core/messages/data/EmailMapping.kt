@@ -14,6 +14,7 @@ import com.otusfoss.mail.core.messages.domain.MailLocation
 import com.otusfoss.mail.core.messages.domain.MailMessage
 import com.otusfoss.mail.core.messages.domain.MailSender
 import com.otusfoss.mail.core.messages.domain.ReceivedAt
+import com.otusfoss.mail.core.messages.domain.displayAddress
 import com.otusfoss.mail.core.messages.domain.displayLine
 import com.otusfoss.mail.core.messages.domain.displayText
 import kotlinx.datetime.TimeZone
@@ -22,8 +23,9 @@ import kotlin.time.Instant
 
 /**
  * Maps one Email listed at [place], whose mailboxes it fills in. Ids are prefixed with the account
- * so accounts cannot collide. Server text loses hidden characters here, so no screen can show a
- * spoofed sender or subject. The body is the server's preview until the message opens and its
+ * so accounts cannot collide. Names, subjects, and bodies lose hidden characters here, so no screen
+ * shows reordered or invisible text. Addresses keep every character ([displayAddress]), so one
+ * address never reads as another. The body is the server's preview until the message opens and its
  * body loads.
  */
 internal fun EmailObject.toMessage(
@@ -74,9 +76,12 @@ internal fun receivedAt(
 internal val EmailBodyPart.isHtml: Boolean
     get() = type.equals(HTML_TYPE, ignoreCase = true)
 
-/** A blank display name shows the address instead. Both lose hidden characters. */
+/**
+ * A blank display name shows the address instead. The name loses hidden characters, and the
+ * address shows them as escapes ([displayAddress]).
+ */
 internal fun EmailAddress?.toSender(accountId: String): MailSender {
-    val address = this?.email.orEmpty().displayLine()
+    val address = this?.email.orEmpty().displayAddress()
     return MailSender(this?.name?.displayLine()?.ifBlank { null } ?: address, address, accountId)
 }
 

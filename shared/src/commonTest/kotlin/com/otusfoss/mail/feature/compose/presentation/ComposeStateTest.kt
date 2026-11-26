@@ -1,8 +1,11 @@
 package com.otusfoss.mail.feature.compose.presentation
 
 import com.otusfoss.mail.core.mail.MailFailure
+import com.otusfoss.mail.core.messages.data.DeviceDrafts
+import com.otusfoss.mail.core.messages.domain.AttachmentBlob
 import com.otusfoss.mail.core.messages.domain.ComposeRequest
 import com.otusfoss.mail.core.messages.domain.Draft
+import com.otusfoss.mail.core.messages.domain.DraftAttachment
 import com.otusfoss.mail.core.messages.domain.DraftFailure
 import com.otusfoss.mail.core.messages.domain.DraftRepository
 import com.otusfoss.mail.core.messages.domain.MailSender
@@ -232,6 +235,27 @@ class ComposeStateTest {
             runCurrent()
             assertFalse(state.signatureOn)
             assertTrue(state.signature.isEmpty)
+        }
+
+    @Test
+    fun savingOfflineWithAnUnuploadedFileTellsTheUserItIsNotSaved() =
+        runTest {
+            val server = FakeDrafts().apply { failure = DraftFailure.Mail(MailFailure.Unreachable) }
+            val state = state(DeviceDrafts(server, store = null))
+            val file = DraftAttachment("f1", "plan.pdf", "application/pdf", 3)
+            state.edit { it.copy(body = "See attached", attachments = listOf(file)) }
+            advanceTimeBy(DELAY + 1)
+            assertEquals(
+                "You're offline. The draft is kept on this device. Files attached offline aren't saved with it.",
+                state.notice,
+            )
+
+            state.edit { it.copy(attachments = listOf(file.copy(blob = AttachmentBlob("a1", "b1")))) }
+            advanceTimeBy(DELAY + 1)
+            assertEquals(
+                "You're offline. The draft is kept on this device and saves to Drafts when you're back online.",
+                state.notice,
+            )
         }
 
     /** One identity in each account, each signed with its account's name. */

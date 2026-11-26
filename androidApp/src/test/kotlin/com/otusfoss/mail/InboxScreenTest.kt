@@ -63,18 +63,18 @@ class InboxScreenTest {
         // The launch animation covers the inbox and would take the first tap.
         compose.waitForIdle()
         compose.mainClock.autoAdvance = false
-        compose.onNodeWithContentDescription("Search Inbox").performClick()
+        compose.onNodeWithContentDescription("Search mail").performClick()
         compose.mainClock.advanceTimeBy(96)
         compose.searchField().assertExists()
         compose.runOnUiThread { compose.activity.onBackPressedDispatcher.onBackPressed() }
         compose.mainClock.advanceTimeBy(48)
-        compose.onNodeWithContentDescription("Search Inbox").performSemanticsAction(SemanticsActions.OnClick) { it() }
+        compose.onNodeWithContentDescription("Search mail").performSemanticsAction(SemanticsActions.OnClick) { it() }
         compose.mainClock.advanceTimeBy(320)
         compose.searchField().assertIsFocused()
         compose.onNodeWithContentDescription("Back to inbox").performClick()
         compose.mainClock.advanceTimeBy(320)
         compose.searchField().assertDoesNotExist()
-        compose.onNodeWithContentDescription("Search Inbox").assertIsDisplayed()
+        compose.onNodeWithContentDescription("Search mail").assertIsDisplayed()
         compose.mainClock.autoAdvance = true
     }
 
@@ -98,7 +98,7 @@ class InboxScreenTest {
         compose.onNodeWithText("Clear search and filters").performClick()
         compose.onNodeWithText("Weekend plans").assertIsDisplayed()
         compose.runOnUiThread { compose.activity.onBackPressedDispatcher.onBackPressed() }
-        compose.onNodeWithContentDescription("Search Inbox").assertIsDisplayed()
+        compose.onNodeWithContentDescription("Search mail").assertIsDisplayed()
     }
 
     @Test

@@ -34,6 +34,7 @@ import com.otusfoss.core.designsystem.theme.tokens.layout.PageTokens
 import com.otusfoss.core.designsystem.theme.tokens.overlays.SheetTokens
 import com.otusfoss.core.designsystem.theme.tokens.people.AvatarTokens
 import com.otusfoss.mail.core.messages.domain.MailSender
+import com.otusfoss.mail.core.messages.domain.shownName
 import com.otusfoss.mail.core.messages.presentation.components.firstName
 import com.otusfoss.mail.feature.contacts.domain.CardKey
 import com.otusfoss.mail.feature.contacts.domain.ContactAddress
@@ -67,7 +68,7 @@ internal fun PersonContactSheet(
     var page by remember { mutableStateOf(SheetPage.Overview) }
     val activity = rememberPersonActivity(mail)
     val shared = activity?.history?.shared.orEmpty()
-    val name = person.name.ifBlank { person.address }
+    val name = shownName(person.name, person.address)
     val back = { page = SheetPage.Overview }
     val add = { card: ContactCard ->
         state.addAddress(card, person.address)

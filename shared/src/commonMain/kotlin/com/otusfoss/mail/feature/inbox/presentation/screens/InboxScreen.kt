@@ -4,7 +4,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material.ProvideTextStyle
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -25,7 +24,6 @@ import com.otusfoss.mail.core.messages.domain.MailMessage
 import com.otusfoss.mail.core.messages.presentation.MessageActions
 import com.otusfoss.mail.feature.inbox.domain.InboxFilters
 import com.otusfoss.mail.feature.inbox.domain.InboxSearch
-import com.otusfoss.mail.feature.inbox.domain.scopeToLoad
 import com.otusfoss.mail.feature.inbox.presentation.InboxContext
 import com.otusfoss.mail.feature.inbox.presentation.InboxFilterState
 import com.otusfoss.mail.feature.inbox.presentation.InboxState
@@ -51,6 +49,7 @@ import com.otusfoss.mail.feature.inbox.presentation.components.rememberFilterSel
 import com.otusfoss.mail.feature.inbox.presentation.components.rememberHeaderActions
 import com.otusfoss.mail.feature.inbox.presentation.components.rememberInboxRows
 import com.otusfoss.mail.feature.inbox.presentation.components.rememberUnreadCount
+import com.otusfoss.mail.feature.inbox.presentation.components.shownPage
 import com.otusfoss.mail.feature.inbox.presentation.listFrame
 
 @Composable
@@ -68,10 +67,11 @@ fun InboxScreen(
     val filters = context.filters ?: remember { InboxFilterState() }
     val sorted = rememberCategoryView(context, state, messages, status, filters)
     val unreadCount = rememberUnreadCount(sorted.listed, status.loading)
-    val activeFilters = rememberActiveFilters(filters, context.filterOptions, messages, dateFormatter)
+    // A search offers the folder picker, so the active filters read the shown page's options.
+    val page = shownPage(state, context, filters).sortedInto(sorted)
+    val activeFilters = rememberActiveFilters(filters, page.filterOptions, messages, dateFormatter)
     var panelHeight by remember { mutableStateOf(0.dp) }
     val density = LocalDensity.current
-    val page = shownPage(state, context).sortedInto(sorted)
     val headerActions = rememberHeaderActions(state, page, filters, messages, rows, onOpenNavigation, dateFormatter)
     val selecting = rows.panelSelection(sorted.listed.messages)
     ProvideTextStyle(panelTextStyle()) {
@@ -221,32 +221,6 @@ private fun InboxEmptyContent(
     )
 }
 
-/**
- * [context] showing the selected folder pill and named after it. This loads the pill's folders, or
- * the mailboxes a search picks beyond the page's own, and the page's own again once neither applies.
- * The pill is dropped once the user takes it off the row.
- */
-@Composable
-private fun shownPage(
-    state: InboxState,
-    context: InboxContext,
-): InboxContext {
-    val pills = context.pills
-    val shown = pills.option(state.folderPill)
-    val scope = shown?.scopeFor(state.search.accounts) ?: state.search.scopeToLoad(context.defaultSearch)
-    LaunchedEffect(scope) { context.mailboxSearch.load(scope) }
-    LaunchedEffect(pills.pills, pills.folders, pills.foldersLoaded) {
-        val unavailable = pills.foldersLoaded && shown == null
-        val selected = state.folderPill
-        if (selected != null && (selected !in pills.pills || unavailable)) {
-            state.showFolder(null)
-        }
-    }
-    return shown?.let {
-        context.copy(title = it.label, emptyTitle = "${it.label} is empty", folderPill = it)
-    } ?: context
-}
-
 /** This page naming an empty category pill, and paging for the pill's share of the mail. */
 private fun InboxContext.sortedInto(view: CategoryView): InboxContext =
     copy(emptyTitle = view.tabs?.emptyTitle ?: emptyTitle, onLoadMore = view.onLoadMore)
@@ -255,4 +229,4 @@ private fun InboxContext.sortedInto(view: CategoryView): InboxContext =
 private fun InboxState.mixesFolders(
     filters: InboxFilterState,
     page: InboxContext,
-): Boolean = searching || filters.applied.folders.isNotEmpty() || page.folderPill != null
+): Boolean = searching || filters.applied.hasFolderOverride || page.folderPill != null

@@ -3,6 +3,7 @@ package com.otusfoss.mail.feature.inbox.data
 import com.otusfoss.core.jmap.login.InMemoryLoginStore
 import com.otusfoss.core.jmap.login.JmapLogin
 import com.otusfoss.mail.core.cache.InMemoryMailCache
+import com.otusfoss.mail.core.mailbox.MailboxRole
 import com.otusfoss.mail.core.messages.data.EmailChangeQueue
 import com.otusfoss.mail.core.messages.data.merged
 import com.otusfoss.mail.core.messages.data.receivedAt
@@ -171,7 +172,16 @@ class OfflineChangesTest {
     fun anOfflineNotSpamWaitsLikeAMove() =
         runTest {
             val inbox = message()
-            val spam = inbox.copy(location = inbox.location.copy(mailboxId = "r", mailboxIds = setOf("r")))
+            val spam =
+                inbox.copy(
+                    location =
+                        inbox.location.copy(
+                            mailboxId = "r",
+                            mailboxIds = setOf("r"),
+                            mailboxRole = MailboxRole.Junk,
+                        ),
+                    conversation = null,
+                )
             server.down = true
             assertTrue(writer.notSpam(spam, inboxId = "a", keywords = false), "It counts as made")
             assertTrue(changes.saved.isNotEmpty(), "It waits on the device")
@@ -184,9 +194,15 @@ class OfflineChangesTest {
     @Test
     fun aDeletedEmailLeavesTheDevicesCopy() =
         runTest {
-            val message = message()
-            assertEquals(setOf(message.id), writer.delete(listOf(message)))
-            assertTrue(source.cached(MailScope.Inbox, MailQuery()).messages.isEmpty(), "The list no longer shows it")
+            val trash = MailScope.Role(MailboxRole.Trash)
+            val trashServer = FakeMailServer(MAILBOXES, email("m1", 10, box = "t"))
+            val trashCache = InMemoryMailCache()
+            val trashQueue = EmailChangeQueue(trashServer.connections(store), trashCache, changes.typed)
+            val trashSource = trashServer.source(store, trashCache, queue = trashQueue)
+            val trashWriter = emailWriter(trashServer.connections(store), trashCache, trashQueue)
+            val message = trashSource.messages(trash, MailQuery()).messages.single()
+            assertEquals(setOf(message.id), trashWriter.delete(listOf(message)))
+            assertTrue(trashSource.cached(trash, MailQuery()).messages.isEmpty(), "The list no longer shows it")
         }
 
     @Test
@@ -211,11 +227,13 @@ class OfflineChangesTest {
         val GRACE_LOGIN = JmapLogin("grace", ADA_LOGIN.sessionUrl, "grace@example.org", "Grace")
 
         const val INBOX = """{"id": "a", "name": "Inbox", "role": "inbox"}, {"id": "r", "name": "Receipts"}"""
+        const val MAILBOXES = """$INBOX, {"id": "t", "name": "Trash", "role": "trash"}"""
 
         fun email(
             id: String,
             hour: Int,
-        ) = """{"id": "$id", "threadId": "t-$id", "subject": "Hi", "mailboxIds": {"a": true}, "keywords": {},
+            box: String = "a",
+        ) = """{"id": "$id", "threadId": "t-$id", "subject": "Hi", "mailboxIds": {"$box": true}, "keywords": {},
             "receivedAt": "2026-10-18T${hour.toString().padStart(2, '0')}:00:00Z"}"""
     }
 }

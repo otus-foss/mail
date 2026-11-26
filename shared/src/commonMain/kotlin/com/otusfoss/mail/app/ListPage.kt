@@ -3,14 +3,18 @@ package com.otusfoss.mail.app
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import com.otusfoss.core.dateformat.DateFormatter
+import com.otusfoss.mail.core.messages.domain.MailLocation
 import com.otusfoss.mail.core.messages.domain.inScope
 import com.otusfoss.mail.feature.folders.presentation.components.rememberFolderNudge
+import com.otusfoss.mail.feature.inbox.domain.ListKind
 import com.otusfoss.mail.feature.inbox.presentation.InboxContext
 import com.otusfoss.mail.feature.inbox.presentation.InboxFeedState
 import com.otusfoss.mail.feature.inbox.presentation.ListBase
+import com.otusfoss.mail.feature.inbox.presentation.MailboxSearch
 import com.otusfoss.mail.feature.inbox.presentation.OpenRequest
 import com.otusfoss.mail.feature.inbox.presentation.QuickJumpTarget
 import com.otusfoss.mail.feature.inbox.presentation.QuickViewContext
+import com.otusfoss.mail.feature.inbox.presentation.defaultFolderRefs
 import com.otusfoss.mail.feature.inbox.presentation.screens.InboxScreen
 import com.otusfoss.mail.feature.inbox.presentation.status
 import com.otusfoss.mail.feature.sidebar.presentation.sidebarMailboxes
@@ -35,6 +39,8 @@ internal fun ListPage(
     val filters = rememberPageFilters(states, page, base, feed)
     val rowLook = rememberRowLook(states)
     val messageActions = rememberMessageActions(states, feed, navigation)
+    val mailboxSearch = mailboxSearch(states, base, feed)
+    val searchFolders = rememberSearchFolders(base, feed, states)
     InboxScreen(
         labeled,
         dateFormatter,
@@ -50,7 +56,7 @@ internal fun ListPage(
                 defaultSearch = base.defaultSearch,
                 title = base.title,
                 emptyTitle = base.emptyTitle,
-                mailboxSearch = base.mailboxSearch,
+                mailboxSearch = mailboxSearch,
                 pills = base.pills,
                 onCompose = { navigation.go(MailPage.Compose(it, parent = page)) },
                 onOpenDraft = rememberDraftOpener(states, navigation, page),
@@ -80,9 +86,40 @@ internal fun ListPage(
                 quick = rememberQuickView(states, page, navigation),
                 opening = opening,
                 categories = base.categories,
+                searchPrompt = base.searchPrompt,
+                searchFolders = searchFolders,
             ),
         messageActions = messageActions,
     )
+}
+
+/** The page's own mailbox search, or one that loads a folder page's search into its [feed]. */
+private fun mailboxSearch(
+    states: MailStates,
+    base: ListBase,
+    feed: InboxFeedState,
+): MailboxSearch =
+    if (base.mailboxSearch.accounts != null) {
+        base.mailboxSearch
+    } else {
+        MailboxSearch(
+            states.list.searchMailboxes(),
+            states.accounts.accounts.map { MailLocation("", it.name, it.id, it.username) },
+            feed::show,
+        )
+    }
+
+@Composable
+private fun rememberSearchFolders(
+    base: ListBase,
+    feed: InboxFeedState,
+    states: MailStates,
+) = remember(base.kind, feed.defaultScope, states.folders.all.accounts, states.mailScope) {
+    if (base.kind == ListKind.Inbox) {
+        emptySet()
+    } else {
+        feed.defaultScope.defaultFolderRefs(states.folders.all.accounts, states.mailScope)
+    }
 }
 
 /**

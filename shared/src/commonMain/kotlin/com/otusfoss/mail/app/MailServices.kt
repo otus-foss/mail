@@ -29,6 +29,7 @@ import com.otusfoss.mail.core.messages.data.JmapEmailByIdWriter
 import com.otusfoss.mail.core.messages.data.JmapEmailWriter
 import com.otusfoss.mail.core.messages.data.JmapPersonHistories
 import com.otusfoss.mail.core.messages.data.ServerSites
+import com.otusfoss.mail.core.messages.data.WaitingMail
 import com.otusfoss.mail.core.messages.domain.AddressBook
 import com.otusfoss.mail.core.messages.domain.DevicePrivacy
 import com.otusfoss.mail.core.messages.domain.DraftRepository
@@ -36,6 +37,7 @@ import com.otusfoss.mail.core.messages.domain.DraftSender
 import com.otusfoss.mail.core.messages.domain.EmailByIdWriter
 import com.otusfoss.mail.core.messages.domain.EmailWriter
 import com.otusfoss.mail.core.messages.domain.MessageBodies
+import com.otusfoss.mail.core.messages.domain.NetworkCost
 import com.otusfoss.mail.core.messages.domain.PeopleSearch
 import com.otusfoss.mail.core.messages.domain.PersonHistories
 import com.otusfoss.mail.core.messages.domain.ScheduledSends
@@ -48,6 +50,7 @@ import com.otusfoss.mail.feature.compose.data.JmapSignatures
 import com.otusfoss.mail.feature.compose.data.JmapThreadHistory
 import com.otusfoss.mail.feature.compose.domain.AttachmentUploads
 import com.otusfoss.mail.feature.compose.domain.MailOutbox
+import com.otusfoss.mail.feature.compose.domain.OutboxServer
 import com.otusfoss.mail.feature.compose.domain.SavedDrafts
 import com.otusfoss.mail.feature.compose.domain.SignatureRepository
 import com.otusfoss.mail.feature.compose.domain.ThreadHistory
@@ -58,6 +61,7 @@ import com.otusfoss.mail.feature.contacts.domain.MailTraceSource
 import com.otusfoss.mail.feature.folders.data.JmapFolderRepository
 import com.otusfoss.mail.feature.folders.data.JmapFolderRuleRepository
 import com.otusfoss.mail.feature.folders.data.JmapSenderHistory
+import com.otusfoss.mail.feature.folders.data.WaitingFolderChanges
 import com.otusfoss.mail.feature.folders.domain.FolderRepository
 import com.otusfoss.mail.feature.folders.domain.FolderRuleRepository
 import com.otusfoss.mail.feature.folders.domain.ReadLaterFolders
@@ -117,6 +121,7 @@ class MailServices(
 
     /** The screen and keyboard protections this platform can apply. */
     internal val devicePrivacy: DevicePrivacy get() = host.devicePrivacy
+    internal val network: NetworkCost get() = host.network
 
     /** Pushed changes, which reload the open inbox and folders while Mail is in [visibility]. */
     val serverChanges = ServerChanges()
@@ -155,7 +160,7 @@ class MailServices(
             connections,
             logins,
             MailAccountService,
-            listOf(device, changes, accountCache, retention, avatars),
+            listOf(device, changes, compose.drafts, folderChanges, accountCache, retention, avatars),
         )
     }
 
@@ -165,19 +170,21 @@ class MailServices(
     }
 
     /** Every change to emails, also for a notification's buttons, which act without opening Mail. */
-    val writer: EmailWriter by lazy { JmapEmailWriter(connections, cache, changes) }
+    val writer: EmailWriter by lazy { JmapEmailWriter(connections, cache, changes, compose.drafts.list) }
 
     /** The changes a notification's buttons make to one email. */
     val byIdWriter: EmailByIdWriter by lazy { JmapEmailByIdWriter(connections, changes, mailboxes) }
     internal val mail: MailSource by lazy {
         CategorizedMailSource(
-            JmapMailSource(connections, cache, changes, mailboxes, sites = serverSites),
+            JmapMailSource(connections, cache, WaitingMail(changes, compose.drafts), mailboxes, sites = serverSites),
             cache,
             CategoryRecords(::senderCategories, host.categoriesOn),
         )
     }
     internal val bodies: MessageBodies by lazy { JmapMessageBodies(connections, cache) }
-    private val compose by lazy { JmapComposeMail(connections, mailboxes, changes) }
+    private val compose by lazy {
+        JmapComposeMail(connections, mailboxes, changes, cache, stores.waiting.drafts, host.wakeOutbox)
+    }
     internal val drafts: DraftRepository get() = compose.drafts
     internal val sender: DraftSender get() = compose.sender
     internal val scheduled: ScheduledSends get() = compose.sender
@@ -186,7 +193,13 @@ class MailServices(
     /** Messages handed over for sending, kept until the server has them; see docs/compose.md. */
     internal val outbox by lazy {
         val checker = JmapSendChecker(connections, changes)
-        MailOutbox(stores.waiting.outbox, compose.sender, checker, host.wakeOutbox, io = io)
+        MailOutbox(
+            stores.waiting.outbox,
+            OutboxServer(compose.sender, checker, compose.sender),
+            host.wakeOutbox,
+            io = io,
+            drafts = compose.drafts.outbox,
+        )
     }
     internal val signatures: SignatureRepository by lazy { JmapSignatures(connections) }
     internal val threads: ThreadHistory by lazy { JmapThreadHistory(connections) }
@@ -198,7 +211,10 @@ class MailServices(
     internal val mailTraces: MailTraceSource by lazy { JmapMailTraces(connections, mailboxes) }
     internal val people: PeopleSearch by lazy { JmapPeopleSearch(connections, addressBook) }
     internal val senderHistory: SenderHistory by lazy { JmapSenderHistory(connections) }
-    internal val folders: FolderRepository by lazy { JmapFolderRepository(connections, mailboxes) }
+    private val folderChanges by lazy {
+        WaitingFolderChanges(connections, mailboxes, stores.folders.waiting, host.wakeOutbox, io)
+    }
+    internal val folders: FolderRepository by lazy { JmapFolderRepository(connections, mailboxes, folderChanges) }
     internal val conversationMessages: ConversationMessages by lazy {
         JmapConversationMessages(connections, cache, mailboxes, sites = serverSites)
     }
@@ -231,7 +247,9 @@ class MailServices(
 
     /** Lives as long as the process, so its lock also covers the loads of a recreated activity. */
     internal val readLater by lazy { ReadLaterFolders(folders, stores.folders.readLater) }
-    internal val rules: FolderRuleRepository by lazy { JmapFolderRuleRepository(connections, mailboxes, changes) }
+    internal val rules: FolderRuleRepository by lazy {
+        JmapFolderRuleRepository(connections, mailboxes, changes, cache)
+    }
 
     /** Finds mail that arrived since the last check, for notifications, on a platform that keeps their state. */
     fun newMail(): NewMailChecker = JmapNewMailChecker(connections, mailboxes, checkNotNull(stores.alerts.mailStates))
@@ -252,14 +270,17 @@ class MailServices(
         )
 
     /**
-     * Sends the messages the outbox kept that are due, and the marks and moves that wait, as from
-     * a background job after the app closed. True when some still wait for the network, so the job
-     * should run again.
+     * Sends the messages the outbox kept that are due, the marks and moves that wait, the drafts
+     * written offline, and the folder changes that wait, as from a background job after the app
+     * closed. True when some still
+     * wait for the network, so the job should run again.
      */
     suspend fun resumeOutbox(): Boolean {
         outbox.resume()
         val changesWait = changes.flushAll()
-        return outbox.waiting() || changesWait
+        val draftsWait = compose.drafts.flush()
+        val foldersWait = folderChanges.flush()
+        return outbox.waiting() || changesWait || draftsWait || foldersWait
     }
 
     /** The server signing key used to register directly with Google (RFC 9749). */
