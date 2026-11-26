@@ -45,3 +45,10 @@ internal class FakeDraftServer : DraftRepository {
         return Result.failure(DraftException(DraftFailure.Mail(failed)))
     }
 }
+
+/** Hands [draft] to the sender as the outbox does: it names the server's copy, then stops waiting. */
+internal suspend fun DeviceDrafts.handOver(draft: Draft): Draft {
+    val sending = outbox.forSending(draft)
+    outbox.handedOver(draft)
+    return sending
+}

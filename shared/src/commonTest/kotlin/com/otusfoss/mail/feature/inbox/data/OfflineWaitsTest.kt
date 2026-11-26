@@ -7,6 +7,7 @@ import com.otusfoss.mail.core.cache.InMemoryMailCache
 import com.otusfoss.mail.core.mail.MailFailure
 import com.otusfoss.mail.core.mailbox.Mailboxes
 import com.otusfoss.mail.core.messages.data.DeviceDrafts
+import com.otusfoss.mail.core.messages.data.handOver
 import com.otusfoss.mail.core.messages.domain.Draft
 import com.otusfoss.mail.core.messages.domain.DraftException
 import com.otusfoss.mail.core.messages.domain.DraftFailure

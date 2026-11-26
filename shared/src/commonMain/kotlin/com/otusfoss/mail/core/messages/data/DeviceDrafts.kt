@@ -6,6 +6,7 @@ import com.otusfoss.mail.core.messages.domain.Draft
 import com.otusfoss.mail.core.messages.domain.DraftException
 import com.otusfoss.mail.core.messages.domain.DraftFailure
 import com.otusfoss.mail.core.messages.domain.DraftRepository
+import com.otusfoss.mail.core.messages.domain.HandedDrafts
 import com.otusfoss.mail.core.messages.domain.SendIdentity
 import com.otusfoss.mail.core.messages.domain.WaitingDraft
 import com.otusfoss.mail.core.messages.domain.WaitingDraftList
@@ -45,6 +46,9 @@ class DeviceDrafts(
     /** The drafts that wait, for the lists that show them and the pages that open them. */
     val list =
         DeviceDraftList(shelf) { loginId, id -> turns.of(loginId).withLock { discard(loginId, id, shelf.all()[id]) } }
+
+    /** Hands waiting drafts to the outbox as they are sent, and takes them back on Undo. */
+    val outbox: HandedDrafts = OutboxDrafts(shelf, turns)
 
     override suspend fun identities(accountId: String): List<SendIdentity> = server.identities(accountId)
 
@@ -86,19 +90,6 @@ class DeviceDrafts(
         accountId: String,
         emailId: String,
     ): Result<Unit> = turns.of(accountId).withLock { discard(accountId, emailId, shelf.all()[emailId]) }
-
-    /**
-     * [draft] as it goes to the sender: with the id of the server's copy it replaces, when it was
-     * saved on the device. It no longer waits here, since the outbox keeps it from now on, but its
-     * device id still names that copy, so a page reopened by Undo replaces it instead of adding one.
-     */
-    suspend fun handOver(draft: Draft): Draft =
-        turns.of(draft.accountId).withLock {
-            val waiting = draft.emailId?.let { shelf.all()[it] }
-            val replaced = shelf.serverCopy(draft.emailId, waiting)
-            if (waiting != null) shelf.arrive(waiting.id, replaced)
-            draft.copy(emailId = replaced)
-        }
 
     /**
      * Sends what waits for [loginId], or for every login, to the server, the oldest first. A draft
