@@ -18,8 +18,6 @@ import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
-import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.dp
 import com.otusfoss.core.dateformat.DateFormatter
 import com.otusfoss.core.designsystem.resources.Res
 import com.otusfoss.core.designsystem.resources.symbol_filter_list
@@ -60,14 +58,14 @@ fun InboxPanel(
     selection: FilterSelection = FilterSelection(),
     look: PanelLook = PanelLook(),
 ) {
-    val selecting = look.selecting
-    if (selecting != null) {
-        SelectionPanel(selecting, look)
-        return
-    }
     // While the panel grows a search room it keeps its pills; the search's own chips come with the results.
     val searchChips = searching && look.expansion == null
     val railShown = searchChips || context.pills.shown.isNotEmpty()
+    val selecting = look.selecting
+    if (selecting != null) {
+        SelectionPanel(selecting, railShown, look.collapse)
+        return
+    }
     val scope = context.scope
     ContextPanel(
         // Without pills, the filter button moves into the header and the list gets the row's space.
@@ -87,7 +85,7 @@ fun InboxPanel(
             )
         },
         chips = { InboxPanelChips(searchChips, search, context, dateFormatter, selection, actions, look) },
-        motion = PanelMotion(look.collapse, look.expansion, expanded = look.expanded),
+        motion = PanelMotion(look.collapse, look.expansion, look.expanded),
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             InboxHeaderField(searching, search, context, actions, look, filterInPill = railShown, Modifier.weight(1f))
@@ -158,17 +156,24 @@ private fun InboxAccountStack(
     AccountStack(header.avatars, "Showing mail from ${header.title}. Change", onOpen, collapse = collapse)
 }
 
-/** The panel while rows are selected: ✕ to stop, the count, and Select all, filling the pills' room. */
+/**
+ * The panel while rows are selected: ✕ to stop and the count. Where the page shows pills
+ * ([railShown]), selection pills take their place, so the panel keeps its shape; otherwise Select
+ * all sits at the header's end.
+ */
 @Composable
 private fun SelectionPanel(
     selecting: PanelSelection,
-    look: PanelLook,
+    railShown: Boolean,
+    collapse: () -> Float,
 ) {
     ContextPanel(
-        placement = ChipPlacement.None,
+        placement = if (railShown) ChipPlacement.Overlapping else ChipPlacement.None,
         navigation = { PanelNavigation("Stop selecting", selecting.onClear, icon = PanelNavigationIcon.Close) },
-        trailingAction = { PanelTextAction("Select all", selecting.onSelectAll) },
-        motion = PanelMotion(look.collapse, minHeight = look.minHeight),
+        // With pills, a trailing action would join the rail as an empty cutout.
+        trailingAction = if (railShown) null else ({ PanelTextAction("Select all", selecting.onSelectAll) }),
+        chips = { if (railShown) SelectionPickChips(selecting.picks) },
+        motion = PanelMotion(collapse),
     ) { PanelTitle("${selecting.count} selected", Modifier.padding(start = PanelTokens.titleStart)) }
 }
 
@@ -221,8 +226,7 @@ private fun searchFieldModifier(
  * [unreadCount] shows on the Unread pill; [filters] are the page's active filters, which lead the
  * pill row and count on the filter button; [categories] are the Inbox's category pills, which lead
  * the row while they are on; [selecting] is set while rows are selected; and [searchFocused] puts
- * the keyboard in the panel's search field. [minHeight] keeps the panel at least that tall, such as
- * to fill the pills' room while rows are selected.
+ * the keyboard in the panel's search field.
  */
 data class PanelLook(
     val collapse: () -> Float = { 0f },
@@ -230,7 +234,6 @@ data class PanelLook(
     val filters: ActiveFilters = ActiveFilters(),
     val categories: CategoryTabs? = null,
     val selecting: PanelSelection? = null,
-    val minHeight: Dp = 0.dp,
     val searchFocused: Boolean = false,
     val expansion: PanelExpansion? = null,
     val expanded: @Composable () -> Unit = {},
@@ -246,9 +249,10 @@ fun PanelLook.grownWith(
     searchFocused: Boolean,
 ): PanelLook = copy(searchFocused = searchFocused, expansion = expansion, expanded = expanded)
 
-/** The selected rows' [count], with what ✕ and Select all do. */
+/** The selected rows' [count], what ✕ and Select all do, and the [picks] that select rows by kind. */
 class PanelSelection(
     val count: Int,
     val onClear: () -> Unit,
     val onSelectAll: () -> Unit,
+    val picks: List<ShownPick>,
 )

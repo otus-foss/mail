@@ -69,9 +69,11 @@ internal fun rememberInboxRows(
     ) { openId = null }
 }
 
-/** The selection the control panel shows while rows are selected, with Select all taking [shown]; null otherwise. */
+/** The selection the control panel shows while rows are selected, picking from [shown]; null otherwise. */
 internal fun InboxRows.panelSelection(shown: List<MailMessage>): PanelSelection? =
-    selected.size.takeIf { it > 0 }?.let { count -> PanelSelection(count, clearSelection) { selectAll(shown) } }
+    selected.size.takeIf { it > 0 }?.let { count ->
+        PanelSelection(count, clearSelection, { selectAll(shown) }, selectionPicks(shown, selected, selectAll))
+    }
 
 /** Whether rows can be selected: everywhere but Scheduled, whose mail only its Read view edits or sends. */
 private fun MessageActions?.selects(): Boolean = this?.cleanup?.listRole?.invoke() != MailboxRole.Scheduled
