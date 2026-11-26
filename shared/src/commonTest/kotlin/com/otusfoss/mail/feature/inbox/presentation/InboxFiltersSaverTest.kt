@@ -1,6 +1,7 @@
 package com.otusfoss.mail.feature.inbox.presentation
 
 import androidx.compose.runtime.saveable.SaverScope
+import com.otusfoss.mail.core.mailbox.MailboxRole
 import com.otusfoss.mail.core.messages.domain.DateFilter
 import com.otusfoss.mail.core.messages.domain.FilterSort
 import com.otusfoss.mail.core.messages.domain.FolderRef
@@ -40,6 +41,7 @@ class InboxFiltersSaverTest {
                 receivedIn = setOf(RecipientField.Bcc),
                 account = "ada",
                 folders = setOf(FolderRef("ada", "f", includeSubfolders = false), FolderRef("bo", "g")),
+                includedBins = setOf(MailboxRole.Junk, MailboxRole.Trash),
                 date = DateFilter.Range(LocalDate(2026, 10, 12), LocalDate(2026, 10, 18)),
                 size = SizeFilter.Over10Mb,
                 sort = FilterSort.OldestFirst,

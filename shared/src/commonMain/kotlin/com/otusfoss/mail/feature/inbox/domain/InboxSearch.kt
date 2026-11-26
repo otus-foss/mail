@@ -16,7 +16,7 @@ data class InboxSearch(
     val senders: Set<String> = emptySet(),
     val dateStart: String? = null,
     val dateEnd: String? = null,
-    val mailboxes: Set<MailboxScope> = setOf(MailboxScope.Inbox),
+    val mailboxes: Set<MailboxScope> = emptySet(),
     val accounts: Set<String> = emptySet(),
     /** Where the terms must match. */
     val field: SearchField = SearchField.Anywhere,
@@ -90,12 +90,12 @@ private fun MailMessage.passes(filters: InboxFilters): Boolean =
 
 /**
  * The mailbox and account scope to load; null while both match [default]'s scope.
- * An empty mailbox choice loads every mailbox of the selected accounts.
+ * An empty mailbox choice loads every non-bin mailbox of the selected accounts.
  */
 fun InboxSearch.scopeToLoad(default: InboxSearch): MailScope? =
     when {
         mailboxes == default.mailboxes && accounts == default.accounts -> null
-        mailboxes.isEmpty() && accounts.isEmpty() -> MailScope.AllMailboxes
+        mailboxes.isEmpty() && accounts.isEmpty() -> MailScope.AllMail
         else -> MailScope.Mailboxes(mailboxes, accounts)
     }
 

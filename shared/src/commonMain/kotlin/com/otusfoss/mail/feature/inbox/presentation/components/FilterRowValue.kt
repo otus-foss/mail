@@ -7,6 +7,7 @@ import com.otusfoss.mail.core.messages.presentation.label
 import com.otusfoss.mail.core.messages.presentation.rangeLabel
 import com.otusfoss.mail.core.settings.presentation.label
 import com.otusfoss.mail.feature.inbox.domain.InboxFilters
+import com.otusfoss.mail.feature.inbox.domain.withDefaultFolders
 import com.otusfoss.mail.feature.inbox.presentation.FilterOptions
 import com.otusfoss.mail.feature.inbox.presentation.FolderLabel
 import com.otusfoss.mail.feature.inbox.presentation.key
@@ -26,19 +27,38 @@ internal fun accountValue(
     draft.account?.let { id -> FilterRowValue(options.account(id)?.name ?: id, set = true) }
         ?: FilterRowValue("All", set = false)
 
-/** "Any", or the first chosen folder and how many others, such as "Clients +4". */
+/**
+ * "Any", the folders a search starts from among [defaultFolders], "All folders" once a search
+ * leaves them, or the chosen folders, such as "Clients +4". Added Spam and Trash follow "Any".
+ */
 internal fun foldersValue(
     draft: InboxFilters,
     options: FilterOptions,
+    defaultFolders: Set<FolderRef> = emptySet(),
 ): FilterRowValue {
-    val first = draft.folders.firstOrNull() ?: return FilterRowValue("Any", set = false)
-    val name = options.folderLabel(first).name
-    val others = draft.folders.size - 1
-    return when (others) {
-        0 -> FilterRowValue(name, set = true)
-        else -> FilterRowValue("$name +$others", set = true, spoken = "$name and $others more")
+    val changed = draft.hasFolderOverride
+    val folders = draft.withDefaultFolders(defaultFolders).folders
+    if (folders.isEmpty()) {
+        val text =
+            when {
+                draft.includedBins.isNotEmpty() -> "Any + ${draft.binNames}"
+                draft.allFolders -> "All folders"
+                else -> "Any"
+            }
+        return FilterRowValue(text, set = changed)
+    }
+    val names = folders.map { options.folderLabel(it).name }
+    val others = folders.size - 1
+    return when {
+        others == 0 -> FilterRowValue(names.first(), set = changed)
+        !changed && names.distinct().size == 1 -> FilterRowValue(names.first(), set = false)
+        else -> FilterRowValue("${names.first()} +$others", set = changed, spoken = "${names.first()} and $others more")
     }
 }
+
+/** The added Spam and Trash, such as "Spam, Trash". */
+internal val InboxFilters.binNames: String
+    get() = includedBins.sortedBy { it.ordinal }.joinToString(", ") { it.title }
 
 /** The preset's name, or a custom range in the user's date format. */
 internal fun dateValue(

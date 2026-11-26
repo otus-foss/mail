@@ -24,6 +24,9 @@ internal fun ContextPanelScope.InboxPanelChips(
     transition(searching) { mode ->
         if (mode) {
             if (shown != null) item(shown.pill) { FolderPillChip(shown, selected = true, actions.onFolder) }
+            look.filters.active.forEach { facet ->
+                item(facet.key) { facet.pill(facet.tap) }
+            }
             InboxFilter.entries.forEach { filter ->
                 item(filter) {
                     SearchFilterChip(filter, search, context, dateFormatter, selection) { actions.onEditSearch() }

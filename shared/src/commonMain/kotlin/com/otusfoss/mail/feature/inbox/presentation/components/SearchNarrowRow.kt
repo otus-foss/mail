@@ -45,10 +45,16 @@ internal fun SearchNarrowRow(room: SearchRoom) {
             picking = filter
         }
     }
+    val badgeCount = room.sources.filters.applied.activeCount
     PillRow(
         Modifier.padding(top = QuickViewTokens.moduleGap),
         trailing = {
-            IconButton("All filters", room.onAllFilters, look = IconButtonLook.Outlined) {
+            IconButton(
+                if (badgeCount == 0) "All filters" else "All filters, $badgeCount active",
+                room.onAllFilters,
+                look = IconButtonLook.Outlined,
+                badgeCount = badgeCount,
+            ) {
                 Symbol(Res.drawable.symbol_filter_list)
             }
         },

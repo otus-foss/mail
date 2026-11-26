@@ -54,10 +54,10 @@ class EmptyAccountPickerTest {
     fun savedAccountsWithNoMailCanBeChosenAndStayNamed() {
         show()
         compose.openSearch()
-        compose.onNodeWithContentDescription("All accounts, Inbox").performScrollTo().performClick()
+        compose.onNodeWithText("All accounts").performScrollTo().performClick()
         compose.pickRow("Empty").performClick()
         compose.onNodeWithText("Done").performClick()
-        compose.onNodeWithContentDescription("Empty account, Inbox").performScrollTo().performClick()
+        compose.onNodeWithContentDescription("Empty account").performScrollTo().performClick()
         compose.pickRow("Empty").assertIsOn()
         compose.onNodeWithText("Done").performClick()
         compose.runOnIdle {

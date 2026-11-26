@@ -87,7 +87,7 @@ class ControlPanelInteractionTest {
 
     /** Collapsed, the filter button sits inside the search pill rather than in the pill row below it. */
     private fun assertCollapsed(expected: Boolean) {
-        val pill = compose.onNodeWithContentDescription("Search Inbox").fetchSemanticsNode().boundsInRoot
+        val pill = compose.onNodeWithContentDescription("Search mail").fetchSemanticsNode().boundsInRoot
         val inPill =
             compose
                 .onAllNodesWithContentDescription("Open filters")

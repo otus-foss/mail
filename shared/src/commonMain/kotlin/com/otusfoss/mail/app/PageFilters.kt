@@ -62,7 +62,9 @@ internal fun rememberPageFilters(
             InboxFilterState(
                 saved,
                 scope,
-                counter = { states.list.filterLookups.count(feed.mailScope, states.mailQuery(it)) },
+                counter = { draft, searchScope ->
+                    states.list.filterLookups.count(searchScope ?: feed.mailScope, states.mailQuery(draft))
+                },
                 onApplied = {
                     pageFilters.keep(page, it)
                     saved = it

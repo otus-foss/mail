@@ -2,6 +2,7 @@ package com.otusfoss.mail.feature.inbox.presentation
 
 import com.otusfoss.mail.core.categories.domain.InboxCategories
 import com.otusfoss.mail.core.messages.domain.ComposeRequest
+import com.otusfoss.mail.core.messages.domain.FolderRef
 import com.otusfoss.mail.core.messages.domain.MailMessage
 import com.otusfoss.mail.core.messages.presentation.ListNudge
 import com.otusfoss.mail.core.messages.presentation.components.MailScopeSwitch
@@ -49,10 +50,11 @@ data class InboxContext(
     val categories: InboxCategories?,
     /** The folder pill the screen shows in place of the page's own mail; none until the user picks one. */
     val folderPill: FolderPillOption? = null,
+    /** The search pill's prompt, such as "Search mail" on Inbox or "Search <folder>" on a folder page. */
+    val searchPrompt: String = "Search $title",
+    /** Folders a search starts scoped to on this page; empty on Inbox to search all non-bin mail. */
+    val searchFolders: Set<FolderRef> = emptySet(),
 ) {
-    val searchPrompt: String
-        get() = "Search $title"
-
     val allowsMailboxSelection: Boolean
         get() = folderPill == null && defaultSearch.mailboxes.isNotEmpty()
 }

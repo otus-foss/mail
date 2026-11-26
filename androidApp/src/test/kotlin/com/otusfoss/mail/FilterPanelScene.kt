@@ -36,7 +36,7 @@ internal fun AndroidComposeTestRule<*, MainActivity>.showFilterPanel(
     runOnUiThread {
         activity.setContent {
             val scope = rememberCoroutineScope()
-            val filters = remember { InboxFilterState(applied, scope, counter = { total }) }
+            val filters = remember { InboxFilterState(applied, scope, counter = { _, _ -> total }) }
             OtusTheme(palette) {
                 CompositionLocalProvider(LocalToday provides PinnedToday) {
                     InboxScreen(

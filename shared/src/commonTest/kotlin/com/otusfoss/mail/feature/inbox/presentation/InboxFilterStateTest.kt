@@ -113,7 +113,7 @@ class InboxFilterStateTest {
             val counted = mutableListOf<InboxFilters>()
             var blocking = true
             val state =
-                InboxFilterState(scope = this, counter = { filters ->
+                InboxFilterState(scope = this, counter = { filters, _ ->
                     counted += filters
                     if (blocking) awaitCancellation()
                     7

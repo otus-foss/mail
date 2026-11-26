@@ -51,7 +51,7 @@ class ControlPanelScreenshotTest {
     @Test
     fun search() {
         compose.showControlInbox()
-        compose.onNodeWithContentDescription("Search Inbox").performClick()
+        compose.onNodeWithContentDescription("Search mail").performClick()
         compose.searchField().performTextInput("launch")
         compose.waitForIdle()
         compose.screenshot("control_panel/search")
