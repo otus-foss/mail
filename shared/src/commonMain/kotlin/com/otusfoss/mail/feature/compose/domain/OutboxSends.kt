@@ -26,13 +26,18 @@ internal class OutboxSends(
     suspend fun deliver(
         entry: OutboxEntry,
         holdUntil: Instant?,
-    ): Result<SentMessage?> {
+    ): Result<SentMessage?> =
         when (if (entry.attempted) earlierTry(entry) else SendCheck.NotSent) {
-            SendCheck.Unreachable -> return sendFailure(SendFailure.Mail(MailFailure.Unreachable))
-            SendCheck.Sent -> return entries.gone(entry)
-            SendCheck.Unconfirmable -> return entries.unconfirmed(entry)
-            SendCheck.NotSent -> Unit
+            SendCheck.Unreachable -> sendFailure(SendFailure.Mail(MailFailure.Unreachable))
+            SendCheck.Sent -> entries.gone(entry)
+            SendCheck.Unconfirmable -> entries.unconfirmed(entry)
+            SendCheck.NotSent -> submit(entry, holdUntil)
         }
+
+    private suspend fun submit(
+        entry: OutboxEntry,
+        holdUntil: Instant?,
+    ): Result<SentMessage?> {
         var trying = entry.copy(attempted = true, problem = null, storedCopy = null)
         entries.replace(trying)
         val scheduled = entry.sendAt?.takeIf { holdsUntil(it, now()) }

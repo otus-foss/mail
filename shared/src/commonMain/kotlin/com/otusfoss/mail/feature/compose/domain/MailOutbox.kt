@@ -44,9 +44,6 @@ class MailOutbox(
     private val sends = OutboxSends(entries, sender, checker, wake, now)
     private val holds = OutboxHolds(entries, scheduled, checker, wake, now)
 
-    // What became of each message a resume took back, for an Undo that asks later in this process.
-    private var takenBack = emptyMap<String, SendCancel>()
-
     /** Keeps [draft] to go at [due], or at [sendAt] when the user chose a time, and returns its id. */
     suspend fun add(
         draft: Draft,
@@ -63,7 +60,9 @@ class MailOutbox(
                 due.toEpochMilliseconds(),
                 sendAt?.toEpochMilliseconds(),
             )
-        keep(entry)
+        lock.withLock { entries.add(entry) }
+        // Later than the app itself sends it, so a background run only takes over from a closed app.
+        wake(due + BACKGROUND_DELAY)
         return id
     }
 
@@ -86,7 +85,8 @@ class MailOutbox(
                 withdrawn = true,
                 storedCopy = StoredCopy(held.emailId, now().toEpochMilliseconds()),
             )
-        keep(entry)
+        lock.withLock { entries.add(entry) }
+        wake(due + BACKGROUND_DELAY)
         return id
     }
 
@@ -97,14 +97,7 @@ class MailOutbox(
      * went, unless a [resume] in this process took it back.
      */
     suspend fun cancel(id: String): SendCancel =
-        lock.withLock {
-            val entry = entries.find(id)
-            when {
-                entry == null -> takenBack[id] ?: SendCancel.Final
-                entry.attempted -> holds.withdraw(entry)
-                else -> unsent(entry)
-            }
-        }
+        lock.withLock { entries.find(id)?.let { holds.withdraw(it) } ?: holds.takenBack(id) ?: SendCancel.Final }
 
     /**
      * Forgets a message the user took back to edit, as from a "Couldn't send" toast, or a discard
@@ -131,7 +124,7 @@ class MailOutbox(
     ): Result<SentMessage?> =
         lock.withLock {
             val entry = entries.find(id)?.takeUnless { it.withdrawn || it.held != null }
-            if (entry == null) Result.success(null) else shown(id, sends.deliver(entry, holdUntil))
+            if (entry == null) Result.success(null) else entries.shown(id, sends.deliver(entry, holdUntil))
         }
 
     /**
@@ -140,7 +133,7 @@ class MailOutbox(
      * with a [OutboxProblem] and its copy, a draft again, to open; as in [send], the caller shows that.
      */
     suspend fun sendNow(id: String): Result<Unit> =
-        lock.withLock { entries.find(id)?.let { shown(id, holds.sendNow(it)) } ?: Result.success(Unit) }
+        lock.withLock { entries.find(id)?.let { entries.shown(id, holds.sendNow(it)) } ?: Result.success(Unit) }
 
     /**
      * Takes the next step of each message that needs no user, as after the app was closed or
@@ -149,7 +142,9 @@ class MailOutbox(
      * may have gone is looked up, so [offers] names only messages the server does not have.
      */
     suspend fun resume() {
-        entries.all().forEach { listed -> lock.withLock { entries.find(listed.id)?.let { step(it) } } }
+        entries.all().forEach { listed ->
+            lock.withLock { entries.find(listed.id)?.let { step(it, it.due <= now(), sends, holds) } }
+        }
     }
 
     /**
@@ -165,42 +160,21 @@ class MailOutbox(
 
     /** Whether a message waits for the server to answer, so a background run should try again. */
     suspend fun waiting(): Boolean = entries.all().any { it.awaitsServer }
+}
 
-    private suspend fun step(entry: OutboxEntry) {
-        val due = entry.due <= now()
-        when {
-            entry.mayHaveGone -> sends.confirm(entry)
-            entry.problem != null -> Unit
-            entry.withdrawn -> if (due) takeBack(entry)
-            entry.held != null -> holds.resume(entry)
-            due -> sends.deliver(entry, holdUntil = null)
-        }
-    }
-
-    /** Saves [entry] and asks for a background run after it is due, which only takes over from a closed app. */
-    private suspend fun keep(entry: OutboxEntry) {
-        lock.withLock { entries.save(entries.all() + entry) }
-        wake(entry.due + BACKGROUND_DELAY)
-    }
-
-    /** [result] of a step whose caller shows its failure to the user. */
-    private suspend fun <T> shown(
-        id: String,
-        result: Result<T>,
-    ): Result<T> {
-        if (result.isFailure) entries.shown(id)
-        return result
-    }
-
-    private suspend fun takeBack(entry: OutboxEntry) {
-        val outcome = holds.withdraw(entry)
-        if (outcome != SendCancel.Waiting) takenBack = takenBack + (entry.id to outcome)
-    }
-
-    /** Forgets [entry], which no try handed to the server, so it will not go. */
-    private suspend fun unsent(entry: OutboxEntry): SendCancel {
-        entries.remove(entry.id)
-        return SendCancel.Stopped
+/** What [entry] needs without the user, [due] once its time has come, done through [sends] and [holds]. */
+private suspend fun step(
+    entry: OutboxEntry,
+    due: Boolean,
+    sends: OutboxSends,
+    holds: OutboxHolds,
+) {
+    when {
+        entry.mayHaveGone -> sends.confirm(entry)
+        entry.problem != null -> Unit
+        entry.withdrawn -> if (due) holds.withdraw(entry)
+        entry.held != null -> holds.resume(entry)
+        due -> sends.deliver(entry, holdUntil = null)
     }
 }
 

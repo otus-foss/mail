@@ -41,6 +41,8 @@ internal class OutboxEntries(
 
     suspend fun find(id: String): OutboxEntry? = all().firstOrNull { it.id == id }
 
+    suspend fun add(entry: OutboxEntry) = save(all() + entry)
+
     suspend fun replace(entry: OutboxEntry) = save(all().map { if (it.id == entry.id) entry else it })
 
     suspend fun remove(id: String) = removeIf { it.id == id }
@@ -53,9 +55,16 @@ internal class OutboxEntries(
         problem: OutboxProblem,
     ) = replace(entry.copy(problem = problem))
 
-    /** Counts message [id] as offered when it waits for the user, since a caller that shows its failure tells them. */
-    suspend fun shown(id: String) {
-        if (find(id)?.problem != null) offered = offered + id
+    /**
+     * [result] of a step on message [id] whose caller shows its failure. A message that failure
+     * left for the user counts as offered, since that caller tells them.
+     */
+    suspend fun <T> shown(
+        id: String,
+        result: Result<T>,
+    ): Result<T> {
+        if (result.isFailure && find(id)?.problem != null) offered = offered + id
+        return result
     }
 
     /**

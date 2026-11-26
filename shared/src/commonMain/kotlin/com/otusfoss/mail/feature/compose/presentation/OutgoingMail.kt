@@ -144,8 +144,8 @@ internal class OutgoingMail(
                 val cancel = sent?.let { UiAction("Undo") { scope.launch { unschedule(outgoing, it) } } }
                 // A message whose time had passed went at once, and nothing is left to undo.
                 val waits = holdsUntil(at.toInstant(TimeZone.currentSystemDefault()), now())
-                val scheduled = ToastMessage(dates().scheduledToast(at, outgoing.scheduledBefore), cancel)
-                toasts.show(if (waits) scheduled else ToastMessage("Sent"))
+                val toast = ToastMessage(dates().scheduledToast(at, outgoing.scheduledBefore), cancel)
+                toasts.show(if (waits) toast else ToastMessage("Sent"))
             },
             onFailure = { error ->
                 val retry = UiAction("Retry") { scope.launch { schedule(outgoing, id, at) } }

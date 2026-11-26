@@ -23,19 +23,39 @@ internal class OutboxHolds(
     private val wake: (Instant) -> Unit,
     private val now: () -> Instant,
 ) {
+    // What became of each message taken back in this process, for an Undo that asks again later.
+    private var outcomes = emptyMap<String, SendCancel>()
+
+    /** What became of message [id], which left the outbox when it was taken back; null when it was not. */
+    fun takenBack(id: String): SendCancel? = outcomes[id]
+
     /**
-     * Keeps [entry] as withdrawn and due at once, then asks the server to stop it. A hold the
-     * server confirmed is canceled, which makes its copy a draft again. A hold whose request got no
-     * answer is looked up, canceled, and its copy destroyed. The message leaves once the server
-     * answered; until then a background run is asked for.
+     * Takes [entry] back. One that no try handed to the server just leaves. Any other is kept as
+     * withdrawn and due at once, and the server is asked to stop it. A hold the server confirmed is
+     * canceled, which makes its copy a draft again. A hold whose request got no answer is looked
+     * up, canceled, and its copy destroyed. The message leaves once the server answered; until then
+     * a background run is asked for.
      */
     suspend fun withdraw(entry: OutboxEntry): SendCancel {
         val dueNow = minOf(entry.dueMillis, now().toEpochMilliseconds())
         val withdrawn = entry.copy(withdrawn = true, sendNow = false, problem = null, dueMillis = dueNow)
-        if (withdrawn != entry) entries.replace(withdrawn)
-        val outcome = if (entry.held != null) cancel(entry.held) else checker.lookUp(withdrawn).asCancel()
-        if (outcome == SendCancel.Waiting) wake(now()) else entries.remove(entry.id)
+        if (entry.attempted && withdrawn != entry) entries.replace(withdrawn)
+        val outcome =
+            when {
+                !entry.attempted -> SendCancel.Stopped
+                entry.held != null -> cancel(entry.held)
+                else -> checker.lookUp(withdrawn).asCancel()
+            }
+        if (outcome == SendCancel.Waiting) wake(now()) else leave(entry, outcome)
         return outcome
+    }
+
+    private suspend fun leave(
+        entry: OutboxEntry,
+        outcome: SendCancel,
+    ) {
+        entries.remove(entry.id)
+        outcomes = outcomes + (entry.id to outcome)
     }
 
     /**
@@ -47,10 +67,15 @@ internal class OutboxHolds(
      */
     suspend fun sendNow(entry: OutboxEntry): Result<Unit> {
         val held = entry.held ?: return entry.problem.asResult()
-        if (!entry.sendNow && entry.due - now() <= SEND_EARLY_MIN) {
-            entries.remove(entry.id)
-            return Result.success(Unit)
-        }
+        val onTime = !entry.sendNow && entry.due - now() <= SEND_EARLY_MIN
+        if (onTime) entries.remove(entry.id)
+        return if (onTime) Result.success(Unit) else resubmit(entry, held)
+    }
+
+    private suspend fun resubmit(
+        entry: OutboxEntry,
+        held: SentMessage,
+    ): Result<Unit> {
         if (!entry.sendNow) entries.replace(entry.copy(sendNow = true))
         val result = failSafe { scheduled.sendNow(held) }
         val failure = (result.exceptionOrNull() as? SendException)?.failure
