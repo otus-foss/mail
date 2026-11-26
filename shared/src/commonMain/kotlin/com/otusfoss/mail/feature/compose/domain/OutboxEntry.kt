@@ -2,6 +2,7 @@ package com.otusfoss.mail.feature.compose.domain
 
 import com.otusfoss.mail.core.messages.domain.AnsweredMessage
 import com.otusfoss.mail.core.messages.domain.Draft
+import com.otusfoss.mail.core.messages.domain.SERVER_SPARE
 import com.otusfoss.mail.core.messages.domain.SentMessage
 import com.otusfoss.mail.core.messages.domain.answered
 import com.otusfoss.mail.core.storage.StoreField
@@ -54,6 +55,16 @@ data class OutboxEntry(
     /** Whether it waits for the server to answer, so a background run should try again. */
     val awaitsServer: Boolean get() = mayHaveGone || (problem == null && attempted && !goesByItself)
 }
+
+/**
+ * Whether a server can still hold a message until [at], a time the user chose. Once that time has
+ * passed, as on a device that was offline over it, or is closer than a request's trip, the hold
+ * would lie in the past, which a server refuses. Such a message goes at once.
+ */
+fun holdsUntil(
+    at: Instant,
+    now: Instant,
+): Boolean = at > now + SERVER_SPARE
 
 /** The Email [emailId] a send stored on the server at [atMillis], before it submitted that copy. */
 @Serializable

@@ -13,6 +13,7 @@ import com.otusfoss.mail.core.messages.domain.SendFailure
 import com.otusfoss.mail.core.messages.domain.SentMessage
 import com.otusfoss.mail.feature.compose.domain.MailOutbox
 import com.otusfoss.mail.feature.compose.domain.OutboxProblem
+import com.otusfoss.mail.feature.compose.domain.holdsUntil
 import com.otusfoss.mail.feature.compose.presentation.components.scheduledToast
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
@@ -141,7 +142,10 @@ internal class OutgoingMail(
                 outgoing.draft.sent()
                 outgoing.filed()
                 val cancel = sent?.let { UiAction("Undo") { scope.launch { unschedule(outgoing, it) } } }
-                toasts.show(ToastMessage(dates().scheduledToast(at, outgoing.scheduledBefore), cancel))
+                // A message whose time had passed went at once, and nothing is left to undo.
+                val waits = holdsUntil(at.toInstant(TimeZone.currentSystemDefault()), now())
+                val scheduled = ToastMessage(dates().scheduledToast(at, outgoing.scheduledBefore), cancel)
+                toasts.show(if (waits) scheduled else ToastMessage("Sent"))
             },
             onFailure = { error ->
                 val retry = UiAction("Retry") { scope.launch { schedule(outgoing, id, at) } }

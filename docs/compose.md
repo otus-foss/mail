@@ -326,6 +326,10 @@ The scheduled copy waits in the Scheduled folder without `$draft`. Undo sets the
 draft fails, Mail reports that the send was canceled but the draft could not be restored. If the
 cancel fails, a sticky "Couldn't cancel" toast offers Retry.
 
+A server refuses a hold in the past. So a message whose time has passed before it reaches the
+server, or is less than 2 seconds ahead, goes at once, and its toast says "Sent". That happens on
+a device that was offline over the time, and when Write stays open past it.
+
 ### Scheduled folder
 
 Mail finds the Scheduled folder by the `scheduled` role only (IANA IMAP Mailbox Name Attributes).

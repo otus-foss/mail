@@ -73,7 +73,7 @@ internal abstract class OutgoingMailFixture {
 
     protected companion object {
         const val HOLD = 5_000L
-        val NOW = Instant.parse("2026-10-30T12:00:00Z")
+        val NOW = Instant.parse("2026-10-16T12:00:00Z")
     }
 }
 

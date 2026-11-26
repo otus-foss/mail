@@ -3,6 +3,7 @@ package com.otusfoss.mail.app
 import com.otusfoss.mail.core.mail.MailFailure
 import com.otusfoss.mail.core.messages.domain.ComposeRequest
 import com.otusfoss.mail.core.messages.domain.SendFailure
+import com.otusfoss.mail.core.messages.domain.SendTime
 import com.otusfoss.mail.core.storage.DeviceStore
 import com.otusfoss.mail.feature.compose.domain.MailOutbox
 import com.otusfoss.mail.feature.compose.domain.OutboxStore
@@ -15,6 +16,7 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
+import kotlinx.datetime.LocalDateTime
 import kotlin.coroutines.EmptyCoroutineContext
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -133,6 +135,17 @@ internal class OfflineUndoTest : OutgoingMailFixture() {
             assertNotNull(offer.action).onClick()
             runCurrent()
             assertNull((opened.single() as ComposeRequest.Resume).draft.emailId, "The copy may be the sent message")
+        }
+
+    @Test
+    fun aMessageScheduledForATimeThatHasPassedGoesAtOnceAndSaysSent() =
+        runTest {
+            outgoing().schedule(message, LocalDateTime(2026, 10, 12, 8, 0))
+            runCurrent()
+            assertEquals(listOf<SendTime>(SendTime.Now), runs, "Write stayed open past the time")
+            val toast = toasts.messages.single()
+            assertEquals("Sent", toast.text)
+            assertNull(toast.action, "Nothing is left to undo")
         }
 
     @Test

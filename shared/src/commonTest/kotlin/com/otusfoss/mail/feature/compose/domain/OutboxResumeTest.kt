@@ -14,6 +14,7 @@ import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
+import kotlin.time.Duration.Companion.hours
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Instant
 
@@ -90,6 +91,24 @@ class OutboxResumeTest {
             restarted.resume()
             assertEquals(OutboxProblem.Refused, restarted.offers().single().problem)
             assertEquals(1, sent.size, "It waits for the user")
+        }
+
+    /** A server refuses a hold in the past, so the message would never go. */
+    @Test
+    fun aScheduledMessageWhoseTimePassedOfflineGoesAtOnce() =
+        runTest {
+            val outbox = outbox()
+            val at = NOW + 10.minutes
+            val id = outbox.add(draft, null, NOW, sendAt = at)
+            failure = SendFailure.Mail(MailFailure.Unreachable)
+            assertTrue(outbox.send(id).isFailure, "Offline when it was scheduled")
+            assertEquals(listOf<SendTime>(SendTime.Scheduled(at)), sent)
+
+            failure = null
+            now = NOW + 1.hours
+            outbox.resume()
+            assertEquals(listOf(SendTime.Scheduled(at), SendTime.Now), sent, "Back online, it goes without a hold")
+            assertTrue(saved().isEmpty())
         }
 
     private companion object {

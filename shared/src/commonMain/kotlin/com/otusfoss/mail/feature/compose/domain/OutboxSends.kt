@@ -35,7 +35,8 @@ internal class OutboxSends(
         }
         var trying = entry.copy(attempted = true, problem = null, storedCopy = null)
         entries.replace(trying)
-        val time = entry.sendAt?.let(SendTime::Scheduled) ?: holdUntil?.let(SendTime::Held) ?: SendTime.Now
+        val scheduled = entry.sendAt?.takeIf { holdsUntil(it, now()) }
+        val time = scheduled?.let(SendTime::Scheduled) ?: holdUntil?.let(SendTime::Held) ?: SendTime.Now
         val result =
             failSafe {
                 sender.send(entry.draft, entry.answered, time) { emailId ->
