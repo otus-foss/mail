@@ -3,6 +3,7 @@ package com.otusfoss.mail.feature.compose.presentation
 import com.otusfoss.mail.core.messages.domain.ComposeRequest
 import com.otusfoss.mail.core.messages.domain.SentMessage
 import com.otusfoss.mail.feature.compose.domain.MailOutbox
+import com.otusfoss.mail.feature.compose.domain.OutboxServer
 import com.otusfoss.mail.feature.compose.domain.SendCheck
 import com.otusfoss.mail.testing.OutgoingMailFixture
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -25,7 +26,7 @@ internal class HeldDiscardTest : OutgoingMailFixture() {
 
     private fun TestScope.discards(): HeldDiscards {
         val now = { NOW + testScheduler.currentTime.milliseconds }
-        val outbox = MailOutbox(null, sender, checker, scheduled, now = now)
+        val outbox = MailOutbox(null, OutboxServer(sender, checker, scheduled), now = now)
         return HeldDiscards(backgroundScope, toasts, scheduled, outbox, now)
     }
 

@@ -41,9 +41,7 @@ class HandedDraftsTest {
     private val outbox =
         MailOutbox(
             DeviceStore(outboxMap, OutboxStore),
-            sender,
-            { _, _, _ -> SendCheck.NotSent },
-            FakeScheduledSends(),
+            OutboxServer(sender, { _, _, _ -> SendCheck.NotSent }, FakeScheduledSends()),
             now = { NOW },
             io = Dispatchers.Unconfined,
             drafts = drafts.outbox,

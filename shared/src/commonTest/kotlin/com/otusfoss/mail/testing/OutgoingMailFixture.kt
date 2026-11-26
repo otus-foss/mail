@@ -11,6 +11,7 @@ import com.otusfoss.mail.core.messages.domain.SendFailure
 import com.otusfoss.mail.core.messages.domain.SendTime
 import com.otusfoss.mail.core.messages.domain.SentMessage
 import com.otusfoss.mail.feature.compose.domain.MailOutbox
+import com.otusfoss.mail.feature.compose.domain.OutboxServer
 import com.otusfoss.mail.feature.compose.domain.SendCheck
 import com.otusfoss.mail.feature.compose.domain.SendChecker
 import com.otusfoss.mail.feature.compose.presentation.Outgoing
@@ -58,7 +59,7 @@ internal abstract class OutgoingMailFixture {
 
     protected fun TestScope.outgoing(): OutgoingMail {
         val now = { NOW + testScheduler.currentTime.milliseconds }
-        val outbox = MailOutbox(null, sender, checker, scheduled, now = now)
+        val outbox = MailOutbox(null, OutboxServer(sender, checker, scheduled), now = now)
         return OutgoingMail(backgroundScope, toasts, scheduled, outbox, { DAY_FIRST }, now) { hold }
     }
 

@@ -4,6 +4,7 @@ import com.otusfoss.mail.core.messages.domain.SendFailure
 import com.otusfoss.mail.core.storage.DeviceStore
 import com.otusfoss.mail.feature.compose.domain.MailOutbox
 import com.otusfoss.mail.feature.compose.domain.OutboxProblem
+import com.otusfoss.mail.feature.compose.domain.OutboxServer
 import com.otusfoss.mail.feature.compose.domain.OutboxStore
 import com.otusfoss.mail.testing.DAY_FIRST
 import com.otusfoss.mail.testing.MemoryMapStore
@@ -22,7 +23,11 @@ internal class OutboxOffersTest : OutgoingMailFixture() {
     private val memory = MemoryMapStore()
 
     private fun outbox() =
-        MailOutbox(DeviceStore(memory, OutboxStore), sender, checker, scheduled, io = EmptyCoroutineContext)
+        MailOutbox(
+            DeviceStore(memory, OutboxStore),
+            OutboxServer(sender, checker, scheduled),
+            io = EmptyCoroutineContext,
+        )
 
     private fun TestScope.start(outbox: MailOutbox) {
         OutgoingMail(backgroundScope, toasts, scheduled, outbox, { DAY_FIRST }) { hold }.resume { opened += it }

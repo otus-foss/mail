@@ -2,9 +2,7 @@ package com.otusfoss.mail.feature.compose.domain
 
 import com.otusfoss.mail.core.messages.domain.AnsweredMessage
 import com.otusfoss.mail.core.messages.domain.Draft
-import com.otusfoss.mail.core.messages.domain.DraftSender
 import com.otusfoss.mail.core.messages.domain.HandedDrafts
-import com.otusfoss.mail.core.messages.domain.ScheduledSends
 import com.otusfoss.mail.core.messages.domain.SendCancel
 import com.otusfoss.mail.core.messages.domain.SentMessage
 import com.otusfoss.mail.core.messages.domain.accountId
@@ -25,8 +23,8 @@ import kotlin.uuid.Uuid
 /**
  * Messages handed over for sending, kept in [store] until their send is final on the server, so a
  * closed app or a dropped connection loses none. Each gets its own Message-ID, so after a send whose
- * answer was lost, [checker] can find out whether it went before it goes again. A message the
- * server holds for Undo stays as well, so Undo and sending it early, both through [scheduled], still
+ * answer was lost, the [server] can tell whether it went before it goes again. A message the
+ * server holds for Undo stays as well, so Undo and sending it early, both through the [server], still
  * happen when the app closes before the server answers. [wake] asks the platform to run [resume]
  * at a time even if the app is closed by then. [store] is read and written on [io]. Without a
  * store, messages last as long as the process.
@@ -35,9 +33,7 @@ import kotlin.uuid.Uuid
  */
 class MailOutbox(
     store: DeviceStore<String, String>?,
-    sender: DraftSender,
-    checker: SendChecker,
-    scheduled: ScheduledSends,
+    server: OutboxServer,
     private val wake: (Instant) -> Unit = {},
     private val now: () -> Instant = { Clock.System.now() },
     io: CoroutineContext = Dispatchers.IO,
@@ -46,8 +42,8 @@ class MailOutbox(
     // One send at a time, so Undo, a retry, and a background run never send the same message twice.
     private val lock = Mutex()
     private val entries = OutboxEntries(store, io)
-    private val sends = OutboxSends(entries, sender, checker, wake, now)
-    private val holds = OutboxHolds(entries, scheduled, checker, wake, now)
+    private val sends = OutboxSends(entries, server.sender, server.checker, wake, now)
+    private val holds = OutboxHolds(entries, server.scheduled, server.checker, wake, now)
 
     /** Keeps [draft] to go at [due], or at [sendAt] when the user chose a time, and returns its id. */
     suspend fun add(

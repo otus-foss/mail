@@ -44,9 +44,7 @@ class OutboxResumeTest {
     private fun outbox() =
         MailOutbox(
             DeviceStore(store, OutboxStore),
-            sender.storingCopy("e9"),
-            checker,
-            FakeScheduledSends(),
+            OutboxServer(sender.storingCopy("e9"), checker, FakeScheduledSends()),
             now = { now },
         )
 

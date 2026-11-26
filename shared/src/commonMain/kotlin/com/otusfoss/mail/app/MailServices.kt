@@ -48,6 +48,7 @@ import com.otusfoss.mail.feature.compose.data.JmapSignatures
 import com.otusfoss.mail.feature.compose.data.JmapThreadHistory
 import com.otusfoss.mail.feature.compose.domain.AttachmentUploads
 import com.otusfoss.mail.feature.compose.domain.MailOutbox
+import com.otusfoss.mail.feature.compose.domain.OutboxServer
 import com.otusfoss.mail.feature.compose.domain.SavedDrafts
 import com.otusfoss.mail.feature.compose.domain.SignatureRepository
 import com.otusfoss.mail.feature.compose.domain.ThreadHistory
@@ -192,9 +193,7 @@ class MailServices(
         val checker = JmapSendChecker(connections, changes)
         MailOutbox(
             stores.waiting.outbox,
-            compose.sender,
-            checker,
-            compose.sender,
+            OutboxServer(compose.sender, checker, compose.sender),
             host.wakeOutbox,
             io = io,
             drafts = compose.drafts.outbox,

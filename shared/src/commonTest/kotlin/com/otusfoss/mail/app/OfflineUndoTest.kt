@@ -6,6 +6,7 @@ import com.otusfoss.mail.core.messages.domain.SendFailure
 import com.otusfoss.mail.core.messages.domain.SendTime
 import com.otusfoss.mail.core.storage.DeviceStore
 import com.otusfoss.mail.feature.compose.domain.MailOutbox
+import com.otusfoss.mail.feature.compose.domain.OutboxServer
 import com.otusfoss.mail.feature.compose.domain.OutboxStore
 import com.otusfoss.mail.feature.compose.domain.SendCheck
 import com.otusfoss.mail.feature.compose.domain.SendChecker
@@ -81,7 +82,7 @@ internal class OfflineUndoTest : OutgoingMailFixture() {
                     SendCheck.Sent
                 }
             val now = { NOW + testScheduler.currentTime.milliseconds }
-            val outbox = MailOutbox(null, sender, slow, scheduled, now = now)
+            val outbox = MailOutbox(null, OutboxServer(sender, slow, scheduled), now = now)
             serverDelaySeconds = 60
             failure = SendFailure.Mail(MailFailure.Unreachable)
             OutgoingMail(backgroundScope, toasts, scheduled, outbox, { DAY_FIRST }, now) { hold }.send(message)
@@ -133,7 +134,8 @@ internal class OfflineUndoTest : OutgoingMailFixture() {
             val memory = MemoryMapStore()
             val now = { NOW + testScheduler.currentTime.milliseconds }
             val store = DeviceStore(memory, OutboxStore)
-            val outbox = MailOutbox(store, sender, checker, scheduled, now = now, io = EmptyCoroutineContext)
+            val outbox =
+                MailOutbox(store, OutboxServer(sender, checker, scheduled), now = now, io = EmptyCoroutineContext)
             serverDelaySeconds = 60
             OutgoingMail(backgroundScope, toasts, scheduled, outbox, { DAY_FIRST }, now) { hold }.send(message)
             runCurrent()

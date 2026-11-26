@@ -53,7 +53,7 @@ class MailOutboxTest {
 
     private fun savedEntries() = OutboxStore.ENTRIES.of(store.saved).orEmpty()
 
-    private fun outbox() = MailOutbox(outboxStore, sender, checker, held, now = { now })
+    private fun outbox() = MailOutbox(outboxStore, OutboxServer(sender, checker, held), now = { now })
 
     @Test
     fun aMessageOutlivesTheAppUntilItIsDue() =
@@ -156,7 +156,12 @@ class MailOutboxTest {
             val copies = mutableListOf<String?>()
             val woken = mutableListOf<Instant>()
             val outbox =
-                MailOutbox(outboxStore, storing, checker.recordingCopies(copies), held, { woken += it }, { now })
+                MailOutbox(
+                    outboxStore,
+                    OutboxServer(storing, checker.recordingCopies(copies), held),
+                    { woken += it },
+                    { now },
+                )
             val id = outbox.add(draft, null, NOW)
             failure = SendFailure.Mail(MailFailure.Unreachable)
             outbox.send(id)
@@ -236,10 +241,10 @@ class MailOutboxTest {
                     tries++
                     throw IllegalArgumentException("Not base64")
                 }
-            val outbox = MailOutbox(outboxStore, throwing, checker, held, now = { now })
+            val outbox = MailOutbox(outboxStore, OutboxServer(throwing, checker, held), now = { now })
             outbox.add(draft, null, NOW)
             outbox.resume()
-            val restarted = MailOutbox(outboxStore, throwing, checker, held, now = { now })
+            val restarted = MailOutbox(outboxStore, OutboxServer(throwing, checker, held), now = { now })
             restarted.resume()
             assertEquals(OutboxProblem.Refused, restarted.offers().single().problem)
             assertEquals(1, tries, "It does not go again by itself")
@@ -255,7 +260,12 @@ class MailOutboxTest {
             outbox.send(id)
 
             failure = null
-            val unsure = MailOutbox(outboxStore, sender, { _, _, _ -> error("Unreadable answer") }, held, now = { now })
+            val unsure =
+                MailOutbox(
+                    outboxStore,
+                    OutboxServer(sender, { _, _, _ -> error("Unreadable answer") }, held),
+                    now = { now },
+                )
             assertEquals(SendFailure.Unconfirmed, (unsure.send(id).exceptionOrNull() as SendException).failure)
             assertEquals(1, sent.size)
         }

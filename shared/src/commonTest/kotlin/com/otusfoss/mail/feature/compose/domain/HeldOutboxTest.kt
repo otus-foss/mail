@@ -45,7 +45,11 @@ class HeldOutboxTest {
 
     /** An outbox as a new process builds it; the sender stores the copy `e9` before it submits it. */
     private fun outbox() =
-        MailOutbox(DeviceStore(store, OutboxStore), sender.storingCopy("e9"), checker, server, now = { now })
+        MailOutbox(
+            DeviceStore(store, OutboxStore),
+            OutboxServer(sender.storingCopy("e9"), checker, server),
+            now = { now },
+        )
 
     private fun saved() = OutboxStore.ENTRIES.of(store.saved).orEmpty()
 
@@ -193,9 +197,7 @@ class HeldOutboxTest {
             val restarted =
                 MailOutbox(
                     DeviceStore(store, OutboxStore),
-                    sender,
-                    checker.recordingCopies(copies),
-                    server,
+                    OutboxServer(sender, checker.recordingCopies(copies), server),
                     now = { now },
                 )
             now = NOW + 5.seconds
