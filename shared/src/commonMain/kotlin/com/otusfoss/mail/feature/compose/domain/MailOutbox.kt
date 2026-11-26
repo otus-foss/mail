@@ -63,9 +63,30 @@ class MailOutbox(
                 due.toEpochMilliseconds(),
                 sendAt?.toEpochMilliseconds(),
             )
-        lock.withLock { entries.save(entries.all() + entry) }
-        // Later than the app itself sends it, so a background run only takes over from a closed app.
-        wake(due + BACKGROUND_DELAY)
+        keep(entry)
+        return id
+    }
+
+    /**
+     * Keeps the discard of a draft that edited the scheduled send [held], and returns its id. At
+     * [due], once Undo of the discard has passed, [cancel] or [resume] cancels the send and
+     * destroys its copy, also when the app is closed by then. [drop] before that keeps the send.
+     */
+    suspend fun discard(
+        held: SentMessage,
+        due: Instant,
+    ): String {
+        val id = newOutboxId()
+        val entry =
+            OutboxEntry(
+                id,
+                Draft(held.accountId, emailId = held.emailId),
+                dueMillis = due.toEpochMilliseconds(),
+                attempted = true,
+                withdrawn = true,
+                storedCopy = StoredCopy(held.emailId, now().toEpochMilliseconds()),
+            )
+        keep(entry)
         return id
     }
 
@@ -85,10 +106,16 @@ class MailOutbox(
             }
         }
 
-    /** Forgets a message the user took back to edit, as from a "Couldn't send" toast. */
-    suspend fun drop(id: String) {
-        lock.withLock { entries.remove(id) }
-    }
+    /**
+     * Forgets a message the user took back to edit, as from a "Couldn't send" toast, or a discard
+     * the user undid. False when it was gone already.
+     */
+    suspend fun drop(id: String): Boolean =
+        lock.withLock {
+            val kept = entries.find(id) != null
+            entries.remove(id)
+            kept
+        }
 
     /**
      * Sends message [id] now, or for the server to hold until [holdUntil]. A message an earlier try
@@ -148,6 +175,12 @@ class MailOutbox(
             entry.held != null -> holds.resume(entry)
             due -> sends.deliver(entry, holdUntil = null)
         }
+    }
+
+    /** Saves [entry] and asks for a background run after it is due, which only takes over from a closed app. */
+    private suspend fun keep(entry: OutboxEntry) {
+        lock.withLock { entries.save(entries.all() + entry) }
+        wake(entry.due + BACKGROUND_DELAY)
     }
 
     /** [result] of a step whose caller shows its failure to the user. */

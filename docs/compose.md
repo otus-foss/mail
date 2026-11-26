@@ -375,10 +375,13 @@ one already went.
   change scheduled mail" toast offers Open, which shows the edit again. If it already went, Send
   saves the edit as a new draft and says "Already sent. Edit saved as draft" with Open; when the
   server cannot say, the toast starts "Couldn't confirm the send". Send never sends that edit by
-  itself. Discard shows "Draft discarded" with Undo. Once that toast leaves, Mail cancels the old
-  send and deletes its copy. If the send may still go, a sticky "Couldn't discard. Scheduled mail
-  may still send" toast offers Retry. Leaving Write any other way drops the changes and keeps the
-  send as it was.
+  itself. Discard shows "Draft discarded" with Undo for 6 seconds and keeps the discard in the
+  outbox. After those 6 seconds Mail cancels the old send and deletes its copy: from a timer while
+  the app runs, and at the next start or from the background job when the app closed first. Undo
+  within that time keeps the send. If the send already went, a toast says "Already sent" and its
+  copy moves to Sent. If the server cannot be reached, a sticky "Couldn't discard. Scheduled mail
+  may still send" toast offers Retry, and the outbox keeps trying. Leaving Write any other way
+  drops the changes and keeps the send as it was.
 - **Send now** cancels the send and sends the copy as it is, dated now, through the usual send
   with its "Sending…" toast and Undo. If loading or the cancel fails, a sticky "Couldn't change
   scheduled mail" toast offers Retry and nothing is sent.
@@ -459,7 +462,8 @@ drafts, and moving a draft to another account.
 `DraftEmailTest` checks the text and HTML parts with the quote, and uploaded files in `multipart/mixed`.
 `SavedDraftTest` and `SavedDraftEmailTest` cover splitting a saved copy for Write, and
 `SavedSignatureTest` and `SavedSignatureEmailTest` whether a reopened draft is signed. `HeldEditTest`
-covers Send, Discard, and Edit on a scheduled mail, and `FolderBarsTest` the Scheduled bar.
+covers Send and Edit on a scheduled mail, `HeldDiscardTest` its Discard, and `FolderBarsTest` the
+Scheduled bar.
 `ScheduledCancellationTest` covers canceling a held or scheduled send, restoring its draft, and
 reading the submissions after a refused or lost cancel. `ScheduledSendNowTest` covers Send now,
 and `ScheduledFilingTest` filing scheduled mail between Drafts, Sent, and Scheduled.

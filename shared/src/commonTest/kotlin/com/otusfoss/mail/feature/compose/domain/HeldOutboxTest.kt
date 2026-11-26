@@ -182,6 +182,46 @@ class HeldOutboxTest {
             assertNull(kept.draft.emailId, "The copy may be the sent message, so the draft does not replace it")
         }
 
+    @Test
+    fun aDiscardedEditOfAScheduledMailIsCanceledOnceItsUndoHasPassedAlsoAfterARestart() =
+        runTest {
+            val copies = mutableListOf<String?>()
+            val first = outbox()
+            first.discard(held, due = NOW + 6.seconds)
+            assertEquals("a1", saved().single().draft.accountId, "Removing the account drops it")
+
+            val restarted =
+                MailOutbox(
+                    DeviceStore(store, OutboxStore),
+                    sender,
+                    checker.recordingCopies(copies),
+                    server,
+                    now = { now },
+                )
+            now = NOW + 5.seconds
+            restarted.resume()
+            assertTrue(heldCancels.isEmpty(), "Undo of the discard can still keep the send")
+
+            now = NOW + 6.seconds
+            restarted.resume()
+            assertEquals(listOf(true), heldCancels, "The send is canceled and its copy destroyed")
+            assertEquals(listOf<String?>("e9"), copies, "By the id of the scheduled copy")
+            assertTrue(saved().isEmpty())
+            assertEquals(0, sends, "A discarded message never goes")
+        }
+
+    @Test
+    fun undoOfADiscardKeepsTheScheduledSend() =
+        runTest {
+            val outbox = outbox()
+            val id = outbox.discard(held, due = NOW + 6.seconds)
+            assertTrue(outbox.drop(id), "The discard was still waiting")
+            now = NOW + 6.seconds
+            outbox.resume()
+            assertTrue(heldCancels.isEmpty())
+            assertFalse(outbox.drop(id), "A second Undo finds nothing")
+        }
+
     private companion object {
         val NOW = Instant.parse("2026-11-25T12:00:00Z")
 
