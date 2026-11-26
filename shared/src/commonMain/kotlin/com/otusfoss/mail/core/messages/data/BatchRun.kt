@@ -13,12 +13,19 @@ import kotlinx.serialization.json.JsonObject
 /** Outcome of sending one login's waiting changes. */
 internal class BatchRun(
     var left: Map<String, JsonObject>,
-    var refused: Set<String> = emptySet(),
-    var limited: Boolean = false,
-    var retry: Boolean = false,
-    var unclearInARow: Int = 0,
-    var stop: Boolean = false,
 ) {
+    var refused: Set<String> = emptySet()
+    var limited: Boolean = false
+    var retry: Boolean = false
+    var unclearInARow: Int = 0
+    var stop: Boolean = false
+
+    /** Whether the server took a change in this run, which shows that it works. */
+    var answered: Boolean = false
+
+    /** Changes that failed without a clear answer, which count as tried only when [answered]. */
+    var unclear: List<String> = emptyList()
+
     fun halt(retry: Boolean) {
         this.retry = retry
         stop = true
@@ -40,6 +47,15 @@ internal suspend fun sendBatches(
         if (run.stop) break
         sendChunk(account, batch.associate { it.toPair() }, tries, run)
     }
+    // Only a server that works shows the fault is in these changes; one that fails every call says
+    // nothing about them, so they wait without a try. An empty Email/set asks when nothing else went.
+    if (run.unclear.isNotEmpty() && !run.answered) run.answered = account.takesEmailSet()
+    if (run.answered) {
+        val dropped = run.unclear.filter(tries::reachedLimit)
+        run.left = run.left - dropped
+        run.refused = run.refused + dropped
+    }
+    if (run.left.keys.any { it in run.unclear }) run.retry = true
     return run
 }
 
@@ -59,6 +75,7 @@ private suspend fun sendChunk(
         run.left = run.left - answered
         run.refused = run.refused + batchRefused
         run.unclearInARow = 0
+        run.answered = true
     } catch (error: JmapException) {
         handleFailure(account, chunk, error.queueFailure(), tries, run)
     }
@@ -99,15 +116,19 @@ private suspend fun retryOrDrop(
         run.unclearInARow = 0
         return
     }
-    if (tries.reachedLimit(emailId)) {
-        run.left = run.left - emailId
-        run.refused = run.refused + emailId
-    } else {
-        run.retry = true
-    }
+    run.unclear = run.unclear + emailId
     run.unclearInARow += 1
     if (run.unclearInARow >= QUEUE_MAX_UNCLEAR) run.stop = true
 }
+
+/** Whether the server answers an `Email/set` that changes nothing, so it works for other changes. */
+private suspend fun MailAccount.takesEmailSet(): Boolean =
+    try {
+        connection.call(SetMethod(EmailType, id, update = emptyMap()))
+        true
+    } catch (expected: JmapException) {
+        false
+    }
 
 /** `SetError` types that may not recur when the same change is sent again later. */
 private val TEMPORARY_SET_ERRORS = setOf("rateLimit")

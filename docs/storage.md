@@ -114,12 +114,14 @@ more.
   through the queue too.
 - A change the server refuses is dropped, and its email leaves the cache, so the next refresh reads
   it again. Only a missing connection, a sign-in or read-only block, or a server that asks to be
-  tried later (`serverUnavailable`, HTTP 408, 429, or 502 to 504, or `rateLimit` on one email)
-  keeps the queue waiting without counting tries. When a multi-email batch fails with another
-  refusal or an unclear error (`serverFail`, `serverPartialFail`, HTTP 500, or an unreadable
-  reply), the queue retries that batch one email at a time so one bad email does not block the
-  rest. An email that fails unclearly three times leaves the queue and the cache, and two unclear
-  failures in a row end the flush.
+  tried later (`serverUnavailable`, HTTP 408, 429, or 502 to 504, a `maxConcurrentRequests`
+  limit, `rateLimit` on one email, or a page that is not JMAP, such as a captive portal's) keeps
+  the queue waiting without counting tries. When a multi-email batch fails with another refusal
+  or an unclear error (`serverFail`, `serverPartialFail`, or HTTP 500), the queue retries that
+  batch one email at a time so one bad email does not block the rest. An unclear failure counts
+  as a try only when the server took another change in the same flush, or answers an empty
+  `Email/set`; a server that fails everything counts nothing. An email with three such tries
+  leaves the queue and the cache, and two unclear failures in a row end the flush.
 - Every login's changes share one stored value, so one lock covers each read and rewrite of it,
   and changes made on two accounts at once both stay.
 - Android keeps the queue in the `otus_mail_pending_changes` shared preferences file, written at
@@ -135,11 +137,12 @@ first looks in the book for a card with its uid (`ContactCard/query`, RFC 9610, 
 leaving out cards that other waiting changes are about. When it finds one, it updates that card
 with any change made since instead of creating a second card.
 
-Only a missing connection or sign-in, or a server that asks to be tried later (HTTP 408, 429,
-502 to 504), makes the contact queue wait. A method error, a `SetError` such as a
+Only a missing connection or sign-in, a server that asks to be tried later (HTTP 408, 429,
+502 to 504, or a `maxConcurrentRequests` limit), or a page that is not JMAP makes the contact
+queue wait. A method error, a `SetError` such as a
 `ContactCard/set` `notCreated`, or another 4xx request problem refuses that change alone: it is
-set aside as not saved and the queue goes on. An answer that says neither, such as HTTP 500 or a
-reply the app cannot read, passes that card over for the rest of the flush, together with the
+set aside as not saved and the queue goes on. An answer that says neither, such as HTTP 500,
+passes that card over for the rest of the flush, together with the
 changes that need it, and sets it aside after three tries. Two such failures in a row end the
 flush, since then the server looks at fault. Tries and refusals live in memory, so a restart sends
 set-aside changes again.

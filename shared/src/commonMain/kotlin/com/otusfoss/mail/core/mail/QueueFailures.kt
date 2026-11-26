@@ -10,7 +10,7 @@ import com.otusfoss.core.jmap.JmapException
  *   for the user or next sync, and the background job does not retry.
  * - [Refused]: the server rejected this change or request. Drop or set it aside at once.
  * - [Unclear]: the server answered with an unclear failure. Pass over the change and set it aside
- *   after [QUEUE_MAX_TRIES] tries.
+ *   after [QUEUE_MAX_TRIES] tries, counted only in runs where the server took another change.
  */
 internal enum class QueueFailure { RetryLater, WaitForUser, Refused, Unclear }
 
@@ -21,12 +21,31 @@ internal enum class QueueFailure { RetryLater, WaitForUser, Refused, Unclear }
  */
 internal fun JmapException.queueFailure(): QueueFailure =
     when (this) {
-        is JmapException.MethodError -> methodQueueFailure(type)
-        is JmapException.RequestFailed -> requestQueueFailure(status)
-        is JmapException.UploadTooLarge, is JmapException.Unsupported -> QueueFailure.Refused
-        is JmapException.NotJmap, is JmapException.ResponseTooLarge -> QueueFailure.Unclear
-        is JmapException.Unreachable -> QueueFailure.RetryLater
-        else -> QueueFailure.WaitForUser
+        is JmapException.MethodError -> {
+            methodQueueFailure(type)
+        }
+
+        // Too many requests at once says nothing about the change, only to send it again later.
+        is JmapException.RequestFailed -> {
+            if (limit == MAX_CONCURRENT_REQUESTS) QueueFailure.RetryLater else requestQueueFailure(status)
+        }
+
+        is JmapException.UploadTooLarge, is JmapException.Unsupported -> {
+            QueueFailure.Refused
+        }
+
+        // A page that is not JMAP comes from a gateway or a captive portal, not from the change.
+        is JmapException.NotJmap, is JmapException.Unreachable -> {
+            QueueFailure.RetryLater
+        }
+
+        is JmapException.ResponseTooLarge -> {
+            QueueFailure.Unclear
+        }
+
+        else -> {
+            QueueFailure.WaitForUser
+        }
     }
 
 private fun methodQueueFailure(type: String): QueueFailure =
@@ -76,6 +95,7 @@ internal const val QUEUE_MAX_TRIES = 3
 /** How many changes in a row may fail without a clear answer before a flush stops. */
 internal const val QUEUE_MAX_UNCLEAR = 2
 
+private const val MAX_CONCURRENT_REQUESTS = "maxConcurrentRequests"
 private const val SERVER_UNAVAILABLE = "serverUnavailable"
 private const val ACCOUNT_READ_ONLY = "accountReadOnly"
 private const val SERVER_FAIL = "serverFail"

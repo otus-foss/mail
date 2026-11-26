@@ -81,7 +81,7 @@ class EmailChangeQueueFailureTest {
             queue.update(ADA_LOGIN.id, mapOf("m1" to read, "m2" to read, "m3" to read))
 
             // One failing batch call plus two single-email tries before stopping.
-            assertEquals(3, setCalls)
+            assertEquals(4, setCalls, "Two changes, then one alone, then an empty Email/set to see if the server works")
             assertTrue(queue.flushAll(), "Changes still wait for a retry after stopping early")
         }
 
