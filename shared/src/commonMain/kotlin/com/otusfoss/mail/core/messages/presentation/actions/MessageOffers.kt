@@ -92,14 +92,17 @@ internal fun MessageActions.offerMoveTo(
     return offerMoves(messages, "Move to $name", name, button, target)
 }
 
-/** Moves the messages to [folder], such as the one the sender's mail usually goes to. */
+/** Moves messages of [folder]'s account to [folder], such as the one the sender's mail usually goes to. */
 internal fun MessageActions.offerFolder(
     messages: List<MailMessage>,
     folder: MoveTarget,
-): OfferedAction? =
-    offerMoves(messages, "Move to ${folder.name}", folder.name, MailAction.SuggestedMove) { message ->
+): OfferedAction? {
+    val accountId = folder.accountId ?: messages.firstOrNull()?.location?.accountId ?: return null
+    return offerMoves(messages, "Move to ${folder.name}", folder.name, MailAction.SuggestedMove) { message ->
+        if (message.location.accountId != accountId) return@offerMoves null
         moves.targets(message).firstOrNull { it.folderId == folder.folderId }
     }
+}
 
 /** Moves each message to its [target]; null when none has one. The main button shows [primaryLabel]. */
 private fun MessageActions.offerMoves(

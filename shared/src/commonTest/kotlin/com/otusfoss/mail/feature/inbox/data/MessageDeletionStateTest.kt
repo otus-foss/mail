@@ -3,6 +3,7 @@ package com.otusfoss.mail.feature.inbox.data
 import com.otusfoss.core.jmap.JmapClient
 import com.otusfoss.core.jmap.JmapConnections
 import com.otusfoss.core.jmap.login.InMemoryLoginStore
+import com.otusfoss.mail.core.mailbox.MailboxRole
 import com.otusfoss.mail.core.messages.data.JmapEmailWriter
 import com.otusfoss.mail.core.messages.domain.MailLocation
 import com.otusfoss.mail.core.messages.domain.MailMessage
@@ -33,7 +34,14 @@ class MessageDeletionStateTest {
             "Keep the archived copy",
             "",
             ReceivedAt("2026-10-24", "09:30"),
-            MailLocation("Trash", "Ada", "ada", mailboxId = "trash", mailboxIds = setOf("trash")),
+            MailLocation(
+                "Trash",
+                "Ada",
+                "ada",
+                mailboxId = "trash",
+                mailboxIds = setOf("trash"),
+                mailboxRole = MailboxRole.Trash,
+            ),
             emailId = "m1",
         )
 

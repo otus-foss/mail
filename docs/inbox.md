@@ -220,7 +220,10 @@ the open message's **More actions** menu show them; see [action bar](action-bar.
   opened** is off in Mail behavior. Undo is not implemented yet; see issue #27.
 - In Spam and Trash, **Not spam** and **Restore** move a message to the inbox, and **Delete
   forever** and **Empty spam** or **Empty trash** delete messages for good after a confirm dialog.
-  In Sent, **Follow up** writes to the people a message went to. See
+  On a conversation row merged from several folders, Delete forever removes only emails in Trash
+  or Spam, Not spam moves only emails in Spam, Restore moves only emails in Trash, and Move and
+  Archive file each email from its own folder while leaving emails in Sent, Trash, and Spam where
+  they are. In Sent, **Follow up** writes to the people a message went to. See
   [folder bars](action-bar.md#folder-bars).
 
 A moved message leaves the list at once. If the server refuses, it comes back and the inbox shows

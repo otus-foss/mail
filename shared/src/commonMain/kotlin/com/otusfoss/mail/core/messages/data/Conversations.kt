@@ -55,7 +55,7 @@ internal fun MailMessage.inConversation(
                     .distinctBy { EmailAddressKey(it.address) },
             answered = counted.any { it.isAnswered },
             invite = counted.any { it.hasInvite },
-            members = listed.map { ThreadMember(it.id, it.boxes, mailboxId, it.flags) },
+            members = listed.map { ThreadMember(it.id, it.boxes, mailboxId, it.flags, location.mailboxRole) },
             exchanged = counted.any(view::isSent) && counted.any { !view.isSent(it) },
             reply =
                 ReplyState(
