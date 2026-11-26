@@ -19,15 +19,31 @@ import kotlin.test.assertTrue
 class EmailShortcutsTest {
     private val sent = mutableListOf<String>()
 
+    // The mailbox the server holds m1 in now.
+    private var heldIn = "i"
+
     private fun shortcuts(mailboxes: String = MAILBOXES): JmapEmailByIdWriter {
         val store = InMemoryLoginStore().apply { save(ADA_LOGIN, "secret") }
         val server =
             stalwartLike(STALWART_SESSION) { body ->
                 sent += body
                 when {
-                    "Mailbox/get" in body -> """{"methodResponses": [["Mailbox/get", $mailboxes, "c0"]]}"""
-                    "\"m2\"" in body -> REFUSED
-                    else -> UPDATED
+                    "Mailbox/get" in body -> {
+                        """{"methodResponses": [["Mailbox/get", $mailboxes, "c0"]]}"""
+                    }
+
+                    "Email/get" in body -> {
+                        """{"methodResponses": [["Email/get", {"state": "e1", "list": [""" +
+                            """{"id": "m1", "mailboxIds": {"$heldIn": true}}], "notFound": []}, "c0"]]}"""
+                    }
+
+                    "\"m2\"" in body -> {
+                        REFUSED
+                    }
+
+                    else -> {
+                        UPDATED
+                    }
                 }
             }
         val connections = JmapConnections(JmapClient(server), store)
@@ -46,8 +62,18 @@ class EmailShortcutsTest {
     fun archiveMovesTheEmailFromTheInboxToTheArchive() =
         runTest {
             assertTrue(shortcuts().archive("ada", "m1"))
-            assertEquals(2, sent.size)
-            assertTrue("\"update\":{\"m1\":{\"mailboxIds/i\":null,\"mailboxIds/a\":true}}" in sent[1], sent[1])
+            assertEquals(3, sent.size)
+            assertTrue("\"update\":{\"m1\":{\"mailboxIds/i\":null,\"mailboxIds/a\":true}}" in sent[2], sent[2])
+        }
+
+    @Test
+    fun archiveFromAnOldAlertLeavesAnEmailThatLeftTheInboxAlone() =
+        runTest {
+            heldIn = "t"
+
+            assertTrue(shortcuts().archive("ada", "m1"))
+
+            assertTrue(sent.none { "Email/set" in it }, sent.toString())
         }
 
     @Test
