@@ -33,11 +33,12 @@ class CodeMail(
  * forward has no code of its own. A wrong code is worse than none, so any doubt gives null.
  */
 fun findSignInCode(mail: CodeMail): SignInCode? {
-    if (mail.fromList || REPLY.containsMatchIn(mail.subject)) return null
     val sources = (listOf(mail.subject) + mail.texts).map(::codeLines)
     val labeled = sources.any { lines -> lines.any { it.words.any(Word::names) } }
-    if (!labeled) return null
+    val own = !mail.fromList && !REPLY.containsMatchIn(mail.subject)
     return sources
+        .takeIf { own && labeled }
+        .orEmpty()
         .flatMap { lines -> lines.indices.flatMap { codesAt(lines, it) } }
         .distinctBy(::codeKey)
         .singleOrNull()

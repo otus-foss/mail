@@ -130,11 +130,11 @@ fun MessageScreen(
     // A tapped message's page arrives like a swiped one, on the design system's easing.
     val turn = motionTween<Float>(MotionSpeed.Normal, MotionCurve.Enter)
     val folds = rememberStripFolds(state)
-    val source = ReadStripSource(parts.row, look.folders, cameFrom, today)
     val delete =
         readActions.subject.offer(MailAction.Trash)?.let { action ->
             { confirmation.run(action.confirm) { parts.perform(action) } }
         }
+    val source = ReadStripSource(parts.row, look.folders, cameFrom, today, delete)
     PageSurface {
         ActionBarHost(
             bar = readActions.bar?.let { bar -> { ReadActionBar(bar, page, parts::perform) } },
@@ -142,7 +142,7 @@ fun MessageScreen(
             Modifier.belowControlPanel(),
         ) { padding ->
             SideEffect { barPadding = padding }
-            ReadLayout(parts, ReadLayoutState(pager, index, look, menu, today, folds, source, delete), notice, padding)
+            ReadLayout(parts, ReadLayoutState(pager, index, look, menu, today, folds, source), notice, padding)
         }
         // Over the bar too, which dims with the page while the grown list sits above it.
         if (!read.display.zen()) {
@@ -159,8 +159,8 @@ fun MessageScreen(
 
 /**
  * Where the Read view's layout stands: the [pager] on the page at [index], how pages [look], the ⋯
- * [menu], the [today] dates are shown against, how the bottom strips [folds] open, what they
- * show from [source], and how a code strip's Delete [delete]s the conversation, where it can.
+ * [menu], the [today] dates are shown against, how the bottom strips [folds] open, and what they
+ * show from [source].
  */
 private class ReadLayoutState(
     val pager: PagerState,
@@ -170,7 +170,6 @@ private class ReadLayoutState(
     val today: LocalDate,
     val folds: StripFolds,
     val source: ReadStripSource,
-    val delete: (() -> Unit)?,
 )
 
 /**
@@ -228,7 +227,6 @@ private fun ReadLayout(
             layout.source,
             strips,
             slide,
-            layout.delete,
             Modifier
                 .align(Alignment.BottomCenter)
                 .padding(padding)

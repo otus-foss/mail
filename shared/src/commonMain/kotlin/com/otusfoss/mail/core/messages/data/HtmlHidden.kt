@@ -36,14 +36,14 @@ internal fun String.hiddenElementEnd(
 ): Int? {
     var depth = 1
     var open = indexOf('<', from)
-    while (open >= 0 && depth > 0) {
+    var end: Int? = null
+    while (open >= 0 && end == null) {
         val next = if (startsWith(COMMENT_START, open)) indexOf(COMMENT_END, open) else tagEnd(open + 1)
-        if (next < 0) return null
-        depth += sameTagStep(open, next, name)
-        if (depth == 0) return next
-        open = indexOf('<', next)
+        if (next >= 0) depth += sameTagStep(open, next, name)
+        if (depth == 0) end = next
+        open = if (next < 0) -1 else indexOf('<', next)
     }
-    return null
+    return end
 }
 
 /** How the tag from [open] to [end] changes the depth of [name]: +1 opens one, -1 closes one, 0 neither. */

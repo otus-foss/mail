@@ -44,7 +44,7 @@ import kotlinx.coroutines.launch
 
 /**
  * The strips above the action bar, from the bottom up: one context strip, then the page's files.
- * A page with a one-time code shows its code strip, whose Delete runs [onDelete]. Otherwise a
+ * A page with a one-time code shows its code strip, with the source's Delete. Otherwise a
  * conversation shows its thread strip; a single message its newsletter strip when it can be left
  * and is not spam, else the folders it is also in, else nothing. Until the pages load, the row's
  * message count tells a conversation from a single message, so the strip does not change kind
@@ -61,7 +61,6 @@ internal fun ReadBottomStack(
     source: ReadStripSource,
     actions: ReadStripActions,
     slide: StripGestures,
-    onDelete: (() -> Unit)?,
     modifier: Modifier = Modifier,
     onFoldedHeight: (Dp) -> Unit = {},
 ) {
@@ -83,7 +82,7 @@ internal fun ReadBottomStack(
         }
         val code = content?.signInCode
         if (code != null) {
-            CodeStrip(page, code, onDelete)
+            CodeStrip(page, code, source.onDelete)
         } else {
             ContextStrip(state, current, source, content, actions, slide)
         }
