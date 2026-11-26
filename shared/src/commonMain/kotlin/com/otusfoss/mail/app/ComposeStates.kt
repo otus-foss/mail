@@ -14,6 +14,7 @@ import com.otusfoss.mail.feature.compose.presentation.ComposeAccount
 import com.otusfoss.mail.feature.compose.presentation.ComposeOrigin
 import com.otusfoss.mail.feature.compose.presentation.ComposeServices
 import com.otusfoss.mail.feature.compose.presentation.ComposeState
+import com.otusfoss.mail.feature.compose.presentation.HeldDiscards
 import com.otusfoss.mail.feature.compose.presentation.HeldEdits
 import com.otusfoss.mail.feature.compose.presentation.OutgoingMail
 import com.otusfoss.mail.feature.compose.presentation.ScheduledSendNow
@@ -103,8 +104,11 @@ internal class ComposeStates(
             dates,
         ) { behavior.behavior.write.undoSendSeconds.seconds.inWholeMilliseconds }
 
-    /** Send and Discard for a draft, which first cancel the scheduled send it edits. */
+    /** Send for a draft, which first cancels the scheduled send it edits. */
     val heldEdits = HeldEdits(services.work, services.moveToasts.toasts, services.scheduled, services.drafts, outgoing)
+
+    /** Discard for a draft that edited a scheduled send, which cancels that send once Undo has passed. */
+    val heldDiscards = HeldDiscards(services.work, services.moveToasts.toasts, services.scheduled, services.outbox)
 
     /** Send now for a message waiting in Scheduled, which first cancels its send. */
     val sendNow = ScheduledSendNow(services.work, services.moveToasts.toasts, services.scheduled, outgoing)

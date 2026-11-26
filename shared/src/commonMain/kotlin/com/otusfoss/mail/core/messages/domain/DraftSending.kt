@@ -60,8 +60,10 @@ class SendException(
 /**
  * A message the server accepted: its stored copy [emailId] and its submission [submissionId], sent
  * as [identityId]. A canceled send moves the copy back to [draftsId], the account's Drafts folder
- * when it has one, and takes back the answered or forwarded mark this send gave [marked].
+ * when it has one, and takes back the answered or forwarded mark this send gave [marked]. A copy
+ * submitted again files in [sentId], the Sent folder the send found.
  */
+@Serializable
 data class SentMessage(
     val accountId: String,
     val emailId: String,
@@ -69,6 +71,7 @@ data class SentMessage(
     val draftsId: String? = null,
     val identityId: String = "",
     val marked: AnsweredMessage? = null,
+    val sentId: String? = null,
 )
 
 /** Time for the request to reach the server and for its clock to differ from the device's. */
@@ -128,8 +131,10 @@ interface ScheduledSends {
     suspend fun cancel(message: SentMessage): SendCancel
 
     /**
-     * Sends a held or scheduled [message] at once. It fails only when the message will not go:
-     * the hold was canceled but the new submission refused, which makes the copy a draft again.
+     * Sends a held or scheduled [message] at once. It fails as unreachable when the server could
+     * not be asked, and as [SendFailure.Unconfirmed] when the server no longer knows the send, which
+     * may have gone. Any other failure means the message will not go: the hold was canceled but the
+     * new submission refused, which makes the copy a draft again.
      */
     suspend fun sendNow(message: SentMessage): Result<Unit>
 

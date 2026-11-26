@@ -8,6 +8,7 @@ import com.otusfoss.core.designsystem.shared.feedback.components.ToastMessage
 import com.otusfoss.mail.core.messages.domain.ComposeRequest
 import com.otusfoss.mail.core.messages.domain.SendIdentityKey
 import com.otusfoss.mail.feature.compose.presentation.ComposeExits
+import com.otusfoss.mail.feature.compose.presentation.DISCARD_UNDO_MILLIS
 import com.otusfoss.mail.feature.compose.presentation.Outgoing
 import com.otusfoss.mail.feature.compose.presentation.OutgoingDraft
 import com.otusfoss.mail.feature.compose.presentation.SignatureEditorState
@@ -37,10 +38,22 @@ internal fun ComposePage(
                 override fun close() = onClose()
 
                 override fun discarded(delete: () -> Unit) {
-                    val pages = states.requests.pages
-                    val undo = UiAction("Undo") { pages.showLater { page.copy(request = compose.reopeningSaved()) } }
-                    val remove = { states.compose.heldEdits.discard(resumed?.held, delete) }
-                    states.moveToasts.toasts.show(ToastMessage("Draft discarded", undo, onClose = remove))
+                    // A scheduled send the draft edited is canceled by a timer, not by the toast's leaving.
+                    val keepSend = resumed?.held?.let(states.compose.heldDiscards::discard)
+                    val undo =
+                        UiAction("Undo") {
+                            states.requests.pages.showLater {
+                                val request = compose.reopeningSaved()
+                                page.copy(request = keepSend?.invoke(request) ?: request)
+                            }
+                        }
+                    val toast =
+                        if (keepSend == null) {
+                            ToastMessage("Draft discarded", undo, onClose = delete)
+                        } else {
+                            ToastMessage("Draft discarded", undo, durationMillis = DISCARD_UNDO_MILLIS)
+                        }
+                    states.moveToasts.toasts.show(toast)
                     onClose()
                 }
 

@@ -7,14 +7,13 @@ import com.otusfoss.mail.core.messages.domain.ComposeRequest
 import com.otusfoss.mail.core.messages.domain.DraftRepository
 import com.otusfoss.mail.core.messages.domain.ScheduledSends
 import com.otusfoss.mail.core.messages.domain.SendCancel
-import com.otusfoss.mail.core.messages.domain.SentMessage
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.datetime.LocalDateTime
 
 /**
- * Send and Discard for a draft that may edit a scheduled send. That send waits unchanged until one
- * of them runs, and both cancel it first, in [scope], which must outlive the page.
+ * Send for a draft that may edit a scheduled send. That send waits unchanged until Send cancels
+ * it, in [scope], which must outlive the page; [HeldDiscards] discards such a draft.
  */
 internal class HeldEdits(
     private val scope: CoroutineScope,
@@ -51,39 +50,6 @@ internal class HeldEdits(
 
                 SendCancel.Waiting -> {
                     offer(COULD_NOT_CHANGE, mail, mail.reopen, sticky = true)
-                }
-            }
-        }
-    }
-
-    /**
-     * Runs [delete], which removes a discarded draft's copy. A draft that edited the scheduled send
-     * [held] cancels it first, as its copy is that send's message, which stays when it went or may
-     * still go.
-     */
-    fun discard(
-        held: SentMessage?,
-        delete: () -> Unit,
-    ) {
-        if (held == null) return delete()
-        scope.launch {
-            when (scheduled.cancel(held)) {
-                SendCancel.Stopped -> {
-                    delete()
-                }
-
-                SendCancel.Final -> {
-                    toasts.show(ToastMessage(ALREADY_SENT))
-                    scheduled.fileSent(held.accountId)
-                }
-
-                SendCancel.Unknown -> {
-                    toasts.show(ToastMessage(NOT_CONFIRMED))
-                }
-
-                SendCancel.Waiting -> {
-                    val retry = UiAction("Retry") { discard(held, delete) }
-                    toasts.show(ToastMessage(MAY_STILL_SEND, retry, sticky = true))
                 }
             }
         }

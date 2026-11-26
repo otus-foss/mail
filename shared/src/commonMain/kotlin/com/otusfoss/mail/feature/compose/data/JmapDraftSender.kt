@@ -121,7 +121,7 @@ class JmapDraftSender internal constructor(
         stored?.invoke(copy)
         val submitted =
             try {
-                submitCopy(route, folder, copy, draft, time)
+                submitCopy(route, folder, copy, time, draft.envelope(time))
             } catch (error: JmapException.MethodError) {
                 // The copy may still go, or have gone in part (RFC 8620, section 3.6.2), so it stays
                 // for the outbox to look up by its id before anything is destroyed.
@@ -131,7 +131,7 @@ class JmapDraftSender internal constructor(
         val refusal = submitted.notCreated[SUBMISSION]
         if (refusal != null) refused(copy, refusal.toSendFailure())
         val submissionId = submitted.createdId(SUBMISSION) ?: failSend(SendFailure.Mail(MailFailure.ServerProblem))
-        return SentMessage(draft.accountId, copy, submissionId, route.drafts, route.identityId)
+        return SentMessage(draft.accountId, copy, submissionId, route.drafts, route.identityId, sentId = route.sent)
     }
 
     override suspend fun maxDelaySeconds(accountId: String): Long =
@@ -196,22 +196,20 @@ class JmapDraftSender internal constructor(
      * A held message cannot be sent early, so its submission is canceled and its copy submitted
      * again. When the new submission fails, the copy becomes a draft again, unless a lost answer
      * hid that the server took it. Running it again after a lost answer is safe: a hold already
-     * canceled is submitted again, and one the server keeps or sent is left alone.
+     * canceled is submitted again, one the server keeps or sent is left alone, and one the server
+     * no longer knows fails as unconfirmed.
      */
     override suspend fun sendNow(message: SentMessage): Result<Unit> =
         submissionCall(message) { account ->
             val canceled = jmapCallOr(null) { account.cancelSubmission(message) == null } == true
             // Unless the cancel was confirmed, a submission still there goes at its time by itself.
-            val kept =
-                !canceled &&
-                    account.isSubmitted(message.emailId) ?: failSend(SendFailure.Mail(MailFailure.Unreachable))
-            if (kept) return@submissionCall
+            if (!canceled && !account.onlyCanceled(message.emailId)) return@submissionCall
             val refusal =
                 try {
                     account.resubmit(message)
                 } catch (error: JmapException) {
                     // When the server cannot be asked, a later run decides, so the copy stays as it is.
-                    if (account.isSubmitted(message.emailId) ?: throw error) return@submissionCall
+                    if (account.isSubmitted(message.emailId) ?: failUnreachable()) return@submissionCall
                     account.restoreCanceledDraft(message, changes)
                     throw error
                 }

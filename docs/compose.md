@@ -211,8 +211,8 @@ online" with Retry instead, since the outbox sends it once the network is back.
 
 ### Outbox
 
-`MailOutbox` keeps each message handed over for sending until the server has it, so closing the
-app or losing the network loses no mail. Android keeps it in the `otus_mail_outbox` shared
+`MailOutbox` keeps each message handed over for sending until its send is final on the server, so
+closing the app or losing the network loses no mail. Android keeps it in the `otus_mail_outbox` shared
 preferences file and writes it before the send starts; iOS keeps it in a file out of backups, as
 `docs/storage.md` describes. Each message
 gets its own Message-ID, `<id>@otus.mail`, which every try reuses.
@@ -236,9 +236,17 @@ gets its own Message-ID, `<id>@otus.mail`, which every try reuses.
   sending" toast offers to open it, at once or after the next start. A server down for now is
   asked again later.
 - A failed send that may hide a lost answer, such as a gateway error, is looked up before Retry
-  sends it. Only a clear refusal, such as an unknown recipient, lets Retry skip the lookup.
+  sends it. Only a clear refusal, such as an unknown recipient, lets Retry skip the lookup. After
+  a restart the same lookup runs before the message is offered. One that went leaves the outbox,
+  and "Couldn't send" shows only once the server says it did not go.
+- A message the server holds for Undo stays until the hold is over, with the ids of its copy and
+  its submission. Undo and the swipe that sends it at once are written to it before their request
+  goes out. When the app closes or the server cannot be reached first, the next start or
+  `OutboxWorker` finishes them from that record.
 - A refused message stays too. After a restart a "Couldn't send" toast offers to open it, and
-  opening it takes it out of the outbox once its page shows. A send or lookup that fails in an
+  opening it takes it out of the outbox once its page shows. A message that an app start or the
+  background job tried and the server refused had no toast of its own, so it is offered the same
+  way the next time Mail opens, also in the process that job left running. A send or lookup that fails in an
   unexpected way, rather than with an answer from the server, counts as a server problem or an
   unconfirmed send, so the message waits for the user instead of stopping the app at every start.
 - On Android, `OutboxWorker` runs the outbox 30 seconds after a message is due, and again once the
@@ -262,23 +270,30 @@ It also removes the `$answered` or `$forwarded` mark the send gave the original,
 original had that mark before, which the sender reads before it marks a held or scheduled send.
 Where the server cannot hold mail that long, the device holds it instead, and Undo opens the
 draft again as it was. If the hold request got no answer, the device takes over the hold, since
-the server may or may not have it. Undo then opens the draft at once and keeps the message in the
-outbox as withdrawn. It never goes. Once the server can be reached, `JmapSendChecker` looks it up:
-a hold the server has is canceled and its copy destroyed, and the entry leaves the outbox. If
-the server already sent it, nothing can bring it back. Undo after the message went says
-"Already sent".
+the server may or may not have it. Undo then asks the server at once: `JmapSendChecker` looks the
+message up, cancels a hold the server has, and destroys its copy, and the draft opens as it was.
+The draft opens after half a second at most, also while the server is slow or out of reach. The message stays in the outbox
+as withdrawn, never goes from the device, and Mail asks again after 5 seconds, doubling the wait
+up to a minute, and from the background job. If the server sent it before a cancel arrived,
+nothing can bring it back, and a toast says "Already sent" while the app runs. Undo of a hold the
+server confirmed shows "Couldn't cancel" with Retry when the server cannot be reached, and the
+outbox keeps trying in the background. Undo after the message went says "Already sent".
 
 Swiping the "Sending…" toast away sends the message at once; screen readers offer the swipe as
 Send. JMAP cannot move a held submission's send time forward, so Mail cancels the held submission
-and, once the server confirms that, submits the same stored copy again without a hold. If the
-server keeps the held submission, the message still goes at its time. With 3 seconds or less of the
+and, once the server confirms that, submits the same stored copy again without a hold. That
+submission files the copy as sent like a first send, since an earlier try may have made it a draft
+again. If the server keeps the held submission, the message still goes at its time. With 3 seconds or less of the
 window left, Mail lets the server send on time instead. If the new submission is refused, the copy
-becomes a draft again and a "Couldn't send" toast offers to open it. Offline, a "Will send when
-online" toast shows and Mail tries again after 5 seconds, doubling the wait up to a minute,
-while the app runs. Trying again is safe: when a cancel's answer was lost, Mail asks whether a
-submission that nobody canceled is left. If one is, the server sends it at its time; if none is,
-the cancel arrived and the copy is submitted again. On the device hold, the swipe ends the
-wait. The sender makes four requests (RFC 8621, section 7.5):
+becomes a draft again and a "Couldn't send" toast offers to open it, at once or after the next
+start. Offline, a "Will send when online" toast shows and Mail tries again after 5 seconds,
+doubling the wait up to a minute, while the app runs. The outbox keeps the request, so the next
+start or the background job sends the message if the app closes first. Trying again is safe: when the server did not confirm a cancel, Mail reads
+every submission of the copy. If one that nobody canceled is left, the server sends it at its
+time. If only canceled ones are left, the cancel arrived and the copy is submitted again. If the
+server keeps none, the message may have gone, since a server may destroy a submission once it is
+sent (RFC 8621, section 7), so Mail submits nothing and a "Couldn't confirm sending" toast offers
+to open the message as a new draft. On the device hold, the swipe ends the wait. The sender makes four requests (RFC 8621, section 7.5):
 
 1. `Identity/get` and two `Mailbox/query` calls find the identity for the From address and the
    Drafts and Sent folders. An identity matches by exact address, or by a wildcard such as
@@ -315,6 +330,10 @@ The scheduled copy waits in the Scheduled folder without `$draft`. Undo sets the
 `$draft` again, take back the original's mark as for a held send, and open it. If restoring the
 draft fails, Mail reports that the send was canceled but the draft could not be restored. If the
 cancel fails, a sticky "Couldn't cancel" toast offers Retry.
+
+A server refuses a hold in the past. So a message whose time has passed before it reaches the
+server, or is less than 2 seconds ahead, goes at once, and its toast says "Sent". That happens on
+a device that was offline over the time, and when Write stays open past it.
 
 ### Scheduled folder
 
@@ -359,10 +378,13 @@ one already went.
   change scheduled mail" toast offers Open, which shows the edit again. If it already went, Send
   saves the edit as a new draft and says "Already sent. Edit saved as draft" with Open; when the
   server cannot say, the toast starts "Couldn't confirm the send". Send never sends that edit by
-  itself. Discard shows "Draft discarded" with Undo. Once that toast leaves, Mail cancels the old
-  send and deletes its copy. If the send may still go, a sticky "Couldn't discard. Scheduled mail
-  may still send" toast offers Retry. Leaving Write any other way drops the changes and keeps the
-  send as it was.
+  itself. Discard shows "Draft discarded" with Undo for 6 seconds and keeps the discard in the
+  outbox. After those 6 seconds Mail cancels the old send and deletes its copy: from a timer while
+  the app runs, and at the next start or from the background job when the app closed first. Undo
+  within that time keeps the send. If the send already went, a toast says "Already sent" and its
+  copy moves to Sent. If the server cannot be reached, a sticky "Couldn't discard. Scheduled mail
+  may still send" toast offers Retry, and the outbox keeps trying. Leaving Write any other way
+  drops the changes and keeps the send as it was.
 - **Send now** cancels the send and sends the copy as it is, dated now, through the usual send
   with its "Sending…" toast and Undo. If loading or the cancel fails, a sticky "Couldn't change
   scheduled mail" toast offers Retry and nothing is sent.
@@ -443,7 +465,8 @@ drafts, and moving a draft to another account.
 `DraftEmailTest` checks the text and HTML parts with the quote, and uploaded files in `multipart/mixed`.
 `SavedDraftTest` and `SavedDraftEmailTest` cover splitting a saved copy for Write, and
 `SavedSignatureTest` and `SavedSignatureEmailTest` whether a reopened draft is signed. `HeldEditTest`
-covers Send, Discard, and Edit on a scheduled mail, and `FolderBarsTest` the Scheduled bar.
+covers Send and Edit on a scheduled mail, `HeldDiscardTest` its Discard, and `FolderBarsTest` the
+Scheduled bar.
 `ScheduledCancellationTest` covers canceling a held or scheduled send, restoring its draft, and
 reading the submissions after a refused or lost cancel. `ScheduledSendNowTest` covers Send now,
 and `ScheduledFilingTest` filing scheduled mail between Drafts, Sent, and Scheduled.
@@ -457,5 +480,5 @@ a forward's quote. `ReplyThreadScreenTest` covers the thread rows, the folded th
 To line, and the quote choice in the sheet; `JmapThreadHistoryTest` the thread request and
 `ReplyQuoteTest` the quote modes. `SignatureTest`, `SignaturesStateTest`, and `SignatureScreensTest` cover the
 signature HTML and images, copying and failed saves, `SendLaterTest` the Send later times,
-`OutgoingMailTest` the Undo window on the server and on the device, sending early with a swipe, and turning it off, `OfflineUndoTest` Undo and the swipe without a network, `UndoSendSettingTest` the delay setting, Retry, and undoing a scheduled message, the list, the editor with its size list,
+`OutgoingMailTest` the Undo window on the server and on the device, sending early with a swipe, and turning it off, `OfflineUndoTest` Undo and the swipe without a network, `HeldOutboxTest` Undo and the swipe finished after a restart, `SendNowAgainTest` sending a held message early a second time, `UndoSendSettingTest` the delay setting, Retry, and undoing a scheduled message, the list, the editor with its size list,
 and the copy sheet. Their screenshots of each state are written to `androidApp/build/reports/compose/`.

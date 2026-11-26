@@ -5,10 +5,12 @@ import com.otusfoss.mail.core.messages.data.DeviceDrafts
 import com.otusfoss.mail.core.messages.data.FakeDraftServer
 import com.otusfoss.mail.core.messages.domain.Draft
 import com.otusfoss.mail.core.messages.domain.DraftSender
+import com.otusfoss.mail.core.messages.domain.SendCancel
 import com.otusfoss.mail.core.messages.domain.SentMessage
 import com.otusfoss.mail.core.messages.domain.WaitingDraftStore
 import com.otusfoss.mail.core.messages.domain.isDeviceDraftId
 import com.otusfoss.mail.core.storage.DeviceStore
+import com.otusfoss.mail.testing.FakeScheduledSends
 import com.otusfoss.mail.testing.MemoryMapStore
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
@@ -39,8 +41,7 @@ class HandedDraftsTest {
     private val outbox =
         MailOutbox(
             DeviceStore(outboxMap, OutboxStore),
-            sender,
-            { _, _, _ -> SendCheck.NotSent },
+            OutboxServer(sender, { _, _, _ -> SendCheck.NotSent }, FakeScheduledSends()),
             now = { NOW },
             io = Dispatchers.Unconfined,
             drafts = drafts.outbox,
@@ -55,7 +56,7 @@ class HandedDraftsTest {
             assertTrue(isDeviceDraftId(id))
 
             val entry = outbox.add(Draft("ada", subject = "Hello", emailId = id), null, due = NOW + 10.seconds)
-            assertTrue(outbox.cancel(entry), "Undo takes the message back")
+            assertEquals(SendCancel.Stopped, outbox.cancel(entry), "Undo takes the message back")
 
             assertEquals(emptyList(), savedEntries(), "The outbox no longer holds it")
             assertEquals(listOf(id), drafts.list.waiting("ada").map { it.id }, "The waiting drafts hold it again")
