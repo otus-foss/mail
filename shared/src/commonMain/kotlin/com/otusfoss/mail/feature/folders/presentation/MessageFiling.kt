@@ -81,6 +81,7 @@ internal class MessageFiling(
                     own = ownNode != null,
                     path = paths[node.folder.id],
                     color = colors.colorOf(node.folder),
+                    accountId = account.accountId,
                 )
             }
     }
