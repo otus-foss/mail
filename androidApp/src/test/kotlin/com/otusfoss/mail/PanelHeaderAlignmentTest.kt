@@ -20,6 +20,7 @@ import com.otusfoss.core.designsystem.shared.controls.elements.IconButton
 import com.otusfoss.core.designsystem.shared.input.elements.SearchField
 import com.otusfoss.core.designsystem.shared.panels.components.ContextPanel
 import com.otusfoss.core.designsystem.theme.OtusTheme
+import com.otusfoss.core.designsystem.theme.typography.panelTextStyle
 import com.otusfoss.mail.feature.inbox.presentation.screens.InboxScreen
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -51,7 +52,8 @@ class PanelHeaderAlignmentTest {
                         if (searching.value) {
                             SearchField("", {}, "Search title")
                         } else {
-                            Text("Inbox")
+                            // Panel titles draw in the panel style, as PanelTitle does.
+                            Text("Inbox", style = panelTextStyle())
                         }
                     }
                 }
