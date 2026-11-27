@@ -70,6 +70,8 @@ internal fun FromDropdown(
                 shown.filter { it.accountId == account.id } - recentShown.toSet(),
                 selected,
                 choose,
+                // With one account, a gap parts its addresses from Recent instead of its name.
+                gapBefore = recentShown.isNotEmpty(),
             )
         }
     }
@@ -81,10 +83,13 @@ private fun IdentitySection(
     identities: List<SendIdentity>,
     selected: MailSender?,
     onSelect: (SendIdentity) -> Unit,
+    gapBefore: Boolean = false,
 ) {
     if (identities.isEmpty()) return
-    // One account needs no name; a gap still parts its addresses from Recent.
-    if (title != null) Caption(title, Modifier.listCaptionInset()) else Spacer(Modifier.height(MenuTokens.inset))
+    when {
+        title != null -> Caption(title, Modifier.listCaptionInset())
+        gapBefore -> Spacer(Modifier.height(MenuTokens.inset))
+    }
     identities.forEach { identity ->
         val sender = identity.sender
         val named = sender.name.isNotBlank() && sender.name != sender.address
