@@ -19,6 +19,7 @@ import com.otusfoss.core.designsystem.resources.symbol_reply
 import com.otusfoss.core.designsystem.resources.symbol_reply_all
 import com.otusfoss.core.designsystem.resources.symbol_report
 import com.otusfoss.core.designsystem.resources.symbol_search
+import com.otusfoss.core.designsystem.resources.symbol_self_improvement
 import com.otusfoss.core.designsystem.resources.symbol_send
 import com.otusfoss.mail.core.mailbox.pathText
 import com.otusfoss.mail.core.messages.domain.BarButton
@@ -48,6 +49,7 @@ internal val BarButton.label: String
             MailAction.ReplyAll -> "Reply all"
             MailAction.Forward -> "Forward"
             MailAction.FollowUp -> "Follow up"
+            MailAction.Zen -> "Zen mode"
             MailAction.NewMail -> "New mail"
             MailAction.Search -> "Search"
             MailAction.Filters -> "Filters"
@@ -91,6 +93,7 @@ internal val BarButton.symbol: DrawableResource
             MailAction.Reply, MailAction.FollowUp -> Res.drawable.symbol_reply
             MailAction.ReplyAll -> Res.drawable.symbol_reply_all
             MailAction.Forward -> Res.drawable.symbol_forward
+            MailAction.Zen -> Res.drawable.symbol_self_improvement
             MailAction.NewMail -> Res.drawable.symbol_edit
             MailAction.Search -> Res.drawable.symbol_search
             MailAction.Filters -> Res.drawable.symbol_filter_list

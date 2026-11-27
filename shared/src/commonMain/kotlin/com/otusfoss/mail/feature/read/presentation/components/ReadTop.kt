@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.onSizeChanged
@@ -59,6 +60,7 @@ internal fun ReadTop(
     val page = text.page
     val expansion = quick.expansion
     val room = ReadRoom(parts.state, page, expansion, parts, quick.look, strips)
+    LoadFiles(room)
     PanelScrim(expansion)
     Column(
         Modifier.onSizeChanged { size ->
@@ -73,7 +75,7 @@ internal fun ReadTop(
             page,
             text.date,
             LocalDateFormatter.current.fullLabel(page.received),
-            headerActions(parts, expansion, text.menu),
+            headerActions(room, text.menu),
             PanelMotion(expansion = expansion) { ReadExpandedContent(room) { quick.height.value = it } },
         )
         text.notice?.let {
@@ -94,27 +96,39 @@ internal fun readDetailsHeight(
     padding: PaddingValues,
 ): Dp = grownPanelHeight(above = header, below = padding.calculateBottomPadding() + PageTokens.pageInset)
 
+/** Loads the thumbnails of the page's files and which of them are kept offline, for the panel. */
+@Composable
+private fun LoadFiles(room: ReadRoom) {
+    val page = room.page
+    val files =
+        room.parts
+            .content(page)
+            ?.attachments
+            ?.takeIf { it.isNotEmpty() } ?: return
+    LaunchedEffect(page.id, files) { room.state.thumbnails.load(page, files) { room.strips.thumbnail(page, it) } }
+    LaunchedEffect(page.id, files) { room.strips.loadKept(page, files) }
+}
+
 private fun headerActions(
-    parts: ReadParts,
-    expansion: PanelExpansion,
+    room: ReadRoom,
     menu: List<OptionsItem>,
 ): ReadHeaderActions {
+    val parts = room.parts
     val actions = parts.actions
-    val read = parts.read
+    val expansion = room.expansion
+    // The sender, date, and files pills all open the panel at the stop that shows the files.
+    val toggle = { if (expansion.expanded) expansion.collapse() else expansion.expandTo(GROWN_EXPANDED_STOP) }
     return ReadHeaderActions(
         onBack = parts::close,
         senderOpen = expansion.expanded,
-        onDetails = { if (expansion.expanded) expansion.collapse() else expansion.expandTo(GROWN_EXPANDED_STOP) },
-        zen = read.display.zen(),
-        onZen = {
-            val on = !read.display.zen()
-            // Zen hides the strips, so their message list and files fold first.
-            if (on) {
-                parts.state.threadOpen = false
-                parts.state.filesOpenOn = null
-            }
-            read.display.setZen(on)
-        },
+        onDetails = toggle,
+        files =
+            room
+                .files()
+                ?.shown
+                ?.map { it.kind }
+                .orEmpty(),
+        onFiles = toggle,
         // A change that takes the message off this list closes the page first, as filing does.
         readLater =
             actions?.readLater(parts.row)?.let { change ->

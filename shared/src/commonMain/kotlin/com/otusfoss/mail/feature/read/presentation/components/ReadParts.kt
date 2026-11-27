@@ -3,6 +3,7 @@ package com.otusfoss.mail.feature.read.presentation.components
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.produceState
+import com.otusfoss.core.designsystem.mail.attachments.components.AttachmentKind
 import com.otusfoss.core.designsystem.shared.overlays.components.OptionsItem
 import com.otusfoss.mail.core.mail.EmailAddressKey
 import com.otusfoss.mail.core.messages.domain.FolderChange
@@ -42,6 +43,13 @@ internal class ReadParts(
     }
 
     fun close() = onClose()
+
+    /** Turns zen mode on or off; it hides the strips, so their message list folds first. */
+    fun toggleZen() {
+        val on = !read.display.zen()
+        if (on) state.threadOpen = false
+        read.display.setZen(on)
+    }
 
     /**
      * Files the conversation as [change] says. A change that takes the row off the list closes the
@@ -187,16 +195,16 @@ internal fun ReadSheets(
 /**
  * What the Read view's header does: Back, the sender and date pills, which show or hide the
  * details with [onDetails] and mark them [senderOpen], [readLater] for the bookmark, which is null
- * while Read later is off, the zen pill, which [onZen] turns on or off while the view is [zen], and
- * the ⋯ [menu].
+ * while Read later is off, the files pill for the kind of each of the page's [files], which
+ * [onFiles] shows in the panel, and the ⋯ [menu].
  */
 internal class ReadHeaderActions(
     val onBack: () -> Unit,
     val senderOpen: Boolean,
     val onDetails: () -> Unit,
     val readLater: ReadLaterChange?,
-    val zen: Boolean,
-    val onZen: () -> Unit,
+    val files: List<AttachmentKind>,
+    val onFiles: () -> Unit,
     val menu: List<OptionsItem>,
 )
 
