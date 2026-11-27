@@ -16,6 +16,8 @@ import com.otusfoss.core.designsystem.shared.settings.components.SettingPageRow
 import com.otusfoss.core.designsystem.shared.settings.components.SettingRow
 import com.otusfoss.core.designsystem.shared.settings.components.SettingsSection
 import com.otusfoss.core.designsystem.shared.settings.elements.ValueButton
+import com.otusfoss.mail.core.text.ALL_ACCOUNTS
+import com.otusfoss.mail.core.text.accountLabel
 import com.otusfoss.mail.feature.notifications.domain.NotificationPreviews
 import com.otusfoss.mail.feature.notifications.domain.PreviewChoices
 import com.otusfoss.mail.feature.notifications.domain.PushDeliveryStatus
@@ -121,13 +123,14 @@ private fun NotInstantSection(
     val troubled = accounts.filter { account -> state.statuses[account.id].let { it != null && it !in healthy } }
     if (troubled.isEmpty()) return
     SettingsSection("Not instant", info = notInstantInfo(state.periodicChecks)) {
-        troubled.forEach { account ->
-            SettingRow(
-                account.name,
-                onClick = null,
-                description = state.statuses[account.id].label(state.periodicChecks),
-            )
-        }
+        troubled
+            .groupBy { state.statuses[it.id].label(state.periodicChecks) }
+            .forEach { (reason, group) ->
+                val names =
+                    accountLabel(group.map { it.name }, accounts.size)
+                        ?: ALL_ACCOUNTS.takeIf { accounts.size > 1 }
+                SettingRow(names ?: reason, onClick = null, description = reason.takeIf { names != null })
+            }
     }
 }
 

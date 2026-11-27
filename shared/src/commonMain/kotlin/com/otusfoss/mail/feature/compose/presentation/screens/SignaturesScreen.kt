@@ -18,6 +18,7 @@ import com.otusfoss.core.designsystem.theme.tokens.people.AvatarTokens
 import com.otusfoss.mail.core.messages.domain.SendIdentity
 import com.otusfoss.mail.core.messages.domain.signature
 import com.otusfoss.mail.core.messages.presentation.components.chipAvatar
+import com.otusfoss.mail.core.text.accountLabel
 import com.otusfoss.mail.feature.compose.presentation.SignaturesState
 
 /**
@@ -40,7 +41,9 @@ fun SignaturesScreen(
             state.accountList.forEach { account ->
                 val identities = state.identities.filter { it.accountId == account.id }
                 if (identities.isNotEmpty()) {
-                    Caption(account.name, Modifier.listCaptionInset())
+                    accountLabel(listOf(account.name), state.accountList.size)?.let {
+                        Caption(it, Modifier.listCaptionInset())
+                    }
                     identities.forEach { identity -> SignatureRow(identity) { onEdit(identity) } }
                 }
             }

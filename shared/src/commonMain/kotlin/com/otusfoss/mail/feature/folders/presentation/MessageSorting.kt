@@ -12,6 +12,7 @@ import com.otusfoss.mail.core.messages.presentation.MoveTarget
 import com.otusfoss.mail.core.messages.presentation.OlderMail
 import com.otusfoss.mail.core.messages.presentation.SortChoice
 import com.otusfoss.mail.core.messages.presentation.SortedMove
+import com.otusfoss.mail.core.text.accountLabel
 import com.otusfoss.mail.feature.folders.domain.FolderRule
 import com.otusfoss.mail.feature.folders.domain.FolderRuleRepository
 import com.otusfoss.mail.feature.folders.domain.SortBy
@@ -62,7 +63,7 @@ internal class MessageSorting(
                     addRule(account.accountId, sort, person, target, moved, feed)
                 }
             }.takeIf { it.isNotEmpty() }
-            ?.let { FutureSorting(account.accountName, it) }
+            ?.let { FutureSorting(accountLabel(listOf(account.accountName), rules.accounts.size), it) }
     }
 
     private fun addRule(

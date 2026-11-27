@@ -154,7 +154,7 @@ class MessageMarkingTest {
             val (marking, feed) = marking(message("m1"))
             marking.mark(feed, feed.messages, MessageFlag.Read, on = true)
             assertEquals(emptyList(), feed.unread())
-            settle { toasts.messages.any { it.text == "Couldn't mark the email as read" } }
+            settle { toasts.messages.any { it.text == "Couldn't mark as read" } }
             assertEquals(listOf("m1"), feed.unread())
             assertEquals(0, countChanges, "Nothing changed, so the folder counts stay")
             assertEquals(2, messageLoads)

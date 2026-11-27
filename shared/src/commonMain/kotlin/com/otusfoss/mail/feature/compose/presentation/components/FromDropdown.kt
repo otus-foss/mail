@@ -1,5 +1,7 @@
 package com.otusfoss.mail.feature.compose.presentation.components
 
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -20,6 +22,7 @@ import com.otusfoss.core.designsystem.theme.tokens.people.AvatarTokens
 import com.otusfoss.mail.core.messages.domain.MailSender
 import com.otusfoss.mail.core.messages.domain.SendIdentity
 import com.otusfoss.mail.core.messages.presentation.components.chipAvatar
+import com.otusfoss.mail.core.text.accountLabel
 import com.otusfoss.mail.feature.compose.presentation.ComposeAccount
 
 /**
@@ -63,7 +66,7 @@ internal fun FromDropdown(
         IdentitySection("Recent", recentShown, selected, choose)
         accounts.forEach { account ->
             IdentitySection(
-                account.name,
+                accountLabel(listOf(account.name), accounts.size),
                 shown.filter { it.accountId == account.id } - recentShown.toSet(),
                 selected,
                 choose,
@@ -74,13 +77,14 @@ internal fun FromDropdown(
 
 @Composable
 private fun IdentitySection(
-    title: String,
+    title: String?,
     identities: List<SendIdentity>,
     selected: MailSender?,
     onSelect: (SendIdentity) -> Unit,
 ) {
     if (identities.isEmpty()) return
-    Caption(title, Modifier.listCaptionInset())
+    // One account needs no name; a gap still parts its addresses from Recent.
+    if (title != null) Caption(title, Modifier.listCaptionInset()) else Spacer(Modifier.height(MenuTokens.inset))
     identities.forEach { identity ->
         val sender = identity.sender
         val named = sender.name.isNotBlank() && sender.name != sender.address

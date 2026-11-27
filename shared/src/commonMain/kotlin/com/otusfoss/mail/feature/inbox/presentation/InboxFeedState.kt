@@ -272,9 +272,9 @@ class InboxFeedState(
             load.served = true
             val now = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault())
             val unavailable =
-                snapshot.unavailable.takeIf { it.isNotEmpty() }?.joinToString(
-                    " ",
-                ) { it.notice(now, dates()) }
+                snapshot.unavailable
+                    .takeIf { it.isNotEmpty() }
+                    ?.notice(snapshot.accounts, now, dates())
             notice = loadNotice(reportedNotice, unavailable)
         }
     }

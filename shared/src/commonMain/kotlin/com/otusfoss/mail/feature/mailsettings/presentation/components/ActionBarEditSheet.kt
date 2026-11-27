@@ -16,14 +16,12 @@ import com.otusfoss.core.designsystem.shared.controls.elements.Symbol
 import com.otusfoss.core.designsystem.shared.controls.elements.UiAction
 import com.otusfoss.core.designsystem.shared.overlays.components.SheetFrame
 import com.otusfoss.core.designsystem.shared.overlays.elements.sheetInset
-import com.otusfoss.core.designsystem.shared.rows.elements.Caption
 import com.otusfoss.core.designsystem.shared.settings.components.PreviewCard
 import com.otusfoss.core.designsystem.theme.tokens.overlays.SheetTokens
 import com.otusfoss.mail.core.messages.domain.ActionBarLayout
 import com.otusfoss.mail.core.messages.domain.ActionBarPlace
 import com.otusfoss.mail.core.messages.domain.BarButton
 import com.otusfoss.mail.core.messages.domain.BarSlot
-import com.otusfoss.mail.core.messages.presentation.components.RowTextInset
 import com.otusfoss.mail.core.settings.presentation.MailBehaviorState
 import com.otusfoss.mail.core.settings.presentation.icon
 
@@ -64,7 +62,6 @@ internal fun ActionBarEditSheet(
             verticalArrangement = Arrangement.spacedBy(SheetTokens.gap),
         ) {
             PreviewCard(place.marker) { ActionBarPreview(layout, { picking = it }, addSlot = true) }
-            Caption("Tap a button to change it.", RowTextInset, heading = false)
         }
     }
     val slot = picking ?: return

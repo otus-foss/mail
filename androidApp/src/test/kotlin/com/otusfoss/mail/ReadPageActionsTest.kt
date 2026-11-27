@@ -187,7 +187,7 @@ class ReadPageActionsTest {
         }
         compose.onNode(hasText("Unsubscribe") and hasClickAction()).performClick()
         compose.mainClock.advanceTimeBy(FRAME)
-        compose.onNodeWithText("Unsubscribed from Sentry weekly digest").assertIsDisplayed()
+        compose.onNodeWithText("Unsubscribed").assertIsDisplayed()
     }
 
     private companion object {

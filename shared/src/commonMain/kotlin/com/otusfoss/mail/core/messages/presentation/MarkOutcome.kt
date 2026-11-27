@@ -51,7 +51,7 @@ internal fun markedText(
 
 /**
  * What the Retry toast says when the server refused [failed] of [total] messages whose [flag] was
- * to be set to [on]. A single message is "the email".
+ * to be set to [on]. A single message needs no count, as in "Couldn't mark as read".
  */
 internal fun notMarkedText(
     flag: MessageFlag,
@@ -61,14 +61,16 @@ internal fun notMarkedText(
 ): String {
     val mail =
         when {
-            total == 1 -> "the email"
+            total == 1 -> null
             failed == 1 -> "1 email"
             else -> "$failed emails"
         }
-    return when (flag) {
-        MessageFlag.Read -> "Couldn't mark $mail as ${if (on) "read" else "unread"}"
-        MessageFlag.Flagged -> "Couldn't ${if (on) "flag" else "unflag"} $mail"
-    }
+    val verb =
+        when (flag) {
+            MessageFlag.Read -> listOfNotNull("mark", mail, "as ${if (on) "read" else "unread"}")
+            MessageFlag.Flagged -> listOfNotNull(if (on) "flag" else "unflag", mail)
+        }
+    return "Couldn't ${verb.joinToString(" ")}"
 }
 
 private fun markWord(

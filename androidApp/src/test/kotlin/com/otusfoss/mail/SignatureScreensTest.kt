@@ -136,7 +136,7 @@ class SignatureScreensTest {
             SignatureEditorScreen(state, editor, onBack = {}, onCopied = { copied = true })
         }
         compose.onNodeWithContentDescription("Copy signature").performClick()
-        compose.onNodeWithText("Replaces the signature of this@companya.example.").assertExists()
+        compose.onNodeWithText("Replaces this signature.").assertExists()
         compose.onNode(hasText("Copy") and hasClickAction()).assertIsNotEnabled()
         compose.onNodeWithText("otus@rubylabs.design").performClick()
         compose.screenshot("compose/signature_copy")
