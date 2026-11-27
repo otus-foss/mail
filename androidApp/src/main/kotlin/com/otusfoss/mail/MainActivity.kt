@@ -20,11 +20,13 @@ import com.otusfoss.core.designsystem.theme.colors.systemTheme
 import com.otusfoss.core.settings.presentation.AnimationSettingsState
 import com.otusfoss.core.settings.presentation.AppIconSettingsState
 import com.otusfoss.core.settings.presentation.DateFormatSettingsState
+import com.otusfoss.core.settings.presentation.FontSettingsState
 import com.otusfoss.core.settings.presentation.ThemeSettingsState
 import com.otusfoss.mail.app.App
 import com.otusfoss.mail.app.IncognitoKeyboard
 import com.otusfoss.mail.app.LocalAllowNotifications
 import com.otusfoss.mail.app.MailServices
+import com.otusfoss.mail.app.SharedSettings
 import com.otusfoss.mail.feature.updates.domain.InstalledBuild
 import com.otusfoss.mail.feature.updates.domain.ReleaseChannel
 import kotlinx.coroutines.Dispatchers
@@ -60,7 +62,14 @@ class MainActivity : ComponentActivity() {
                 .toArgb()
                 .toDrawable(),
         )
-        val animationState = AnimationSettingsState(animationChoice())
+        val settings =
+            SharedSettings(
+                dateFormatState,
+                themeState,
+                AnimationSettingsState(animationChoice()),
+                FontSettingsState(fontChoice()),
+                appIconState,
+            )
         val build =
             InstalledBuild(
                 ReleaseChannel.valueOf(BuildConfig.CHANNEL),
@@ -81,7 +90,7 @@ class MainActivity : ComponentActivity() {
             SideEffect { keepScreenPrivate(secure) }
             IncognitoKeyboard(behaviorState.behavior.privacy.incognitoKeyboard) {
                 CompositionLocalProvider(LocalAllowNotifications provides notificationRequest()) {
-                    App(dateFormatState, services, behaviorState, themeState, animationState, appIconState, build)
+                    App(settings, services, behaviorState, build)
                 }
             }
         }

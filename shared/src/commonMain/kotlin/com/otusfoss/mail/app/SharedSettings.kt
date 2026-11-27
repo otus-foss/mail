@@ -1,28 +1,21 @@
 package com.otusfoss.mail.app
 
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
 import com.otusfoss.core.settings.presentation.AnimationSettingsState
 import com.otusfoss.core.settings.presentation.AppIconSettingsState
 import com.otusfoss.core.settings.presentation.DateFormatSettingsState
+import com.otusfoss.core.settings.presentation.FontSettingsState
 import com.otusfoss.core.settings.presentation.ThemeSettingsState
+import com.otusfoss.core.storage.inMemoryChoice
 
-/** The suite's settings that Mail shows on the shared settings pages. */
-internal class SharedSettings(
-    val dateFormat: DateFormatSettingsState,
-    val theme: ThemeSettingsState,
-    val animation: AnimationSettingsState,
-    val appIcon: AppIconSettingsState?,
+/**
+ * The suite's settings that Mail shows on the shared settings pages and applies to every page.
+ * Each one is kept in memory unless the platform passes its saved state. [appIcon] is null where
+ * the platform cannot switch its icon; the launch animation then uses the accent.
+ */
+class SharedSettings(
+    val dateFormat: DateFormatSettingsState = DateFormatSettingsState(inMemoryChoice()),
+    val theme: ThemeSettingsState = ThemeSettingsState(inMemoryChoice()),
+    val animation: AnimationSettingsState = AnimationSettingsState(inMemoryChoice()),
+    val font: FontSettingsState = FontSettingsState(inMemoryChoice()),
+    val appIcon: AppIconSettingsState? = null,
 )
-
-/** The [SharedSettings] for these states, kept while they stay the same. */
-@Composable
-internal fun rememberSharedSettings(
-    dateFormat: DateFormatSettingsState,
-    theme: ThemeSettingsState,
-    animation: AnimationSettingsState,
-    appIcon: AppIconSettingsState?,
-): SharedSettings =
-    remember(dateFormat, theme, animation, appIcon) {
-        SharedSettings(dateFormat, theme, animation, appIcon)
-    }

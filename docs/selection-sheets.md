@@ -34,8 +34,8 @@ a grab handle, a centered title with Clear before it and Done after it, an optio
 and a scrollable content area. `PickerSearch` composes the existing `SearchField` element; its
 text is independent of the mail query. Rows are `PickRow`s.
 They share clipped press feedback with pills and icon buttons, including keyboard focus feedback.
-All colors use the supplied dark palette; text uses Figtree and the existing symbols use Material
-Symbols Rounded. `SheetTokens` owns sheet geometry. No new palette colors or icon assets are added.
+All colors use the supplied dark palette; text uses the font chosen in Appearance › Font and the
+symbols are Core's own. `SheetTokens` owns sheet geometry. No new palette colors or icon assets are added.
 
 The sheet slides up from the bottom edge. Outside-tap, system Back, or swiping down anywhere on
 it slides it away; in a scrolling list or calendar, the swipe takes over once the content is at

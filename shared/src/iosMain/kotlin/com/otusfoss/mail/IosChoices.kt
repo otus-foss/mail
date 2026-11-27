@@ -9,4 +9,6 @@ internal fun themeChoice(): StoredChoice = StoredChoice(UserDefaultsValues("otus
 
 internal fun animationChoice(): StoredChoice = StoredChoice(UserDefaultsValues("otus."), "animation_speed")
 
+internal fun fontChoice(): StoredChoice = StoredChoice(UserDefaultsValues("otus."), "font")
+
 internal fun dateFormatChoice(): StoredChoice = StoredChoice(UserDefaultsValues("otus."), "date_format")
