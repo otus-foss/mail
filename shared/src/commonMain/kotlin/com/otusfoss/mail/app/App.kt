@@ -32,14 +32,8 @@ import com.otusfoss.core.designsystem.shared.sidebar.components.rememberSidebarS
 import com.otusfoss.core.designsystem.theme.OtusTheme
 import com.otusfoss.core.designsystem.theme.brand.AppIconStyle
 import com.otusfoss.core.designsystem.theme.motion.LocalMotionScale
-import com.otusfoss.core.settings.presentation.AnimationSettingsState
-import com.otusfoss.core.settings.presentation.AppIconSettingsState
-import com.otusfoss.core.settings.presentation.DateFormatSettingsState
-import com.otusfoss.core.settings.presentation.FontSettingsState
-import com.otusfoss.core.settings.presentation.ThemeSettingsState
 import com.otusfoss.core.settings.presentation.components.LocalDateFormatter
 import com.otusfoss.core.settings.presentation.components.rememberDateFormatter
-import com.otusfoss.core.storage.inMemoryChoice
 import com.otusfoss.mail.core.messages.domain.MailScopeChoice
 import com.otusfoss.mail.core.messages.presentation.components.SortedMoveSheet
 import com.otusfoss.mail.core.settings.domain.SidebarPin
@@ -59,17 +53,12 @@ import kotlinx.coroutines.launch
 
 @Composable
 fun App(
-    dateFormatState: DateFormatSettingsState = remember { DateFormatSettingsState(inMemoryChoice()) },
+    settings: SharedSettings = remember { SharedSettings() },
     services: MailServices = remember { MailServices() },
     behaviorState: MailBehaviorState = remember { MailBehaviorState() },
-    themeState: ThemeSettingsState = remember { ThemeSettingsState(inMemoryChoice()) },
-    animationState: AnimationSettingsState = remember { AnimationSettingsState(inMemoryChoice()) },
-    // Null where the platform cannot switch its icon; the launch animation then uses the accent.
-    appIconState: AppIconSettingsState? = null,
     build: InstalledBuild? = null,
-    fontState: FontSettingsState = remember { FontSettingsState(inMemoryChoice()) },
 ) {
-    val dateFormatter = rememberDateFormatter(dateFormatState)
+    val dateFormatter = rememberDateFormatter(settings.dateFormat)
     val currentDates = rememberUpdatedState(dateFormatter)
     // The start page is read once per launch; changing it in settings applies at the next launch.
     val start = remember(behaviorState) { behaviorState.behavior.sidebar.startPage }
@@ -81,13 +70,12 @@ fun App(
     var updateOpen by rememberSaveable { mutableStateOf(false) }
     // Each page keeps its own saved state, such as an inbox search, while another page is shown.
     val pages = rememberSaveableStateHolder()
-    val settings = rememberSharedSettings(dateFormatState, themeState, animationState, fontState, appIconState)
     val navigation = rememberMailNavigation({ page = it }) { scope.launch { sidebar.open() } }
     AppEffects(services, states, behaviorState, start, navigation, current = { page }) { page = it }
     val onboarding = rememberOnboarding(states, behaviorState)
     // A launch that may open on the first run plays no launch animation over it.
     val firstRun = remember(behaviorState) { !behaviorState.behavior.onboarded }
-    AppTheme(themeState, fontState, animationState, dateFormatter) {
+    AppTheme(settings, dateFormatter) {
         Box(Modifier.fillMaxSize()) {
             if (onboarding) {
                 // Another account is added where accounts live, not by running the setup again.
@@ -121,7 +109,7 @@ fun App(
             if (!firstRun) {
                 LaunchCover(
                     states.list.feed,
-                    appIconState?.style ?: AppIconStyle.Accent,
+                    settings.appIcon?.style ?: AppIconStyle.Accent,
                     inbox = start == SidebarPin.Inbox,
                 )
             }
@@ -149,15 +137,13 @@ private fun rememberMailStates(
 /** The theme, font, motion speed, date format, and bottom clearance every page reads. */
 @Composable
 private fun AppTheme(
-    themeState: ThemeSettingsState,
-    fontState: FontSettingsState,
-    animationState: AnimationSettingsState,
+    settings: SharedSettings,
     dateFormatter: DateFormatter,
     content: @Composable () -> Unit,
 ) {
-    OtusTheme(themeState.palette, fontState.font) {
+    OtusTheme(settings.theme.palette, settings.font.font) {
         CompositionLocalProvider(
-            LocalMotionScale provides animationState.speed.scale,
+            LocalMotionScale provides settings.animation.speed.scale,
             LocalDateFormatter provides dateFormatter,
             LocalBottomClearance provides remember { BottomClearance() },
             content = content,

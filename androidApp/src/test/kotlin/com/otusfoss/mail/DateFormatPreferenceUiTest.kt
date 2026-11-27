@@ -12,6 +12,7 @@ import com.otusfoss.core.dateformat.DateFormatPreference
 import com.otusfoss.core.settings.presentation.DateFormatSettingsState
 import com.otusfoss.core.storage.inMemoryChoice
 import com.otusfoss.mail.app.App
+import com.otusfoss.mail.app.SharedSettings
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -30,7 +31,7 @@ class DateFormatPreferenceUiTest {
     @Test
     fun changingThePreferenceUpdatesAnOpenDatePickerAndItsAppliedRange() {
         val settings = DateFormatSettingsState(inMemoryChoice(DateFormatPreference.DayMonthYearDots.storageValue))
-        compose.runOnUiThread { compose.activity.setContent { App(settings) } }
+        compose.runOnUiThread { compose.activity.setContent { App(SharedSettings(settings)) } }
         openDatePicker()
         compose.onNodeWithText("Last 7 days").performClick()
         val start = LocalDate.now().minusDays(6)

@@ -14,12 +14,19 @@ import com.otusfoss.core.dateformat.formatRelative
 import com.otusfoss.core.settings.presentation.DateFormatSettingsState
 import com.otusfoss.core.storage.inMemoryChoice
 import com.otusfoss.mail.app.App
+import com.otusfoss.mail.app.SharedSettings
 import kotlinx.datetime.LocalDate
 
 /** Gesture tests select ISO explicitly so their assertions do not depend on the host locale. */
 fun MainActivity.showIsoDateApp() {
     setContent {
-        App(remember { DateFormatSettingsState(inMemoryChoice(DateFormatPreference.YearMonthDayDashes.storageValue)) })
+        App(
+            remember {
+                SharedSettings(
+                    DateFormatSettingsState(inMemoryChoice(DateFormatPreference.YearMonthDayDashes.storageValue)),
+                )
+            },
+        )
     }
 }
 
