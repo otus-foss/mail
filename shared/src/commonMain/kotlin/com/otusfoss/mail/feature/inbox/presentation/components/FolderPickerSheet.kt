@@ -9,6 +9,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import com.otusfoss.core.designsystem.mail.folders.components.FilterFolderRow
 import com.otusfoss.core.designsystem.mail.folders.components.FolderCheck
+import com.otusfoss.core.designsystem.mail.folders.components.FolderExpansion
 import com.otusfoss.core.designsystem.mail.folders.components.TreeFolder
 import com.otusfoss.core.designsystem.shared.controls.elements.Chip
 import com.otusfoss.core.designsystem.shared.controls.elements.ChipLook
@@ -132,14 +133,20 @@ private fun FolderRows(
             TreeFolder(folder.name, if (searching) 0 else folder.depth, path),
             check,
             onCheck = { onEdit { it.toggle(folder) } },
-            expanded = (folder.key !in collapsed).takeIf { folder.hasChildren && !searching },
-            onExpandedChange = { onCollapse(folder.key, !it) },
+            expansion =
+                FolderExpansion(folder.key !in collapsed) { onCollapse(folder.key, !it) }
+                    .takeIf { folder.hasChildren && !searching },
+            subrow =
+                if (check == FolderCheck.On && folder.hasChildren) {
+                    { OnlyThisFolder(folder, draft, onEdit) }
+                } else {
+                    null
+                },
         ) { FolderGlyph(folder.color, icon = folder.icon, size = ControlTokens.chipIconSize) }
-        if (check == FolderCheck.On && folder.hasChildren) OnlyThisFolder(folder, draft, onEdit)
     }
 }
 
-/** Under a chosen parent: whether its subfolders count too. */
+/** Under a ticked parent: whether its subfolders count too. */
 @Composable
 private fun OnlyThisFolder(
     folder: FilterFolder,
@@ -150,7 +157,6 @@ private fun OnlyThisFolder(
     Chip(
         "Only this folder",
         { onEdit { it.includeSubfolders(folder, include = only) } },
-        Modifier.padding(start = FilterTokens.folderIndent * (folder.depth + 1) + FilterTokens.folderRowHeight),
         selected = only,
         style = ChipStyle(look = ChipLook.Raised),
     )
