@@ -153,7 +153,6 @@ class MailBehaviorFormatsTest {
                 "action_bar_message" to "archive,move_to:Clients/Acme|reply_all",
                 "action_bar_inbox" to "|search",
                 "action_bar_mode" to "fixed",
-                "action_bar_minimized" to true,
                 "notification_actions" to "read,spam",
             ).actions
         assertEquals(null, actions.startToEnd)
@@ -168,7 +167,6 @@ class MailBehaviorFormatsTest {
         assertEquals(ActionBarLayout(emptyList(), MailAction.Search), actions.savedLayout(ActionBarPlace.Inbox))
         assertEquals(ActionBarPlace.Selection.defaultLayout, actions.savedLayout(ActionBarPlace.Selection))
         assertEquals(ActionBarMode.Fixed, actions.barMode)
-        assertEquals(true, actions.minimizedBar)
         assertEquals(listOf(MailAction.Read, MailAction.Spam), actions.notificationActions)
         assertEquals(emptyList<MailAction>(), read("notification_actions" to "").actions.notificationActions)
     }

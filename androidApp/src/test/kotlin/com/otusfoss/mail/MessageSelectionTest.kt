@@ -7,11 +7,9 @@ import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.isSelected
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.longClick
-import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTouchInput
-import com.otusfoss.mail.core.settings.domain.ActionBehavior
 import com.otusfoss.mail.core.settings.domain.MailBehavior
 import com.otusfoss.mail.core.settings.domain.ReadBehavior
 import com.otusfoss.mail.core.settings.presentation.MailBehaviorState
@@ -34,8 +32,11 @@ class MessageSelectionTest {
     private val selectionBar get() = compose.onNode(hasContentDescription(SHELL) and hasClickAction())
 
     /** Opens the inbox once folders and rules have loaded, then long-presses the one message. */
-    private fun selectWelcome(behavior: MailBehavior = MailBehavior(read = ReadBehavior(markReadOnOpen = false))) {
-        compose.showInbox(server, MailBehaviorState(initial = behavior))
+    private fun selectWelcome() {
+        compose.showInbox(
+            server,
+            MailBehaviorState(initial = MailBehavior(read = ReadBehavior(markReadOnOpen = false))),
+        )
         compose.onNodeWithText("Welcome").performTouchInput { longClick() }
     }
 
@@ -44,7 +45,6 @@ class MessageSelectionTest {
         // Outside selection the row reports no selected state at all.
         compose.onNodeWithText("Welcome").assertIsDisplayed()
         compose.onNode(hasText("Welcome") and isSelected()).assertDoesNotExist()
-        compose.onNodeWithContentDescription("More actions").assertDoesNotExist()
     }
 
     @Test
@@ -52,7 +52,6 @@ class MessageSelectionTest {
         selectWelcome()
         compose.onNode(hasText("Welcome") and isSelected()).assertIsDisplayed()
         selectionBar.assertIsDisplayed()
-        compose.onNodeWithContentDescription("More actions").assertDoesNotExist()
     }
 
     @Test
@@ -78,20 +77,6 @@ class MessageSelectionTest {
         selectWelcome()
         compose.onNodeWithText("Welcome").performClick()
         assertNothingSelected()
-    }
-
-    @Test
-    fun aMinimizedBarListsTheActionsItLeavesOutInAMenu() {
-        server.folders += """{"id": "t", "name": "Deleted", "role": "trash"}"""
-        selectWelcome(
-            MailBehavior(read = ReadBehavior(markReadOnOpen = false), actions = ActionBehavior(minimizedBar = true)),
-        )
-        compose.onNode(hasContentDescription("Delete") and hasClickAction()).assertDoesNotExist()
-        compose.onNodeWithContentDescription("More actions").performClick()
-        compose.onNode(hasText("Delete") and hasClickAction()).performClick()
-        compose.waitForCall(server, "Email/set")
-        assertTrue(server.calls.last { "Email/set" in it }.contains("\"mailboxIds/t\":true"))
-        selectionBar.assertDoesNotExist()
     }
 
     private companion object {
