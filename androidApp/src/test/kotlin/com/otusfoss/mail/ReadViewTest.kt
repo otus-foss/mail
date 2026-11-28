@@ -247,7 +247,13 @@ class ReadViewTest {
         }
         assertTrue(!exists("3 attachments"))
         compose.onNodeWithContentDescription("Show 3 files").performClick()
-        compose.waitUntil(TIMEOUT) { exists("whiteboard.jpg") }
+        // A file card names its file only in its description.
+        compose.waitUntil(TIMEOUT) {
+            compose
+                .onAllNodesWithContentDescription("whiteboard.jpg", substring = true)
+                .fetchSemanticsNodes()
+                .isNotEmpty()
+        }
         compose.screenshot("read/attachments")
     }
 
