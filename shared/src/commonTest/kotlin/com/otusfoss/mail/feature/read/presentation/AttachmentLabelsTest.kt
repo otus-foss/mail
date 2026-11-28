@@ -5,9 +5,13 @@ import com.otusfoss.mail.core.messages.domain.MailingList
 import com.otusfoss.mail.core.messages.presentation.AttachmentKindName
 import com.otusfoss.mail.core.messages.presentation.attachmentSummary
 import com.otusfoss.mail.core.messages.presentation.detail
+import com.otusfoss.mail.core.messages.presentation.drawable
 import com.otusfoss.mail.core.messages.presentation.kind
+import com.otusfoss.mail.core.messages.presentation.symbol
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
+import kotlin.test.assertTrue
 
 class AttachmentLabelsTest {
     private val pdf = MailAttachment("Q4-plan-v3.pdf", "application/pdf", 240 * 1024L, "b1")
@@ -31,7 +35,7 @@ class AttachmentLabelsTest {
     @Test
     fun kindFallsBackToTheExtension() {
         assertEquals(AttachmentKindName.Pdf, MailAttachment("a.PDF", "application/octet-stream", 1, "b").kind())
-        assertEquals(AttachmentKindName.Sheet, MailAttachment("a.csv", "application/octet-stream", 1, "b").kind())
+        assertEquals(AttachmentKindName.Data, MailAttachment("a.csv", "application/octet-stream", 1, "b").kind())
         assertEquals(AttachmentKindName.Slides, MailAttachment("deck.pptx", "application/octet-stream", 1, "b").kind())
         assertEquals(AttachmentKindName.Other, MailAttachment("README", "application/octet-stream", 1, "b").kind())
     }
@@ -40,9 +44,58 @@ class AttachmentLabelsTest {
     fun officeTypesWinOverTheXmlTheyName() {
         val deck = "application/vnd.openxmlformats-officedocument.presentationml.presentation"
         assertEquals(AttachmentKindName.Slides, MailAttachment("deck", deck, 1, "b").kind())
-        assertEquals(AttachmentKindName.Code, MailAttachment("feed", "application/xml", 1, "b").kind())
+        assertEquals(AttachmentKindName.Data, MailAttachment("feed", "application/xml", 1, "b").kind())
         assertEquals(AttachmentKindName.Archive, MailAttachment("a.zip", "application/zip", 1, "b").kind())
         assertEquals(AttachmentKindName.Calendar, MailAttachment("invite.ics", "text/calendar", 1, "b").kind())
+    }
+
+    @Test
+    fun wrappersAndVectorsWinOverWhatTheyHold() {
+        assertEquals(AttachmentKindName.Design, MailAttachment("logo", "image/svg+xml", 1, "b").kind())
+        assertEquals(
+            AttachmentKindName.Signature,
+            MailAttachment("signature.asc", "application/pgp-signature", 1, "b").kind(),
+        )
+        assertEquals(AttachmentKindName.Encrypted, MailAttachment("msg", "application/pgp-encrypted", 1, "b").kind())
+        assertEquals(AttachmentKindName.Ebook, MailAttachment("book", "application/epub+zip", 1, "b").kind())
+        assertEquals(
+            AttachmentKindName.Location,
+            MailAttachment("trip", "application/vnd.google-earth.kml+xml", 1, "b").kind(),
+        )
+    }
+
+    @Test
+    fun armoredFilesFollowTheirMediaType() {
+        assertEquals(AttachmentKindName.Key, MailAttachment("publickey.asc", "application/pgp-keys", 1, "b").kind())
+        assertEquals(
+            AttachmentKindName.Other,
+            MailAttachment("encrypted.asc", "application/octet-stream", 1, "b").kind(),
+        )
+    }
+
+    @Test
+    fun wrappersAndAppsWinOverTheirContainerType() {
+        assertEquals(
+            AttachmentKindName.Encrypted,
+            MailAttachment("photo.jpg", "application/pkcs7-mime", 1, "b").kind(),
+        )
+        assertEquals(AttachmentKindName.App, MailAttachment("otus.apk", "application/zip", 1, "b").kind())
+    }
+
+    @Test
+    fun archivesAreNotCode() {
+        assertEquals(AttachmentKindName.Other, MailAttachment("backup.cpio", "application/x-cpio", 1, "b").kind())
+        assertEquals(AttachmentKindName.Code, MailAttachment("main.c", "text/x-c", 1, "b").kind())
+    }
+
+    @Test
+    fun everyKindHasASymbol() = AttachmentKindName.entries.forEach { assertEquals(it.name, it.symbol.name) }
+
+    @Test
+    fun tiffIsNotDrawn() {
+        assertTrue(image.drawable())
+        assertFalse(MailAttachment("scan.tiff", "image/tiff", 1, "b").drawable())
+        assertFalse(pdf.drawable())
     }
 
     @Test

@@ -20,6 +20,7 @@ import com.otusfoss.mail.core.messages.presentation.actions.MailBar
 import com.otusfoss.mail.core.messages.presentation.actions.MoveOptions
 import com.otusfoss.mail.core.messages.presentation.actions.OfferedAction
 import com.otusfoss.mail.core.messages.presentation.actions.PageSubject
+import com.otusfoss.mail.core.messages.presentation.actions.ZenSwitch
 import com.otusfoss.mail.core.messages.presentation.actions.barFor
 import com.otusfoss.mail.core.messages.presentation.actions.offer
 import com.otusfoss.mail.core.settings.domain.ActionBehavior
@@ -122,7 +123,7 @@ class ActionReachTest {
         actions(role),
         messages,
         moves = MoveOptions(suggestion = folders.last()),
-        page = page?.let { PageSubject(it, role, onCompose = {}) },
+        page = page?.let { PageSubject(it, role, onCompose = {}, zen = ZenSwitch(on = false) {}) },
     )
 
     private fun actions(role: MailboxRole) =

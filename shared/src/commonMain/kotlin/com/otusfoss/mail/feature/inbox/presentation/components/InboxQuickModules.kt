@@ -25,6 +25,7 @@ import com.otusfoss.mail.core.messages.presentation.components.chipAvatar
 import com.otusfoss.mail.core.messages.presentation.components.firstName
 import com.otusfoss.mail.core.messages.presentation.icon
 import com.otusfoss.mail.core.messages.presentation.kind
+import com.otusfoss.mail.core.messages.presentation.symbol
 import com.otusfoss.mail.core.settings.presentation.icon
 import com.otusfoss.mail.feature.inbox.domain.InboxFilters
 import com.otusfoss.mail.feature.inbox.domain.frequentSenders
@@ -152,8 +153,7 @@ private fun String.withoutTopDomain(): String =
     if ('@' in this && '.' in substringAfter('@')) substringBeforeLast('.') else this
 
 /** The icon kind for a file named [name], read from its extension as the attachment strip does. */
-private fun fileKind(name: String): AttachmentKind =
-    AttachmentKind.valueOf(MailAttachment(name, "", 0L, "").kind().name)
+private fun fileKind(name: String): AttachmentKind = MailAttachment(name, "", 0L, "").kind().symbol
 
 private const val FACE_SLOTS = 5
 
