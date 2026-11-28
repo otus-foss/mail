@@ -31,7 +31,7 @@ class AttachmentLabelsTest {
     @Test
     fun kindFallsBackToTheExtension() {
         assertEquals(AttachmentKindName.Pdf, MailAttachment("a.PDF", "application/octet-stream", 1, "b").kind())
-        assertEquals(AttachmentKindName.Sheet, MailAttachment("a.csv", "application/octet-stream", 1, "b").kind())
+        assertEquals(AttachmentKindName.Data, MailAttachment("a.csv", "application/octet-stream", 1, "b").kind())
         assertEquals(AttachmentKindName.Slides, MailAttachment("deck.pptx", "application/octet-stream", 1, "b").kind())
         assertEquals(AttachmentKindName.Other, MailAttachment("README", "application/octet-stream", 1, "b").kind())
     }
@@ -40,9 +40,24 @@ class AttachmentLabelsTest {
     fun officeTypesWinOverTheXmlTheyName() {
         val deck = "application/vnd.openxmlformats-officedocument.presentationml.presentation"
         assertEquals(AttachmentKindName.Slides, MailAttachment("deck", deck, 1, "b").kind())
-        assertEquals(AttachmentKindName.Code, MailAttachment("feed", "application/xml", 1, "b").kind())
+        assertEquals(AttachmentKindName.Data, MailAttachment("feed", "application/xml", 1, "b").kind())
         assertEquals(AttachmentKindName.Archive, MailAttachment("a.zip", "application/zip", 1, "b").kind())
         assertEquals(AttachmentKindName.Calendar, MailAttachment("invite.ics", "text/calendar", 1, "b").kind())
+    }
+
+    @Test
+    fun wrappersAndVectorsWinOverWhatTheyHold() {
+        assertEquals(AttachmentKindName.Design, MailAttachment("logo", "image/svg+xml", 1, "b").kind())
+        assertEquals(
+            AttachmentKindName.Signature,
+            MailAttachment("signature.asc", "application/pgp-signature", 1, "b").kind(),
+        )
+        assertEquals(AttachmentKindName.Encrypted, MailAttachment("msg", "application/pgp-encrypted", 1, "b").kind())
+        assertEquals(AttachmentKindName.Ebook, MailAttachment("book", "application/epub+zip", 1, "b").kind())
+        assertEquals(
+            AttachmentKindName.Location,
+            MailAttachment("trip", "application/vnd.google-earth.kml+xml", 1, "b").kind(),
+        )
     }
 
     @Test

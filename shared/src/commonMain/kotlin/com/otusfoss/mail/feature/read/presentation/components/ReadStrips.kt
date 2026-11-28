@@ -78,18 +78,4 @@ internal fun ReadCodeStrip(
 }
 
 private val AttachmentKindName.shown: AttachmentKind
-    get() =
-        when (this) {
-            AttachmentKindName.Image -> AttachmentKind.Image
-            AttachmentKindName.Pdf -> AttachmentKind.Pdf
-            AttachmentKindName.Document -> AttachmentKind.Document
-            AttachmentKindName.Sheet -> AttachmentKind.Sheet
-            AttachmentKindName.Slides -> AttachmentKind.Slides
-            AttachmentKindName.Archive -> AttachmentKind.Archive
-            AttachmentKindName.Audio -> AttachmentKind.Audio
-            AttachmentKindName.Video -> AttachmentKind.Video
-            AttachmentKindName.Calendar -> AttachmentKind.Calendar
-            AttachmentKindName.Contact -> AttachmentKind.Contact
-            AttachmentKindName.Code -> AttachmentKind.Code
-            AttachmentKindName.Other -> AttachmentKind.Other
-        }
+    get() = AttachmentKind.valueOf(name)
