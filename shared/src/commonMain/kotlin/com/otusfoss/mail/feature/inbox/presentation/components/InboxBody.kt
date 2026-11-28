@@ -25,6 +25,7 @@ import com.otusfoss.core.designsystem.resources.symbol_search
 import com.otusfoss.core.designsystem.shared.feedback.components.EmptyState
 import com.otusfoss.core.designsystem.shared.feedback.elements.RefreshIndicator
 import com.otusfoss.core.designsystem.shared.rows.components.dragToSelect
+import com.otusfoss.core.designsystem.shared.rows.components.entryNeighbors
 import com.otusfoss.core.designsystem.shared.rows.components.rowSelection
 import com.otusfoss.core.designsystem.shared.swipe.components.SwipeActions
 import com.otusfoss.core.designsystem.theme.colors.OtusColors
@@ -135,7 +136,10 @@ private fun LazyListScope.loadingMoreFooter() {
     }
 }
 
-/** A conversation's row with its swipes, joined to selected neighbors while the list is selecting. */
+/**
+ * A conversation's row with its swipes, grouped with the rows around it and joined to selected
+ * neighbors while the list is selecting.
+ */
 @Composable
 private fun LazyItemScope.ConversationItem(
     message: MailMessage,
@@ -161,6 +165,7 @@ private fun LazyItemScope.ConversationItem(
             message,
             model,
             selection = selection,
+            neighbors = entryNeighbors(index, ids.size),
             onLongClick = { gestures.onToggle(message) },
             onCodeCopied = { gestures.codeCopied(message, model.read) },
         ) { gestures.tap(message) }
