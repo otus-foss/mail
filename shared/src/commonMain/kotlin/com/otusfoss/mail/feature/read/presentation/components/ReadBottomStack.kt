@@ -31,7 +31,8 @@ import com.otusfoss.mail.feature.read.presentation.ReadState
 import com.otusfoss.mail.feature.read.presentation.subtitle
 
 /**
- * The context strip above the action bar; the page's files are in the control panel. A page with a one-time code shows its code strip, with the source's Delete. Otherwise a
+ * The context strip above the action bar; the page's files are in the control panel. A page with
+ * a one-time code shows its code strip, with the source's Delete. Otherwise a
  * conversation shows its thread strip; a single message its newsletter strip when it can be left
  * and is not spam, else the folders it is also in, else nothing. Until the pages load, the row's
  * message count tells a conversation from a single message, so the strip does not change kind
