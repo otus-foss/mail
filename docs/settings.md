@@ -34,9 +34,10 @@ left, the control on the right, and large section titles. Search covers every pa
     `themeChoice()`. Below the preview, a warning names custom colors that are hard to read, and
     **Colors from one hue** generates a custom theme from a hue; see
     [the color theme](design.md#colors-from-one-hue).
-  - **Mail list** previews a row, then sets **Show sender**, **Order**, **Preview**, and **Folder
-    icons** under **Rows**, and the date **Style** and **Show this year** under **Dates**. Order and
-    Preview only apply while the sender shows, so they wait, disabled, below Show sender.
+  - **Mail list** previews a row, then sets **Size** (Comfortable by default, or Compact), **Show
+    sender**, **Order**, **Preview**, and **Folder icons** under **Rows**, and the date **Style**
+    and **Show this year** under **Dates**. Order and Preview only apply while the sender shows,
+    so they wait, disabled, below Show sender.
   - **Date format** shows the pattern in a `ValueButton`, with an example date below the title,
     and **Animations** chooses Instant, Slow, Regular, or Fast; both open a `ChoiceSheet`.
 - **Mail behavior** (`MailBehaviorScreen`) holds how Mail acts, in the order the user meets it:

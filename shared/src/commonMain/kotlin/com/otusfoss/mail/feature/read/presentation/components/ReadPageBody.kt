@@ -37,7 +37,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
 /**
- * One page of the Read view: [top], such as the images banner and the sender details, floats
+ * One page of the Read view: [top], such as the images banner, floats at the width of the strips
  * above the [message]'s text, which scrolls up behind it and behind whatever floats over the
  * page's edges, leaving [insets] of room at its top and bottom so it can scroll clear of them. Its
  * quoted part folds under it as [quotes] says, and levels quoted inside it fold to a row each.
@@ -61,7 +61,9 @@ internal fun ReadPageBody(
         val loose = constraints.copy(minWidth = 0, minHeight = 0)
         val tops =
             subcompose(TOP) {
-                Column(textInset.padding(top = PageTokens.contentInset), spacing, content = top)
+                // The banner lines up with the strips over the page's bottom, not with the text, and
+                // sits as far below the header as they sit above the bar.
+                Column(chromeInset.padding(top = PageTokens.pageInset), spacing, content = top)
             }.map { it.measure(loose) }
         val topHeight = tops.maxOfOrNull { it.height } ?: 0
         val room =
@@ -202,6 +204,8 @@ internal fun openLink(
 }
 
 private val textSide = PageTokens.pageInset + PageTokens.textInset
+
+private val chromeInset = Modifier.padding(horizontal = PageTokens.pageInset)
 
 private val spacing = Arrangement.spacedBy(ReadTokens.partGap)
 

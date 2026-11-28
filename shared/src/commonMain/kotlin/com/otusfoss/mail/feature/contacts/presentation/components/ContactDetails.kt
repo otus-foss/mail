@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -25,8 +26,10 @@ import com.otusfoss.core.designsystem.shared.feedback.components.InfoStrip
 import com.otusfoss.core.designsystem.shared.overlays.components.OptionsItem
 import com.otusfoss.core.designsystem.shared.overlays.components.OptionsMenu
 import com.otusfoss.core.designsystem.shared.pages.components.PageNote
+import com.otusfoss.core.designsystem.shared.rows.components.EntryNeighbors
 import com.otusfoss.core.designsystem.shared.rows.components.EntryTaps
 import com.otusfoss.core.designsystem.shared.rows.components.RowGroup
+import com.otusfoss.core.designsystem.shared.rows.components.entryNeighbors
 import com.otusfoss.core.designsystem.shared.rows.elements.SectionCaption
 import com.otusfoss.core.designsystem.theme.tokens.layout.PageTokens
 import com.otusfoss.core.designsystem.theme.tokens.rows.EntryTokens
@@ -191,7 +194,10 @@ internal fun GroupMembers(
             PageNote("No one in this group yet.")
         }
         Column(verticalArrangement = Arrangement.spacedBy(EntryTokens.gap)) {
-            members.forEach { person -> GroupMember(person, onOpen, onRemove) }
+            members.forEachIndexed { index, person ->
+                // Keyed, so a removed member's corners and menu leave with them.
+                key(person.main.key) { GroupMember(person, entryNeighbors(index, members.size), onOpen, onRemove) }
+            }
         }
     }
 }
@@ -199,6 +205,7 @@ internal fun GroupMembers(
 @Composable
 private fun GroupMember(
     person: ContactPerson,
+    neighbors: EntryNeighbors,
     onOpen: (CardKey) -> Unit,
     onRemove: ((ContactPerson) -> Unit)?,
 ) {
@@ -209,6 +216,7 @@ private fun GroupMember(
             person.emails.firstOrNull()?.value ?: "No address",
             person.avatar,
             EntryTaps({ onOpen(person.main.key) }, onRemove?.let { { open = true } }),
+            neighbors = neighbors,
         )
         if (open && onRemove != null) {
             val remove =
