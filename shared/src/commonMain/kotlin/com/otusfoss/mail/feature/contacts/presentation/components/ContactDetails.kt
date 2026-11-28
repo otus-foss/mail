@@ -25,8 +25,10 @@ import com.otusfoss.core.designsystem.shared.feedback.components.InfoStrip
 import com.otusfoss.core.designsystem.shared.overlays.components.OptionsItem
 import com.otusfoss.core.designsystem.shared.overlays.components.OptionsMenu
 import com.otusfoss.core.designsystem.shared.pages.components.PageNote
+import com.otusfoss.core.designsystem.shared.rows.components.EntryNeighbors
 import com.otusfoss.core.designsystem.shared.rows.components.EntryTaps
 import com.otusfoss.core.designsystem.shared.rows.components.RowGroup
+import com.otusfoss.core.designsystem.shared.rows.components.entryNeighbors
 import com.otusfoss.core.designsystem.shared.rows.elements.SectionCaption
 import com.otusfoss.core.designsystem.theme.tokens.layout.PageTokens
 import com.otusfoss.core.designsystem.theme.tokens.rows.EntryTokens
@@ -191,7 +193,9 @@ internal fun GroupMembers(
             PageNote("No one in this group yet.")
         }
         Column(verticalArrangement = Arrangement.spacedBy(EntryTokens.gap)) {
-            members.forEach { person -> GroupMember(person, onOpen, onRemove) }
+            members.forEachIndexed { index, person ->
+                GroupMember(person, entryNeighbors(index, members.size), onOpen, onRemove)
+            }
         }
     }
 }
@@ -199,6 +203,7 @@ internal fun GroupMembers(
 @Composable
 private fun GroupMember(
     person: ContactPerson,
+    neighbors: EntryNeighbors,
     onOpen: (CardKey) -> Unit,
     onRemove: ((ContactPerson) -> Unit)?,
 ) {
@@ -209,6 +214,7 @@ private fun GroupMember(
             person.emails.firstOrNull()?.value ?: "No address",
             person.avatar,
             EntryTaps({ onOpen(person.main.key) }, onRemove?.let { { open = true } }),
+            neighbors = neighbors,
         )
         if (open && onRemove != null) {
             val remove =

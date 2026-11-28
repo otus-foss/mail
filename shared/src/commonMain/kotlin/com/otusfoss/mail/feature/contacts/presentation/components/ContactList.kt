@@ -21,8 +21,10 @@ import com.otusfoss.core.designsystem.shared.contacts.components.LetterIndexScro
 import com.otusfoss.core.designsystem.shared.contacts.components.LetterIndexState
 import com.otusfoss.core.designsystem.shared.contacts.components.letterIndexHandle
 import com.otusfoss.core.designsystem.shared.people.components.ChipAvatar
+import com.otusfoss.core.designsystem.shared.rows.components.EntryNeighbors
 import com.otusfoss.core.designsystem.shared.rows.components.EntryTaps
 import com.otusfoss.core.designsystem.shared.rows.components.RowSelection
+import com.otusfoss.core.designsystem.shared.rows.components.entryNeighbors
 import com.otusfoss.core.designsystem.shared.rows.components.rowSelection
 import com.otusfoss.core.designsystem.shared.rows.elements.SectionCaption
 import com.otusfoss.core.designsystem.theme.tokens.layout.PageTokens
@@ -112,6 +114,7 @@ private fun LazyListScope.groupRows(
             group.groupAvatar,
             group.key,
             rowSelection(groupKeys, index, actions.selected),
+            entryNeighbors(index, groupKeys.size),
             actions,
             ContactEntryEnd(label = content.booksOf(group).firstNotNullOfOrNull { it.rowLabel() }),
         )
@@ -149,6 +152,7 @@ private fun LazyListScope.letterSections(
                 person.avatar,
                 main.key,
                 rowSelection(keys, index, actions.selected),
+                entryNeighbors(index, keys.size),
                 actions,
                 ContactEntryEnd(
                     detail = "+$extra".takeIf { extra > 0 },
@@ -180,6 +184,7 @@ private fun ListRow(
     avatar: ChipAvatar,
     key: CardKey,
     selection: RowSelection?,
+    neighbors: EntryNeighbors,
     actions: ContactListActions,
     end: ContactEntryEnd,
 ) {
@@ -189,6 +194,7 @@ private fun ListRow(
         avatar,
         EntryTaps({ if (selection != null) actions.onToggle(key) else actions.onOpen(key) }, { actions.onToggle(key) }),
         selection = selection,
+        neighbors = neighbors,
         end = end,
     )
 }

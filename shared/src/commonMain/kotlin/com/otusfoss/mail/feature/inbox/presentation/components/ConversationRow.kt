@@ -15,6 +15,7 @@ import com.otusfoss.core.designsystem.resources.symbol_content_copy
 import com.otusfoss.core.designsystem.shared.controls.elements.UiAction
 import com.otusfoss.core.designsystem.shared.people.components.PersonBadge
 import com.otusfoss.core.designsystem.shared.people.elements.BadgedAvatar
+import com.otusfoss.core.designsystem.shared.rows.components.EntryNeighbors
 import com.otusfoss.core.designsystem.shared.rows.components.RowSelection
 import com.otusfoss.core.designsystem.theme.tokens.rows.InboxTokens
 import com.otusfoss.mail.core.codes.presentation.components.rememberCodeCopy
@@ -36,6 +37,7 @@ fun ConversationRow(
     model: ConversationRowModel,
     modifier: Modifier = Modifier,
     selection: RowSelection? = null,
+    neighbors: EntryNeighbors = EntryNeighbors(),
     onLongClick: (() -> Unit)? = null,
     onCodeCopied: () -> Unit = {},
     onClick: () -> Unit,
@@ -64,6 +66,7 @@ fun ConversationRow(
         onClick = onClick,
         modifier = modifier,
         selection = selection,
+        neighbors = neighbors,
         onLongClick = onLongClick,
     ) {
         BadgedAvatar(model.badge?.let { badge -> { PersonBadge(badge.toChipAvatar()) } }) {
