@@ -55,7 +55,8 @@ internal class ReadWiring(
             known = services.knownPeople,
             allowSender = { address -> behavior.updateRead { it.allowingSender(address) } },
         )
-    private val files = ReadFiles(services.attachments, services.pickers.savedFiles, services.pickers.printer)
+    private val files =
+        ReadFiles(services.attachments, services.pickers.savedFiles, services.pickers.printer, services.network)
 
     private val categories =
         ReadCategories({ behavior.behavior.list.categories }) { address, category ->

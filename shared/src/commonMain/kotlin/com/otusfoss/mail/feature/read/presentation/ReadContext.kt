@@ -9,6 +9,7 @@ import com.otusfoss.mail.core.messages.domain.ComposeRequest
 import com.otusfoss.mail.core.messages.domain.MailMessage
 import com.otusfoss.mail.core.messages.domain.MessageContent
 import com.otusfoss.mail.core.messages.domain.MessageFolder
+import com.otusfoss.mail.core.messages.domain.NetworkCost
 import com.otusfoss.mail.core.messages.domain.OwnAddresses
 import com.otusfoss.mail.core.messages.domain.RemoteImages
 import com.otusfoss.mail.core.messages.domain.SenderBlocks
@@ -109,6 +110,7 @@ class ReadFiles(
     val downloads: OfflineAttachments?,
     val saved: SavedFiles?,
     val printer: MessagePrinter?,
+    val network: NetworkCost = NetworkCost.Free,
 )
 
 /**

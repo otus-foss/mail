@@ -4,7 +4,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.ImageBitmap
 import com.otusfoss.core.designsystem.mail.attachments.components.AttachmentFile
-import com.otusfoss.core.designsystem.mail.attachments.components.AttachmentKind
 import com.otusfoss.core.designsystem.resources.Res
 import com.otusfoss.core.designsystem.resources.symbol_archive
 import com.otusfoss.core.designsystem.resources.symbol_check
@@ -18,9 +17,9 @@ import com.otusfoss.core.designsystem.shared.feedback.components.InfoStrip
 import com.otusfoss.mail.core.codes.domain.SignInCode
 import com.otusfoss.mail.core.codes.presentation.components.ONE_TIME_CODE
 import com.otusfoss.mail.core.messages.domain.MailAttachment
-import com.otusfoss.mail.core.messages.presentation.AttachmentKindName
 import com.otusfoss.mail.core.messages.presentation.detail
 import com.otusfoss.mail.core.messages.presentation.kind
+import com.otusfoss.mail.core.messages.presentation.symbol
 import com.otusfoss.mail.core.messages.presentation.typeLabel
 import com.otusfoss.mail.feature.read.presentation.NewsletterStep
 
@@ -54,7 +53,7 @@ internal fun ReadNewsletterStrip(
 internal fun MailAttachment.shown(
     kept: Boolean,
     thumbnail: ImageBitmap?,
-): AttachmentFile = AttachmentFile(name, detail(kept), kind().shown, thumbnail, typeLabel())
+): AttachmentFile = AttachmentFile(name, detail(kept), kind().symbol, thumbnail, typeLabel())
 
 /**
  * A one-time [code]'s strip: the code with Copy, then, once [copied], the code under "Copied" with
@@ -76,6 +75,3 @@ internal fun ReadCodeStrip(
         InfoStrip(Res.drawable.symbol_key, code.shown, ONE_TIME_CODE, copy, modifier)
     }
 }
-
-private val AttachmentKindName.shown: AttachmentKind
-    get() = AttachmentKind.valueOf(name)

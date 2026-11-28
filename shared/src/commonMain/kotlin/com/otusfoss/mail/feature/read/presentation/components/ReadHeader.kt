@@ -3,10 +3,7 @@ package com.otusfoss.mail.feature.read.presentation.components
 import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -15,14 +12,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.coerceAtLeast
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.max
 import com.otusfoss.core.designsystem.mail.attachments.components.FilesPill
-import com.otusfoss.core.designsystem.mail.attachments.components.filesPillWidth
 import com.otusfoss.core.designsystem.mail.compose.elements.AddressPill
 import com.otusfoss.core.designsystem.resources.Res
 import com.otusfoss.core.designsystem.resources.symbol_bookmark
@@ -37,12 +28,9 @@ import com.otusfoss.core.designsystem.shared.panels.elements.PanelTitle
 import com.otusfoss.core.designsystem.shared.people.components.PersonAvatar
 import com.otusfoss.core.designsystem.theme.colors.OtusColors
 import com.otusfoss.core.designsystem.theme.motion.motionTween
-import com.otusfoss.core.designsystem.theme.tokens.controls.ControlTokens
-import com.otusfoss.core.designsystem.theme.tokens.core.Sizes
 import com.otusfoss.core.designsystem.theme.tokens.core.Spacing
 import com.otusfoss.core.designsystem.theme.tokens.layout.PanelTokens
 import com.otusfoss.core.designsystem.theme.tokens.people.SenderTokens
-import com.otusfoss.core.designsystem.theme.typography.panelTextStyle
 import com.otusfoss.mail.core.messages.domain.MailMessage
 import com.otusfoss.mail.core.messages.domain.shownName
 import com.otusfoss.mail.core.messages.presentation.ReadLaterChange
@@ -53,8 +41,8 @@ import com.otusfoss.mail.core.messages.presentation.components.chipAvatar
  * The Read view's control panel: Back and the [subject] alone, over pills for the [page]'s sender
  * and date, the bookmark, the page's files, and ⋯. Its [motion] grows it into the quick view and details.
  * The date reads [dateLabel], and screen readers read [fullDate]; like the sender pill, it shows or
- * hides the details, which hold the full date. The sender's name gives way first, so the date
- * never shortens.
+ * hides the details, which hold the full date. The sender's pill takes whatever room is left, so
+ * the date never shortens and no gap opens beside a cut-off name.
  */
 @Composable
 internal fun ReadHeader(
@@ -70,23 +58,23 @@ internal fun ReadHeader(
         navigation = { PanelNavigation("Back", actions.onBack) },
         trailingAction = { OptionsButton(actions.menu, "More actions") },
         chips = {
-            BoxWithConstraints(Modifier.fillRail()) {
-                val files = actions.files.takeIf { it.isNotEmpty() }
-                val pills =
-                    (if (actions.readLater != null) Sizes.touchTarget + Spacing.inlineGap else 0.dp) +
-                        (files?.let { filesPillWidth(it) + Spacing.inlineGap } ?: 0.dp)
-                val labelMax = senderLabelMax(maxWidth, dateLabel, pills)
+            Row(
+                Modifier.fillRail(),
+                horizontalArrangement = Arrangement.spacedBy(Spacing.inlineGap),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
                 Row(
-                    Modifier.fillMaxWidth(),
+                    Modifier.weight(1f),
                     horizontalArrangement = Arrangement.spacedBy(Spacing.inlineGap),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    item(SENDER) { SenderPill(page, labelMax, actions.senderOpen, actions.onDetails) }
+                    item(SENDER) {
+                        SenderPill(page, actions.senderOpen, actions.onDetails, Modifier.weight(1f, fill = false))
+                    }
                     item(DATE) { DatePill(dateLabel, fullDate, actions.onDetails) }
-                    Spacer(Modifier.weight(1f))
-                    actions.readLater?.let { change -> item(BOOKMARK) { Bookmark(change) } }
-                    files?.let { item(FILES) { FilesPill(it, actions.onFiles) } }
                 }
+                actions.readLater?.let { change -> item(BOOKMARK) { Bookmark(change) } }
+                actions.files.takeIf { it.isNotEmpty() }?.let { item(FILES) { FilesPill(it, actions.onFiles) } }
             }
         },
         motion = motion,
@@ -117,16 +105,20 @@ private fun ExpandableSubject(subject: String) {
 
 private const val FOLDED_LINES = 2
 
+/**
+ * The sender's pill, which takes the room the date and the pills after it leave, its name fading
+ * where it does not fit.
+ */
 @Composable
 private fun SenderPill(
     page: MailMessage,
-    labelMax: Dp,
     open: Boolean,
     onClick: () -> Unit,
+    modifier: Modifier,
 ) {
     val name = page.sender.shownName
     val description = if (open) "From $name. Hide details" else "From $name. Show details"
-    AddressPill(name, description, onClick, labelMaxWidth = labelMax, expanded = open) {
+    AddressPill(name, description, onClick, modifier, labelMaxWidth = Dp.Infinity, expanded = open) {
         PersonAvatar(page.sender.chipAvatar, SenderTokens.avatarSize)
     }
 }
@@ -141,39 +133,6 @@ private fun Bookmark(change: ReadLaterChange) {
         fill = OtusColors.bgDark,
     )
 }
-
-/**
- * How wide the sender's name may be in a rail of [railWidth]: what is left beside the date pill,
- * the [pills] after it with their gaps, such as the bookmark, the gaps around the date, and the
- * sender pill's own avatar, chevron, and padding.
- */
-@Composable
-private fun senderLabelMax(
-    railWidth: Dp,
-    dateLabel: String,
-    pills: Dp,
-): Dp {
-    val measurer = rememberTextMeasurer()
-    val style = panelTextStyle()
-    val dateText =
-        with(LocalDensity.current) {
-            measurer
-                .measure(dateLabel, style)
-                .size.width
-                .toDp()
-        }
-    val date = max(Sizes.touchTarget, dateText + ControlTokens.chipPadding * 2 + Sizes.borderWidth * 2)
-    val senderChrome =
-        SenderTokens.avatarSize + Sizes.iconSize + Spacing.iconGap * SENDER_GAPS +
-            ControlTokens.chipPadding +
-            Sizes.borderWidth * 2
-    return (railWidth - date - pills - Spacing.inlineGap * 2 - senderChrome).coerceAtLeast(
-        Sizes.iconSize,
-    )
-}
-
-/** The gaps in a sender pill: before its avatar, after it, and before the chevron. */
-private const val SENDER_GAPS = 3
 
 private const val SENDER = "sender"
 private const val DATE = "date"

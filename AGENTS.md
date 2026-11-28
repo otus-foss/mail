@@ -203,6 +203,16 @@ feat(inbox): add avatars
 - Fall back to initials when a photo is unavailable.
 ```
 
+Pull requests are squash-merged, so the title becomes the commit subject on `main`, and
+Mail's nightly notes and in-app Update sheet list the `feat`, `fix`, and `perf` subjects from Mail
+and Core. Write the title as that changelog line: a verb and the precise noun the app or code
+uses, in a few words. Never address the reader as "you", and don't explain the layout, the reason,
+or the mechanism.
+
+- Good: `fix(ui): remove redundant labels and toast text`, `feat(designsystem): add frameless info strips`.
+- Too explained: `fix(mail): stop repeating account names and what you just tapped`.
+- Too internal: `feat(panels): adopt full-bleed control panel`.
+
 Enable the versioned Git hooks once per checkout, including new clones. `pre-commit` checks
 formatting, and `commit-msg` checks the message with Core's checker. No hook runs
 `checkAll`, and CI checks only pull requests, so run `./gradlew checkAll` yourself before a push

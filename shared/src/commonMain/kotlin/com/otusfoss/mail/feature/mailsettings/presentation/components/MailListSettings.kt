@@ -19,6 +19,7 @@ import com.otusfoss.mail.core.settings.domain.DateStyle
 import com.otusfoss.mail.core.settings.domain.ListOrder
 import com.otusfoss.mail.core.settings.domain.MailListLayout
 import com.otusfoss.mail.core.settings.domain.PreviewLines
+import com.otusfoss.mail.core.settings.domain.RowSize
 import com.otusfoss.mail.core.settings.presentation.MailBehaviorState
 import com.otusfoss.mail.core.settings.presentation.SENDER_UNAVAILABLE
 import com.otusfoss.mail.core.settings.presentation.label
@@ -56,6 +57,13 @@ private fun rowSettings(state: MailBehaviorState): List<SettingRowSpec> {
     val list = state.behavior.list.layout
     val waiting = SENDER_UNAVAILABLE.takeUnless { list.showSender }
     return listOf(
+        ChoiceRowSpec(
+            "Size",
+            list.size.label,
+            { SizeSheet(state, it) },
+            RowSize.entries.map { it.label },
+            keywords = listOf("Height", "Density"),
+        ),
         ToggleRowSpec("Show sender", list.showSender, { on -> state.changeList { it.copy(showSender = on) } }),
         ChoiceRowSpec(
             "Order",
@@ -93,6 +101,20 @@ private fun dateSettings(
 
 private fun MailBehaviorState.changeList(update: (MailListLayout) -> MailListLayout) {
     updateList { it.copy(layout = update(it.layout)) }
+}
+
+@Composable
+private fun SizeSheet(
+    state: MailBehaviorState,
+    onDismiss: () -> Unit,
+) {
+    ChoiceSheet(
+        title = "Size",
+        choices = ChoiceOptions(RowSize.entries, state.behavior.list.layout.size, MailListLayout().size),
+        row = { ChoiceRow(it.label) },
+        onSelect = { size -> state.changeList { it.copy(size = size) } },
+        onDismiss = onDismiss,
+    )
 }
 
 @Composable
