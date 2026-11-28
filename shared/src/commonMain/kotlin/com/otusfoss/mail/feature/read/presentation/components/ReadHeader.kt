@@ -19,12 +19,14 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.coerceAtLeast
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.max
+import com.otusfoss.core.designsystem.mail.attachments.elements.FilesPill
+import com.otusfoss.core.designsystem.mail.attachments.elements.filesPillWidth
 import com.otusfoss.core.designsystem.mail.compose.elements.AddressPill
 import com.otusfoss.core.designsystem.resources.Res
 import com.otusfoss.core.designsystem.resources.symbol_bookmark
 import com.otusfoss.core.designsystem.resources.symbol_bookmark_fill
-import com.otusfoss.core.designsystem.resources.symbol_self_improvement
 import com.otusfoss.core.designsystem.shared.controls.elements.IconPill
 import com.otusfoss.core.designsystem.shared.dates.elements.DatePill
 import com.otusfoss.core.designsystem.shared.panels.components.ChipPlacement
@@ -49,7 +51,7 @@ import com.otusfoss.mail.core.messages.presentation.components.chipAvatar
 
 /**
  * The Read view's control panel: Back and the [subject] alone, over pills for the [page]'s sender
- * and date, the bookmark, zen mode, and ⋯. Its [motion] grows it into the quick view and details.
+ * and date, the bookmark, the page's files, and ⋯. Its [motion] grows it into the quick view and details.
  * The date reads [dateLabel], and screen readers read [fullDate]; like the sender pill, it shows or
  * hides the details, which hold the full date. The sender's name gives way first, so the date
  * never shortens.
@@ -69,7 +71,11 @@ internal fun ReadHeader(
         trailingAction = { OptionsButton(actions.menu, "More actions") },
         chips = {
             BoxWithConstraints(Modifier.fillRail()) {
-                val labelMax = senderLabelMax(maxWidth, dateLabel, if (actions.readLater != null) 2 else 1)
+                val files = actions.files.takeIf { it.isNotEmpty() }
+                val pills =
+                    (if (actions.readLater != null) Sizes.touchTarget + Spacing.inlineGap else 0.dp) +
+                        (files?.let { filesPillWidth(it) + Spacing.inlineGap } ?: 0.dp)
+                val labelMax = senderLabelMax(maxWidth, dateLabel, pills)
                 Row(
                     Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(Spacing.inlineGap),
@@ -79,7 +85,7 @@ internal fun ReadHeader(
                     item(DATE) { DatePill(dateLabel, fullDate, actions.onDetails) }
                     Spacer(Modifier.weight(1f))
                     actions.readLater?.let { change -> item(BOOKMARK) { Bookmark(change) } }
-                    item(ZEN) { ZenPill(actions.zen, actions.onZen) }
+                    files?.let { item(FILES) { FilesPill(it, actions.onFiles) } }
                 }
             }
         },
@@ -125,21 +131,6 @@ private fun SenderPill(
     }
 }
 
-/** Zen mode, which hides the banners and strips around the message while it is [on]. */
-@Composable
-private fun ZenPill(
-    on: Boolean,
-    onClick: () -> Unit,
-) {
-    IconPill(
-        if (on) "Leave zen mode" else "Zen mode",
-        Res.drawable.symbol_self_improvement,
-        on,
-        onClick,
-        fill = OtusColors.bgDark,
-    )
-}
-
 @Composable
 private fun Bookmark(change: ReadLaterChange) {
     IconPill(
@@ -153,14 +144,14 @@ private fun Bookmark(change: ReadLaterChange) {
 
 /**
  * How wide the sender's name may be in a rail of [railWidth]: what is left beside the date pill,
- * the [iconPills] such as the bookmark, the gaps, and the sender pill's own avatar, chevron, and
- * padding.
+ * the [pills] after it with their gaps, such as the bookmark, the gaps around the date, and the
+ * sender pill's own avatar, chevron, and padding.
  */
 @Composable
 private fun senderLabelMax(
     railWidth: Dp,
     dateLabel: String,
-    iconPills: Int,
+    pills: Dp,
 ): Dp {
     val measurer = rememberTextMeasurer()
     val style = panelTextStyle()
@@ -172,12 +163,11 @@ private fun senderLabelMax(
                 .toDp()
         }
     val date = max(Sizes.touchTarget, dateText + ControlTokens.chipPadding * 2 + Sizes.borderWidth * 2)
-    val pillsWidth = (Sizes.touchTarget + Spacing.inlineGap) * iconPills
     val senderChrome =
         SenderTokens.avatarSize + Sizes.iconSize + Spacing.iconGap * SENDER_GAPS +
             ControlTokens.chipPadding +
             Sizes.borderWidth * 2
-    return (railWidth - date - pillsWidth - Spacing.inlineGap * 2 - senderChrome).coerceAtLeast(
+    return (railWidth - date - pills - Spacing.inlineGap * 2 - senderChrome).coerceAtLeast(
         Sizes.iconSize,
     )
 }
@@ -188,4 +178,4 @@ private const val SENDER_GAPS = 3
 private const val SENDER = "sender"
 private const val DATE = "date"
 private const val BOOKMARK = "bookmark"
-private const val ZEN = "zen"
+private const val FILES = "files"

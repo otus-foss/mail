@@ -23,7 +23,7 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 import org.robolectric.annotation.GraphicsMode
 
-/** Zen mode in the Read view: the panel's pill hides the banners and strips, and shows them again. */
+/** Zen mode in the Read view: the ⋯ menu's entry hides the banners and strips, and shows them again. */
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [35], qualifiers = "w412dp-h892dp-xxhdpi")
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
@@ -62,13 +62,15 @@ class ReadZenTest {
     fun zenModeHidesTheBannerAndStripsUntilItIsLeft() {
         showDigest()
         compose.waitUntil(TIMEOUT) { exists("Images blocked for privacy") && exists("Mailing list") }
-        compose.onNodeWithContentDescription("Zen mode").performClick()
+        compose.onNodeWithContentDescription("More actions").performClick()
+        compose.onNodeWithText("Zen mode").performClick()
         compose.waitForIdle()
         assertTrue(zen.value)
         compose.onNodeWithText("Images blocked for privacy", substring = true).assertIsNotDisplayed()
         compose.onNodeWithText("Mailing list", substring = true).assertIsNotDisplayed()
         compose.screenshot("read/zen")
-        compose.onNodeWithContentDescription("Leave zen mode").performClick()
+        compose.onNodeWithContentDescription("More actions").performClick()
+        compose.onNodeWithText("Leave zen mode").performClick()
         compose.waitUntil(TIMEOUT) { exists("Images blocked for privacy") && exists("Mailing list") }
         compose.onNodeWithText("Images blocked for privacy", substring = true).assertIsDisplayed()
         compose.onNodeWithText("Mailing list", substring = true).assertIsDisplayed()

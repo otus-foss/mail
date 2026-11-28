@@ -14,6 +14,7 @@ import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.isSelectable
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
+import androidx.compose.ui.test.onAllNodesWithContentDescription
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
@@ -239,12 +240,14 @@ class ReadViewTest {
     }
 
     @Test
-    fun attachmentsOpenInTheirStrip() {
+    fun theFilesPillOpensTheFilesInThePanel() {
         showThread()
-        compose.waitUntil(TIMEOUT) { exists("3 attachments") }
-        compose.onNodeWithText("3 attachments", substring = true).performClick()
-        compose.onNodeWithText("Save all").assertIsDisplayed()
-        assertTrue(exists("whiteboard.jpg"))
+        compose.waitUntil(TIMEOUT) {
+            compose.onAllNodesWithContentDescription("Show 3 files").fetchSemanticsNodes().isNotEmpty()
+        }
+        assertTrue(!exists("3 attachments"))
+        compose.onNodeWithContentDescription("Show 3 files").performClick()
+        compose.waitUntil(TIMEOUT) { exists("whiteboard.jpg") }
         compose.screenshot("read/attachments")
     }
 

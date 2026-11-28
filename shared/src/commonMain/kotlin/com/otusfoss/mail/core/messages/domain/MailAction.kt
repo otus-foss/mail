@@ -46,6 +46,7 @@ enum class MailAction(
     ReplyAll("reply_all", ActionTarget.OneMessage),
     Forward("forward", ActionTarget.OneMessage),
     FollowUp("follow_up", ActionTarget.OneMessage),
+    Zen("zen", ActionTarget.OneMessage),
     NewMail("new_mail", ActionTarget.Anywhere),
     Search("search", ActionTarget.List),
     Filters("filters", ActionTarget.List),

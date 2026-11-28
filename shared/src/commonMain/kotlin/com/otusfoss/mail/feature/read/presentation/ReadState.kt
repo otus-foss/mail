@@ -60,9 +60,6 @@ class ReadState(
     /** The thread strip grown into the list of messages. */
     var threadOpen by mutableStateOf(false)
 
-    /** The page whose attachment strip is grown into its files; null while every strip is closed. */
-    var filesOpenOn by mutableStateOf<String?>(null)
-
     var sheet by mutableStateOf<ReadSheet?>(null)
 
     /** Whether the conversation is muted; null until it is known. */
@@ -141,20 +138,10 @@ class ReadState(
             }
     }
 
-    /** Whether [page]'s attachment strip is grown; another page's strip starts closed. */
-    fun filesOpen(page: MailMessage): Boolean = filesOpenOn == page.id
-
-    fun toggleFiles(page: MailMessage) {
-        filesOpenOn = if (filesOpen(page)) null else page.id
-    }
-
-    /** Folds what is open: the message list, then the files; false when nothing was. */
+    /** Folds the message list; false when it was not open. */
     fun back(): Boolean {
-        when {
-            threadOpen -> threadOpen = false
-            filesOpenOn != null -> filesOpenOn = null
-            else -> return false
-        }
+        if (!threadOpen) return false
+        threadOpen = false
         return true
     }
 

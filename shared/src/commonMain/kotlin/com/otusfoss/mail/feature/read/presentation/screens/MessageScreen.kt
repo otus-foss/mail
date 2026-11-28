@@ -44,6 +44,7 @@ import com.otusfoss.mail.core.messages.domain.MailAction
 import com.otusfoss.mail.core.messages.domain.MailMessage
 import com.otusfoss.mail.core.messages.domain.withContent
 import com.otusfoss.mail.core.messages.presentation.MessageActions
+import com.otusfoss.mail.core.messages.presentation.actions.ZenSwitch
 import com.otusfoss.mail.core.messages.presentation.actions.offer
 import com.otusfoss.mail.core.messages.presentation.components.rememberMoveChoice
 import com.otusfoss.mail.core.messages.presentation.shortLabel
@@ -82,8 +83,8 @@ import kotlinx.datetime.LocalDate
  * page, newest first. Filing acts on the whole conversation and closes the page first, while
  * replies and the ⋯ menu's message entries follow the page on screen. A [notice], such as a
  * refused mark, shows under the header. [cameFrom] is the folders the list shows the message from,
- * which the strips leave out; empty without a folder context. Back folds the message list, then the files, then the
- * details, then runs [onClose]. The details and the page on screen survive a recreated screen. Zen
+ * which the strips leave out; empty without a folder context. Back folds the message list, then the details, then
+ * runs [onClose]. The details and the page on screen survive a recreated screen. Zen
  * mode leaves out the strips, the message list they open, and the images banner.
  */
 @Composable
@@ -118,7 +119,8 @@ fun MessageScreen(
     val page = state.pages[index].withContent(parts.content(state.pages[index]))
     SideEffect { state.shownId = page.id }
     val look = rememberPageLook(parts)
-    val readActions = rememberReadActions(message, page, read.replies, actions, moveChoice)
+    val zen = ZenSwitch(read.display.zen(), parts::toggleZen)
+    val readActions = rememberReadActions(message, page, read.replies, actions, moveChoice, zen)
     val confirmation = rememberConfirmation()
     val menu =
         rememberReadMenu(parts, look, readActions, page, index) { action ->

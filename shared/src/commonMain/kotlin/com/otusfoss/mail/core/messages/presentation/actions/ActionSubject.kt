@@ -39,13 +39,20 @@ internal class MoveOptions(
 
 /**
  * The open [message] replies answer, in a folder of [role]; drafts start through [onCompose], and
- * a message in Scheduled is edited or sent through [scheduled].
+ * a message in Scheduled is edited or sent through [scheduled]. [zen] turns zen mode on or off.
  */
 internal class PageSubject(
     val message: MailMessage,
     val role: MailboxRole?,
     val onCompose: (ComposeRequest) -> Unit,
     val scheduled: ScheduledActions? = null,
+    val zen: ZenSwitch? = null,
+)
+
+/** Zen mode, which keeps the Read view to the message while it is [on]; [toggle] turns it on or off. */
+internal class ZenSwitch(
+    val on: Boolean,
+    val toggle: () -> Unit,
 )
 
 /**
@@ -108,6 +115,17 @@ private fun ActionSubject.offer(action: MailAction): OfferedAction? =
 
         MailAction.EditScheduled, MailAction.SendNow -> {
             page?.offerScheduled(action)
+        }
+
+        MailAction.Zen -> {
+            page?.zen?.let {
+                OfferedAction(
+                    if (it.on) "Leave zen mode" else "Zen mode",
+                    action.symbol,
+                    false,
+                    run = it.toggle,
+                )
+            }
         }
 
         MailAction.AllActions -> {
