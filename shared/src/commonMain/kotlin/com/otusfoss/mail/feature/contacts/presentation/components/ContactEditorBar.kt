@@ -10,10 +10,8 @@ import com.otusfoss.core.designsystem.resources.symbol_person_add
 import com.otusfoss.core.designsystem.shared.actionbar.components.ActionBar
 import com.otusfoss.core.designsystem.shared.actionbar.components.BarAction
 import com.otusfoss.core.designsystem.shared.actionbar.components.BarContext
-import com.otusfoss.core.designsystem.shared.actionbar.components.BarMinimized
 import com.otusfoss.core.designsystem.shared.actionbar.components.BarToken
 import com.otusfoss.core.designsystem.shared.controls.elements.UiAction
-import com.otusfoss.core.designsystem.shared.input.elements.isKeyboardUp
 import com.otusfoss.mail.feature.contacts.domain.BookKey
 import com.otusfoss.mail.feature.contacts.domain.ContactBook
 import com.otusfoss.mail.feature.contacts.domain.ContactDraft
@@ -22,8 +20,7 @@ import com.otusfoss.mail.feature.contacts.presentation.nameAvatar
 
 /**
  * The editor's bar. Save needs a [context], since that names the book the card goes to. ⋯ shows
- * only for a new card, and [onImport] is null when import is not possible. The bar minimizes
- * while the keyboard is up, so it never covers the field being typed in.
+ * only for a new card, and [onImport] is null when import is not possible.
  */
 @Composable
 internal fun ContactEditorBar(
@@ -44,7 +41,6 @@ internal fun ContactEditorBar(
                 moreAction(draft, onSave, onImport).takeIf { isNew },
             ),
         context = context,
-        minimized = BarMinimized().takeIf { isKeyboardUp() },
     )
 }
 
