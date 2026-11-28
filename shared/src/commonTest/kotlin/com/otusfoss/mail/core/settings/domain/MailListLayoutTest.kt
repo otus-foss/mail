@@ -28,7 +28,7 @@ class MailListLayoutTest {
                 folderIcons = false,
                 dateStyle = DateStyle.FullMonths,
                 showThisYear = false,
-                size = RowSize.Comfortable,
+                size = RowSize.Compact,
             )
         assertEquals(layout, MailListLayout.decode(MailListLayout.encode(layout)))
     }

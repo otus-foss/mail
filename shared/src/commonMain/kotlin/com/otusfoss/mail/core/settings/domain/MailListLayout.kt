@@ -59,7 +59,7 @@ data class MailListLayout(
     val folderIcons: Boolean = true,
     val dateStyle: DateStyle = DateStyle.Relative,
     val showThisYear: Boolean = true,
-    val size: RowSize = RowSize.Compact,
+    val size: RowSize = RowSize.Comfortable,
 ) {
     companion object {
         /** One `name=value` line per setting, so a new setting cannot break an older saved value. */
