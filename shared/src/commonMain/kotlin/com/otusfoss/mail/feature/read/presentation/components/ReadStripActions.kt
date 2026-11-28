@@ -9,8 +9,7 @@ import com.otusfoss.mail.core.messages.domain.MailAttachment
 import com.otusfoss.mail.core.messages.domain.MailMessage
 import com.otusfoss.mail.core.messages.domain.MailingList
 import com.otusfoss.mail.core.messages.domain.Unsubscribe
-import com.otusfoss.mail.core.messages.presentation.AttachmentKindName
-import com.otusfoss.mail.core.messages.presentation.kind
+import com.otusfoss.mail.core.messages.presentation.drawable
 import com.otusfoss.mail.feature.read.domain.UnsubscribeResult
 import com.otusfoss.mail.feature.read.presentation.AttachmentTransfers
 import com.otusfoss.mail.feature.read.presentation.NewsletterStep
@@ -67,7 +66,7 @@ internal class ReadStripActions(
         file: MailAttachment,
     ): ImageBitmap? =
         file
-            .takeIf { it.kind() == AttachmentKindName.Image && it.size in 1..thumbnailLimit() }
+            .takeIf { it.drawable() && it.size in 1..thumbnailLimit() }
             ?.let { transfers.bytes(message, it) }
             ?.let { withContext(Dispatchers.Default) { decodeImage(it, THUMBNAIL_PIXELS) } }
 
