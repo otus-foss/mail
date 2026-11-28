@@ -25,6 +25,7 @@ import com.otusfoss.core.designsystem.shared.actionbar.components.ActionBarHost
 import com.otusfoss.core.designsystem.shared.controls.elements.IconButton
 import com.otusfoss.core.designsystem.shared.controls.elements.IconButtonLook
 import com.otusfoss.core.designsystem.shared.controls.elements.Symbol
+import com.otusfoss.core.designsystem.shared.input.elements.isKeyboardUp
 import com.otusfoss.core.designsystem.shared.pages.components.belowControlPanel
 import com.otusfoss.core.designsystem.shared.pages.components.pageSideInset
 import com.otusfoss.core.designsystem.shared.panels.components.ChipPlacement
@@ -56,7 +57,7 @@ import com.otusfoss.mail.feature.contacts.presentation.withLabel
 /**
  * Creates a contact, or edits the card [key]. The bar saves; its context names the address book
  * and opens the others the card can go to. ⋯ holds Save and add another and import. While the
- * user types, the bar minimizes, so it never covers the field above the keyboard.
+ * keyboard is up there is no bar, so it never covers the field being typed in.
  */
 @Composable
 internal fun ContactEditorScreen(
@@ -91,16 +92,21 @@ internal fun ContactEditorScreen(
     }
     ProvideTextStyle(panelTextStyle()) {
         ActionBarHost(
-            bar = {
-                ContactEditorBar(
-                    draft,
-                    editorBarContext(draft, state.targetBooks(existing), book) { book = it },
-                    isNew = existing == null,
-                    onSave = save,
-                    onImport = { state.pickImport() }.takeIf { state.canTransfer },
-                    onDiscard = onClose,
-                )
-            },
+            bar =
+                if (isKeyboardUp()) {
+                    null
+                } else {
+                    {
+                        ContactEditorBar(
+                            draft,
+                            editorBarContext(draft, state.targetBooks(existing), book) { book = it },
+                            isNew = existing == null,
+                            onSave = save,
+                            onImport = { state.pickImport() }.takeIf { state.canTransfer },
+                            onDiscard = onClose,
+                        )
+                    }
+                },
             Modifier.fillMaxSize().belowControlPanel(),
         ) { barPadding ->
             Column(Modifier.fillMaxSize()) {

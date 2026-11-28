@@ -5,7 +5,6 @@ import androidx.compose.ui.Modifier
 import com.otusfoss.core.designsystem.shared.actionbar.components.ActionBar
 import com.otusfoss.core.designsystem.shared.actionbar.components.BarAction
 import com.otusfoss.core.designsystem.shared.actionbar.components.BarContext
-import com.otusfoss.core.designsystem.shared.actionbar.components.BarMinimized
 import com.otusfoss.core.designsystem.shared.controls.elements.UiAction
 import com.otusfoss.core.designsystem.shared.overlays.components.rememberConfirmation
 import com.otusfoss.mail.core.messages.domain.BarButton
@@ -19,15 +18,14 @@ import com.otusfoss.mail.core.messages.presentation.actions.symbol
  * Any screen's [bar]. An action it cannot offer stays in its slot, disabled, so the buttons never
  * move. All actions opens every action in a menu, and stays disabled while there is none; a drag
  * up on the buttons opens it too. [context] describes what the primary applies to, such as a
- * reply's recipient. A minimized bar shows only the primary, as [minimized] says. An action that
- * asks to be confirmed reaches [onAction] only once the user confirms it.
+ * reply's recipient. An action that asks to be confirmed reaches [onAction] only once the user
+ * confirms it.
  */
 @Composable
 internal fun MailActionBar(
     bar: MailBar,
     onAction: (OfferedAction) -> Unit,
     modifier: Modifier = Modifier,
-    minimized: Minimized = Minimized(),
     context: BarContext? = null,
 ) {
     val confirmation = rememberConfirmation()
@@ -61,19 +59,9 @@ internal fun MailActionBar(
     ActionBar(
         barAction(layout.primary, primary = true),
         modifier,
-        secondary = if (bar.minimized) emptyList() else layout.secondary.map { barAction(it, primary = false) },
+        secondary = layout.secondary.map { barAction(it, primary = false) },
         context = context,
-        minimized = minimized.takeIf { bar.minimized }?.let { BarMinimized(it.hidden, menuOf(it.more)) },
         allActions = menuOf(bar.every),
     )
     confirmation.Dialog()
 }
-
-/**
- * How a minimized bar differs from the full one: [hidden] scales its button out, and [more] lists
- * actions in a menu behind a round button at its start.
- */
-internal class Minimized(
-    val hidden: Boolean = false,
-    val more: List<OfferedAction> = emptyList(),
-)

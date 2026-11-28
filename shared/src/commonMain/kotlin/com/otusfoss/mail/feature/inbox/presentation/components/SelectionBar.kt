@@ -12,14 +12,13 @@ import com.otusfoss.mail.core.messages.presentation.actions.barFor
 import com.otusfoss.mail.core.messages.presentation.actions.offer
 import com.otusfoss.mail.core.messages.presentation.actions.showsSuggestedMove
 import com.otusfoss.mail.core.messages.presentation.components.MailActionBar
-import com.otusfoss.mail.core.messages.presentation.components.Minimized
 import com.otusfoss.mail.core.messages.presentation.components.rememberMoveChoice
 import com.otusfoss.mail.core.messages.presentation.components.rememberSuggestedMove
 
 /**
  * The bar for [selected] messages, which names their number beside the primary. An action they
  * cannot take stays in its slot, disabled. Each action, or a folder chosen to move them to, ends
- * the selection. A minimized bar lists the actions it leaves out behind a round button.
+ * the selection.
  */
 @Composable
 internal fun SelectionBar(
@@ -33,14 +32,12 @@ internal fun SelectionBar(
     val suggestion =
         rememberSuggestedMove(selected, actions, saved.showsSuggestedMove(ActionBarPlace.Selection, role))
     val subject = ActionSubject(actions, selected, moves = MoveOptions(moveChoice::choose, suggestion))
-    val bar = saved.barFor(ActionBarPlace.Selection, role, subject::offer)
     MailActionBar(
-        bar,
+        saved.barFor(ActionBarPlace.Selection, role, subject::offer),
         onAction = { action ->
             action.run()
             if (!action.asks) onDone()
         },
-        minimized = Minimized(more = bar.more()),
         context = selectionContext(selected.size),
     )
     moveChoice.Sheet(actions)

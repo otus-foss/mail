@@ -9,8 +9,7 @@ import com.otusfoss.mail.feature.inbox.presentation.InboxState
 
 /**
  * The bar under the list: the selection's while rows are selected, none while searching, and the
- * list's otherwise. A minimized bar stays while searching, so it can sink under the keyboard
- * instead of vanishing. Without [actions] there is no bar, and Scheduled has none: its mail is
+ * list's otherwise. Without [actions] there is no bar, and Scheduled has none: its mail is
  * edited or sent from its Read view. While the [header] panel shows every
  * filter, its Show button takes the bar's place, and while it shows a typed search, the search's.
  */
@@ -32,7 +31,7 @@ internal fun inboxBar(
         }
 
         actions == null ||
-            (state.searching && !actions.saved().minimizedBar) ||
+            state.searching ||
             actions.cleanup?.listRole?.invoke() == MailboxRole.Scheduled -> {
             null
         }
