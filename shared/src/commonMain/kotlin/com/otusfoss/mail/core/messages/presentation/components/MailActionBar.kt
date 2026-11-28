@@ -55,6 +55,7 @@ internal fun MailActionBar(
             ) {
                 if (offered != null) confirmation.run(offered.confirm) { onAction(offered) }
             },
+            on = offered?.on,
         )
     }
     val layout = bar.layout

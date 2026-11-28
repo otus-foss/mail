@@ -13,6 +13,7 @@ import com.otusfoss.mail.core.messages.domain.MailAction.Reply
 import com.otusfoss.mail.core.messages.domain.MailAction.Search
 import com.otusfoss.mail.core.messages.domain.MailAction.Send
 import com.otusfoss.mail.core.messages.domain.MailAction.Trash
+import com.otusfoss.mail.core.messages.domain.MailAction.Zen
 
 /** Whether each place has its own bar, or one bar is used everywhere. */
 enum class ActionBarMode(
@@ -68,7 +69,7 @@ enum class ActionBarPlace(
             when (this) {
                 Inbox -> ActionBarLayout(listOf(Search, Filters, MarkAllRead), NewMail)
                 Selection -> ActionBarLayout(listOf(Read, Flag, Trash), Move)
-                Message -> ActionBarLayout(listOf(Archive, Trash, Move), Reply)
+                Message -> ActionBarLayout(listOf(Trash, Move, Zen), Reply)
                 Compose -> ActionBarLayout(listOf(Attach, Discard), Send)
                 Everywhere -> ActionBarLayout(listOf(Search, Archive, Trash), NewMail)
             }

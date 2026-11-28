@@ -123,6 +123,7 @@ private fun ActionSubject.offer(action: MailAction): OfferedAction? =
                     if (it.on) "Leave zen mode" else "Zen mode",
                     action.symbol,
                     false,
+                    on = it.on,
                     run = it.toggle,
                 )
             }
