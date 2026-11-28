@@ -4,6 +4,7 @@ import com.otusfoss.mail.core.settings.domain.DateStyle
 import com.otusfoss.mail.core.settings.domain.ListOrder
 import com.otusfoss.mail.core.settings.domain.MailListLayout
 import com.otusfoss.mail.core.settings.domain.PreviewLines
+import com.otusfoss.mail.core.settings.domain.RowSize
 
 val ListOrder.label: String
     get() =
@@ -18,6 +19,13 @@ val PreviewLines.label: String
             PreviewLines.Off -> "Off"
             PreviewLines.One -> "1 line"
             PreviewLines.Two -> "2 lines"
+        }
+
+val RowSize.label: String
+    get() =
+        when (this) {
+            RowSize.Compact -> "Compact"
+            RowSize.Comfortable -> "Comfortable"
         }
 
 val DateStyle.label: String

@@ -12,6 +12,7 @@ import com.otusfoss.core.designsystem.mail.inbox.components.RowTextPart
 import com.otusfoss.core.designsystem.resources.Res
 import com.otusfoss.core.designsystem.resources.symbol_inbox
 import com.otusfoss.core.designsystem.resources.symbol_reply
+import com.otusfoss.core.designsystem.shared.rows.components.EntrySize
 import com.otusfoss.core.designsystem.theme.colors.FolderColor
 import com.otusfoss.mail.core.codes.domain.CodeMail
 import com.otusfoss.mail.core.codes.domain.SignInCode
@@ -31,6 +32,7 @@ import com.otusfoss.mail.core.messages.presentation.listDateLabel
 import com.otusfoss.mail.core.settings.domain.ListOrder
 import com.otusfoss.mail.core.settings.domain.MailListLayout
 import com.otusfoss.mail.core.settings.domain.PreviewLines
+import com.otusfoss.mail.core.settings.domain.RowSize
 import kotlinx.datetime.LocalDate
 
 /** How a list draws its rows: the user's Mail list settings and the user's own addresses. */
@@ -42,14 +44,16 @@ data class RowLook(
 )
 
 /**
- * One conversation row, worked out before composition so scrolling only draws. [read] rows dim
- * unless they are selected. [badge] is the address the conversation came to, shown only
- * when the list mixes addresses. [code] is the one-time code its subject and preview give.
+ * One conversation row, worked out before composition so scrolling only draws. [read] rows step
+ * back unless they are selected. [size] is how tall the row is. [badge] is the address the
+ * conversation came to, shown only when the list mixes addresses. [code] is the one-time code its
+ * subject and preview give.
  */
 data class ConversationRowModel(
     val text: CompactRowText,
     val read: Boolean,
     val badge: ResolvedAvatar?,
+    val size: EntrySize,
     val code: SignInCode? = null,
 )
 
@@ -127,6 +131,7 @@ private fun MailMessage.rowModel(
     return ConversationRowModel(
         text,
         read = looksRead,
+        size = layout.size.entrySize,
         badge =
             receivedOn?.let {
                 look.ownAvatars[location.accountId to EmailAddressKey(it)]
@@ -218,9 +223,16 @@ private val PreviewLines.lines: Int
             PreviewLines.Two -> 2
         }
 
+private val RowSize.entrySize: EntrySize
+    get() =
+        when (this) {
+            RowSize.Compact -> EntrySize.Compact
+            RowSize.Comfortable -> EntrySize.Comfortable
+        }
+
 private const val MAX_FOLDERS = 2
 private const val NO_SUBJECT = "(No subject)"
 
-/** Whether the row fades as read mail does; drafts and mail in Drafts, Scheduled, and Sent never fade. */
+/** Whether the row steps back as read mail does; drafts and mail in Drafts, Scheduled, and Sent never do. */
 private val MailMessage.looksRead: Boolean
     get() = !attributes.unread && !attributes.draft && location.mailboxRole?.holdsOwnMail != true

@@ -9,7 +9,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.ime
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.SideEffect
@@ -32,6 +32,7 @@ import com.otusfoss.core.designsystem.shared.pages.components.PageNote
 import com.otusfoss.core.designsystem.shared.rows.components.FoldingSection
 import com.otusfoss.core.designsystem.shared.rows.components.LocalEntriesOnRaised
 import com.otusfoss.core.designsystem.shared.rows.components.SectionFold
+import com.otusfoss.core.designsystem.shared.rows.components.entryNeighbors
 import com.otusfoss.core.designsystem.shared.rows.components.rememberSectionFold
 import com.otusfoss.core.designsystem.shared.rows.elements.SectionCaption
 import com.otusfoss.core.designsystem.theme.tokens.overlays.SheetTokens
@@ -156,9 +157,14 @@ private fun SearchMail(
                     ) { PageNote("No matching mail") }
                 }
             }
-            items(hits, key = { it.id }) { message ->
+            itemsIndexed(hits, key = { _, message -> message.id }) { index, message ->
                 rows[message.id]?.let {
-                    ConversationRow(message, it, onCodeCopied = { room.gestures.codeCopied(message, it.read) }) {
+                    ConversationRow(
+                        message,
+                        it,
+                        neighbors = entryNeighbors(index, hits.size),
+                        onCodeCopied = { room.gestures.codeCopied(message, it.read) },
+                    ) {
                         // The message opens over the room, without the keyboard.
                         focus.clearFocus()
                         room.gestures.tap(message)

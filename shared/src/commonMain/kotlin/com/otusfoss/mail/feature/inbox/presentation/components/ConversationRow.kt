@@ -15,8 +15,8 @@ import com.otusfoss.core.designsystem.resources.symbol_content_copy
 import com.otusfoss.core.designsystem.shared.controls.elements.UiAction
 import com.otusfoss.core.designsystem.shared.people.components.PersonBadge
 import com.otusfoss.core.designsystem.shared.people.elements.BadgedAvatar
+import com.otusfoss.core.designsystem.shared.rows.components.EntryNeighbors
 import com.otusfoss.core.designsystem.shared.rows.components.RowSelection
-import com.otusfoss.core.designsystem.theme.tokens.rows.InboxTokens
 import com.otusfoss.mail.core.codes.presentation.components.rememberCodeCopy
 import com.otusfoss.mail.core.messages.domain.MailMessage
 import com.otusfoss.mail.core.messages.presentation.components.SenderAvatar
@@ -25,11 +25,11 @@ import kotlinx.coroutines.delay
 import kotlin.time.Duration.Companion.seconds
 
 /**
- * One conversation in a list, drawn from its prepared [model]. Read rows dim, also while the list is
- * selecting, so read and unread mail still look apart; only a selected row shows at full strength.
- * A selected row shows a check in place of the sender's avatar and its badge; a null [selection]
- * means the list is not selecting. A row with a one-time code ends its second line with the code
- * as a quick use; a tap copies it, says "Copied" for a moment, and runs [onCodeCopied].
+ * One conversation in a list, drawn from its prepared [model]. A selected row shows a check in
+ * place of the sender's avatar and its badge; a null [selection] means the list is not selecting.
+ * [neighbors] rounds the card less where other rows touch it. A row with a one-time code ends its
+ * second line with the code as a quick use; a tap copies it, says "Copied" for a moment, and runs
+ * [onCodeCopied].
  */
 @Composable
 fun ConversationRow(
@@ -37,6 +37,7 @@ fun ConversationRow(
     model: ConversationRowModel,
     modifier: Modifier = Modifier,
     selection: RowSelection? = null,
+    neighbors: EntryNeighbors = EntryNeighbors(),
     onLongClick: (() -> Unit)? = null,
     onCodeCopied: () -> Unit = {},
     onClick: () -> Unit,
@@ -61,14 +62,16 @@ fun ConversationRow(
         }
     CompactContentRow(
         text = model.text.copy(quickUse = quickUse),
-        dimmed = model.read && selection?.selected != true,
+        read = model.read,
         onClick = onClick,
         modifier = modifier,
         selection = selection,
+        neighbors = neighbors,
+        size = model.size,
         onLongClick = onLongClick,
     ) {
         BadgedAvatar(model.badge?.let { badge -> { PersonBadge(badge.toChipAvatar()) } }) {
-            SenderAvatar(message.sender, size = InboxTokens.compactAvatarSize)
+            SenderAvatar(message.sender, size = model.size.avatarSize)
         }
     }
 }
