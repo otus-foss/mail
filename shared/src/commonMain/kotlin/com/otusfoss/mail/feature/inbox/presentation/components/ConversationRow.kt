@@ -27,8 +27,9 @@ import kotlin.time.Duration.Companion.seconds
 /**
  * One conversation in a list, drawn from its prepared [model]. A selected row shows a check in
  * place of the sender's avatar and its badge; a null [selection] means the list is not selecting.
- * A row with a one-time code ends its second line with the code
- * as a quick use; a tap copies it, says "Copied" for a moment, and runs [onCodeCopied].
+ * [neighbors] rounds the card less where other rows touch it. A row with a one-time code ends its
+ * second line with the code as a quick use; a tap copies it, says "Copied" for a moment, and runs
+ * [onCodeCopied].
  */
 @Composable
 fun ConversationRow(

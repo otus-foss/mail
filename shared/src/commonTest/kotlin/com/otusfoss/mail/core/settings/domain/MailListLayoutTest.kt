@@ -5,7 +5,7 @@ import kotlin.test.assertEquals
 
 class MailListLayoutTest {
     @Test
-    fun theDefaultsPutTheSubjectFirstWithoutAPreview() {
+    fun theDefaultsPutTheSubjectFirstWithoutAPreviewInComfortableRows() {
         assertEquals(
             MailListLayout(
                 order = ListOrder.SubjectFirst,
@@ -13,6 +13,7 @@ class MailListLayoutTest {
                 showSender = true,
                 folderIcons = true,
                 dateStyle = DateStyle.Relative,
+                size = RowSize.Comfortable,
             ),
             ListBehavior().layout,
         )
@@ -38,7 +39,7 @@ class MailListLayoutTest {
         assertEquals(MailListLayout(), MailListLayout.decode(""))
         assertEquals(
             MailListLayout(preview = PreviewLines.One),
-            MailListLayout.decode("order=middle\npreview=one\nshowSender=maybe\nlater=true"),
+            MailListLayout.decode("order=middle\npreview=one\nshowSender=maybe\nsize=huge\nlater=true"),
         )
     }
 }

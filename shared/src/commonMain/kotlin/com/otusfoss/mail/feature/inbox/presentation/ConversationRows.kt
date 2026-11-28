@@ -45,14 +45,15 @@ data class RowLook(
 
 /**
  * One conversation row, worked out before composition so scrolling only draws. [read] rows step
- * back unless they are selected. [size] is how tall the row is. [badge] is the address the conversation came to, shown only
- * when the list mixes addresses. [code] is the one-time code its subject and preview give.
+ * back unless they are selected. [size] is how tall the row is. [badge] is the address the
+ * conversation came to, shown only when the list mixes addresses. [code] is the one-time code its
+ * subject and preview give.
  */
 data class ConversationRowModel(
     val text: CompactRowText,
     val read: Boolean,
     val badge: ResolvedAvatar?,
-    val size: EntrySize = EntrySize.Compact,
+    val size: EntrySize,
     val code: SignInCode? = null,
 )
 
@@ -229,6 +230,6 @@ private val PreviewLines.lines: Int
 private const val MAX_FOLDERS = 2
 private const val NO_SUBJECT = "(No subject)"
 
-/** Whether the row fades as read mail does; drafts and mail in Drafts, Scheduled, and Sent never fade. */
+/** Whether the row steps back as read mail does; drafts and mail in Drafts, Scheduled, and Sent never do. */
 private val MailMessage.looksRead: Boolean
     get() = !attributes.unread && !attributes.draft && location.mailboxRole?.holdsOwnMail != true
