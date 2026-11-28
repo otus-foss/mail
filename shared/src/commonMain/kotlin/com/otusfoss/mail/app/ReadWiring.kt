@@ -4,6 +4,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import com.otusfoss.mail.core.messages.domain.ComposeRequest
 import com.otusfoss.mail.core.messages.domain.OwnAddresses
+import com.otusfoss.mail.core.messages.domain.PersonHistories
 import com.otusfoss.mail.core.messages.presentation.MailEdits
 import com.otusfoss.mail.core.messages.presentation.MessageActions
 import com.otusfoss.mail.core.messages.presentation.actions.ScheduledActions
@@ -14,6 +15,7 @@ import com.otusfoss.mail.feature.folders.presentation.account
 import com.otusfoss.mail.feature.folders.presentation.components.FolderActions
 import com.otusfoss.mail.feature.folders.presentation.components.FolderDialogs
 import com.otusfoss.mail.feature.inbox.presentation.InboxFeedState
+import com.otusfoss.mail.feature.inbox.presentation.InboxFilterState
 import com.otusfoss.mail.feature.inbox.presentation.components.ReadView
 import com.otusfoss.mail.feature.read.presentation.ReadCategories
 import com.otusfoss.mail.feature.read.presentation.ReadContext
@@ -55,6 +57,15 @@ internal class ReadWiring(
             known = services.knownPeople,
             allowSender = { address -> behavior.updateRead { it.allowingSender(address) } },
         )
+
+    /** Looks up a person's threads for the person sheet. */
+    val personHistories: PersonHistories get() = services.personHistories
+
+    fun openMessage(
+        loginId: String,
+        emailId: String,
+    ) = services.requests.openMessage(loginId, emailId)
+
     private val files = ReadFiles(services.attachments, services.pickers.savedFiles, services.pickers.printer)
 
     private val categories =
@@ -114,8 +125,18 @@ internal class ReadWiring(
 }
 
 /**
+ * What the Read view needs from the list it opens from: the user's [own] addresses, whether the
+ * page is [sorted] into categories, and the [filters] its person sheet counts and applies.
+ */
+internal class ReadList(
+    val own: OwnAddresses,
+    val sorted: Boolean,
+    val filters: InboxFilterState,
+)
+
+/**
  * The Read view of [feed]'s rows on [page], whose drafts close back to that page, again when the
- * feed changes. On a [sorted] page its ⋯ menu offers the categories.
+ * feed changes. On a sorted [list] its ⋯ menu offers the categories.
  */
 @Composable
 internal fun rememberReadView(
@@ -124,13 +145,13 @@ internal fun rememberReadView(
     navigation: MailNavigation,
     page: MailPage,
     actions: MessageActions,
-    own: OwnAddresses,
-    sorted: Boolean,
+    list: ReadList,
 ): ReadView {
     val scheduled = rememberScheduledActions(states, navigation, page)
     val read =
-        remember(states, feed, own, sorted) {
-            states.reading.context(feed, contactSheet(states.contacts.cards, navigation), own, sorted, scheduled) {
+        remember(states, feed, list.own, list.sorted, list.filters) {
+            val person = personSheet(states, list.filters, navigation, page, list.own)
+            states.reading.context(feed, person, list.own, list.sorted, scheduled) {
                 navigation.go(MailPage.Compose(it, parent = page))
             }
         }

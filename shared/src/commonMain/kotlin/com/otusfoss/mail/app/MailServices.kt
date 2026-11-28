@@ -27,6 +27,7 @@ import com.otusfoss.mail.core.mailbox.Mailboxes
 import com.otusfoss.mail.core.messages.data.EmailChangeQueue
 import com.otusfoss.mail.core.messages.data.JmapEmailByIdWriter
 import com.otusfoss.mail.core.messages.data.JmapEmailWriter
+import com.otusfoss.mail.core.messages.data.JmapPersonHistories
 import com.otusfoss.mail.core.messages.data.ServerSites
 import com.otusfoss.mail.core.messages.data.WaitingMail
 import com.otusfoss.mail.core.messages.domain.AddressBook
@@ -38,6 +39,7 @@ import com.otusfoss.mail.core.messages.domain.EmailWriter
 import com.otusfoss.mail.core.messages.domain.MessageBodies
 import com.otusfoss.mail.core.messages.domain.NetworkCost
 import com.otusfoss.mail.core.messages.domain.PeopleSearch
+import com.otusfoss.mail.core.messages.domain.PersonHistories
 import com.otusfoss.mail.core.messages.domain.ScheduledSends
 import com.otusfoss.mail.core.messages.domain.SenderBlocks
 import com.otusfoss.mail.core.messages.presentation.MoveToasts
@@ -227,6 +229,7 @@ class MailServices(
         JmapNewsletters(connections, drafts, sender, writer, mailboxes, domains)
     }
     internal val senderMails: SenderMails by lazy { JmapSenderMails(connections, mailboxes) }
+    internal val personHistories: PersonHistories by lazy { JmapPersonHistories(connections, mailboxes) }
     internal val headers: MessageHeaders by lazy { JmapMessageHeaders(connections) }
     internal val blocks: SenderBlocks by lazy { RuleSenderBlocks(rules, folders) }
 
@@ -258,19 +261,12 @@ class MailServices(
         push: MailPush,
         beforeCreate: suspend (String) -> Unit,
     ): PushSubscriptions =
-        PushSubscriptions(
-            connections,
-            states,
-            deviceClientId,
-            push.types,
-            beforeCreate = beforeCreate,
-        )
+        PushSubscriptions(connections, states, deviceClientId, push.types, beforeCreate = beforeCreate)
 
     /**
      * Sends the messages the outbox kept that are due, the marks and moves that wait, the drafts
      * written offline, and the folder changes that wait, as from a background job after the app
-     * closed. True when some still
-     * wait for the network, so the job should run again.
+     * closed. True when some still wait for the network, so the job should run again.
      */
     suspend fun resumeOutbox(): Boolean {
         outbox.resume()
