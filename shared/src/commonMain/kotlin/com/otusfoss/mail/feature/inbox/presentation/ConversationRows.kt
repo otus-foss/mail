@@ -131,11 +131,7 @@ private fun MailMessage.rowModel(
     return ConversationRowModel(
         text,
         read = looksRead,
-        size =
-            when (layout.size) {
-                RowSize.Compact -> EntrySize.Compact
-                RowSize.Comfortable -> EntrySize.Comfortable
-            },
+        size = layout.size.entrySize,
         badge =
             receivedOn?.let {
                 look.ownAvatars[location.accountId to EmailAddressKey(it)]
@@ -225,6 +221,13 @@ private val PreviewLines.lines: Int
             PreviewLines.Off -> 0
             PreviewLines.One -> 1
             PreviewLines.Two -> 2
+        }
+
+private val RowSize.entrySize: EntrySize
+    get() =
+        when (this) {
+            RowSize.Compact -> EntrySize.Compact
+            RowSize.Comfortable -> EntrySize.Comfortable
         }
 
 private const val MAX_FOLDERS = 2
