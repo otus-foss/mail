@@ -117,23 +117,6 @@ class ActionBarSettingsTest {
     }
 
     @Test
-    fun aMinimizedBarShowsOnlyTheMainButton() {
-        start()
-        openActionBarSettings()
-        compose.onNode(hasText("Minimize") and isToggleable()).performClick().assertIsOn()
-        assertEquals(true, AndroidMailBehaviorStore(compose.activity).read().actions.minimizedBar)
-
-        // Back leads to Mail behavior, then Settings.
-        compose.onNodeWithContentDescription("Back").performClick()
-        compose.onNodeWithContentDescription("Back").performClick()
-        compose.onNodeWithContentDescription("Open navigation").performClick()
-        compose.onNode(hasContentDescription("Inbox", substring = true) and isSelectable()).performClick()
-        compose.onNodeWithText("Welcome").performClick()
-        compose.onNode(hasContentDescription("Reply", substring = true) and hasClickAction()).assertIsDisplayed()
-        button("Delete").assertDoesNotExist()
-    }
-
-    @Test
     fun oneBarForEveryScreenReplacesThePerScreenCards() {
         start()
         openActionBarSettings()

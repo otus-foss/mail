@@ -39,7 +39,6 @@ internal fun KeyValueStore.actionBehavior(): ActionBehavior {
         endToStart = MailAction.decodeSwipe(string(END_TO_START), defaults.endToStart),
         bars = ActionBarPlace.entries.associateWith { ActionBarLayout.decode(savedBar(it), it) },
         barMode = ActionBarMode.fromStorageValue(string(ACTION_BAR_MODE)) ?: defaults.barMode,
-        minimizedBar = flag(MINIMIZED_BAR, defaults.minimizedBar),
         notificationActions = decoded(NOTIFICATION_ACTIONS, defaults.notificationActions, ::decodeNotificationActions),
     )
 }
@@ -52,7 +51,6 @@ internal fun KeyValueEditor.put(actions: ActionBehavior) {
     }
     put(DEFAULT_BARS_MARKED, true)
     put(ACTION_BAR_MODE, actions.barMode.storageValue)
-    put(MINIMIZED_BAR, actions.minimizedBar)
     put(NOTIFICATION_ACTIONS, encodeNotificationActions(actions.notificationActions))
 }
 
@@ -131,7 +129,6 @@ private val EARLIER_DEFAULT_BARS =
 private const val START_TO_END = "swipe_start_to_end"
 private const val END_TO_START = "swipe_end_to_start"
 private const val ACTION_BAR_MODE = "action_bar_mode"
-private const val MINIMIZED_BAR = "action_bar_minimized"
 private const val NOTIFICATION_ACTIONS = "notification_actions"
 private const val ICON_SOURCE = "website_icon_source"
 private const val BULWARK_ADDRESS = "bulwark_address"

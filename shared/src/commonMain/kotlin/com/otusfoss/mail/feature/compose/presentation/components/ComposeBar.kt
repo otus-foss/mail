@@ -21,8 +21,7 @@ import com.otusfoss.mail.feature.compose.presentation.recipients
  * The compose page's bar as [actions] lays it out. Send runs [onSend], and stays disabled while that is null;
  * Attach runs [onAttach], disabled while that is null, and actions for messages, which Fixed mode may
  * place here, do not apply. The main button reads Send to, or Sends to with the schedule-send
- * symbol while [scheduled], and names the draft's recipients once it has any. A minimized bar
- * shows only the main button.
+ * symbol while [scheduled], and names the draft's recipients once it has any.
  */
 @Composable
 internal fun ComposeBar(

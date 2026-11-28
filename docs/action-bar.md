@@ -152,14 +152,12 @@ move. A swipe can be any action except Spam, Move, Rule for sender, and the fold
 **All actions**, under **Anywhere** in the picker, fits every bar. It shows a ⋯ icon, and tapping it
 opens a Core `ContextMenu` above the button with every action the screen offers, including those
 already on the bar; actions the current messages cannot take are left out. It suits a bar kept to
-a few buttons. A minimized bar hides it like any secondary button and keeps its own ⋯ button.
+a few buttons.
 
 ### Settings
 
 The Mail behavior page's **Actions** section has an **Action bar** row, which opens
-**Settings › Mail behavior › Action bar** (`ActionBarSettingsScreen`). The page's **Minimize**
-switch, below **Layout**, shows only the main button, as a 62 dp round button at the bar's end, on every screen. The
-other buttons then move into the page's menu, such as an open message's **More actions**.
+**Settings › Mail behavior › Action bar** (`ActionBarSettingsScreen`).
 
 The action bar page starts with a **Layout** row that shows the mode and opens a `ChoiceSheet`
 with **Per screen** and **Same everywhere**. **Per screen** shows a card for **Message list**,
@@ -235,9 +233,7 @@ and **Copy to** leaves it out for them. Turning Read later off removes it from e
 the main button, the place's default main action takes over.
 
 The mode is saved as `adaptive` or `fixed` under `action_bar_mode` on Android and
-`otus.mail.action_bar_mode` on iOS. A missing or unknown value reads as `adaptive`. **Minimize**
-is saved as a boolean under `action_bar_minimized` on Android and `otus.mail.action_bar_minimized`
-on iOS, and is off when missing.
+`otus.mail.action_bar_mode` on iOS. A missing or unknown value reads as `adaptive`.
 
 One action model in `core/messages/presentation/actions` serves every place: `ActionSubject.offer`
 is one exhaustive `when` over `MailAction` that gives each action's label, symbol, and run for what

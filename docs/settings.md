@@ -73,7 +73,7 @@ left, the control on the right, and large section titles. Search covers every pa
   **Quick view**, each in an ordered sheet. Quick filters waits, disabled, until the panel shows
   its Quick filters section.
 - **Action bar** (`ActionBarSettingsScreen`), under Mail behavior, starts with a **Layout** row
-  whose `ChoiceSheet` picks **Per screen** or **Same everywhere**, then the **Minimize** switch.
+  whose `ChoiceSheet` picks **Per screen** or **Same everywhere**.
   **Per screen** shows a card for **Message list**, **Selected messages**, **Open message**, and
   **Writing**; **Same everywhere** shows one **Every screen** card. Each card previews the saved
   bar and opens its editor. See [action bar](action-bar.md).
