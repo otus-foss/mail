@@ -126,11 +126,17 @@ internal class ReadStripActions(
     ) {
         val lists = read.services.newsletters ?: return
         newsletters.set(message, NewsletterStep.Archived)
-        val undo = UiAction("Undo") { newsletters.set(message, NewsletterStep.Unsubscribed) }
+        // A failed unsubscribe may have put the strip back to Subscribed meanwhile; that state wins.
+        val restore = {
+            if (newsletters.of(message) == NewsletterStep.Archived) {
+                newsletters.set(message, NewsletterStep.Unsubscribed)
+            }
+        }
+        val undo = UiAction("Undo", onClick = restore)
         val archive = {
             read.effects.launch {
                 if (!lists.archive(message.location.accountId, list.olderIds)) {
-                    newsletters.set(message, NewsletterStep.Unsubscribed)
+                    restore()
                     toasts.show(ToastMessage("Couldn't archive them. Try again."))
                 }
             }

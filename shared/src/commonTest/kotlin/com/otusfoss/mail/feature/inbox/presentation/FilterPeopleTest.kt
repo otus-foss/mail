@@ -117,7 +117,9 @@ class FilterPeopleTest {
         val people = toPeople(messages, own, mapOf("ada" to "Work"))
         assertEquals(listOf("ada@example.org", "hi@example.org", "kim@x.example"), people.map { it.addresses.first() })
         assertEquals(listOf(2, 0, 2), people.map { it.conversations })
-        assertEquals("Work", people.first().accountName)
+        // With one account its name tells the user nothing.
+        assertEquals("", people.first().accountName)
+        assertEquals("Work", toPeople(messages, own, mapOf("ada" to "Work", "bo" to "Home")).first().accountName)
         assertEquals(own.first(), people.first().own)
         val picked = InboxFilters().withRecipient(people[0], true).withRecipient(people[2], true)
         assertEquals(setOf(own.first()), picked.sentTo)

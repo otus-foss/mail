@@ -8,7 +8,7 @@ package com.otusfoss.mail.core.text
 fun accountLabel(
     affected: List<String>,
     total: Int,
-): String? = affected.takeIf { total > 1 && it.size < total }?.let(::andList)
+): String? = affected.takeIf { total > 1 && it.isNotEmpty() && it.size < total }?.let(::andList)
 
 /** "Work", "Work and Personal", "Work, Personal and Home". */
 private fun andList(names: List<String>): String =
