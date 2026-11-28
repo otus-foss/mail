@@ -18,5 +18,5 @@ internal fun PageSubject.offerScheduled(action: MailAction): OfferedAction? {
     val actions = scheduled?.takeIf { role == MailboxRole.Scheduled } ?: return null
     val edits = action == MailAction.EditScheduled
     val run = if (edits) actions.edit else actions.sendNow
-    return OfferedAction(action.label, action.symbol, leaves = !edits) { run(message) }
+    return OfferedAction(action.label, action.symbol, OfferEffect.of(leaves = !edits)) { run(message) }
 }
