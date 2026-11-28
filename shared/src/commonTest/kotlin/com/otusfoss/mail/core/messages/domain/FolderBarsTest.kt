@@ -5,17 +5,16 @@ import com.otusfoss.mail.core.messages.domain.ActionBarPlace.Compose
 import com.otusfoss.mail.core.messages.domain.ActionBarPlace.Inbox
 import com.otusfoss.mail.core.messages.domain.ActionBarPlace.Message
 import com.otusfoss.mail.core.messages.domain.ActionBarPlace.Selection
+import com.otusfoss.mail.core.messages.domain.MailAction.AllActions
 import com.otusfoss.mail.core.messages.domain.MailAction.DeleteForever
 import com.otusfoss.mail.core.messages.domain.MailAction.EditScheduled
 import com.otusfoss.mail.core.messages.domain.MailAction.EmptyFolder
-import com.otusfoss.mail.core.messages.domain.MailAction.Filters
 import com.otusfoss.mail.core.messages.domain.MailAction.FollowUp
 import com.otusfoss.mail.core.messages.domain.MailAction.Forward
-import com.otusfoss.mail.core.messages.domain.MailAction.NewMail
 import com.otusfoss.mail.core.messages.domain.MailAction.NotSpam
 import com.otusfoss.mail.core.messages.domain.MailAction.Restore
-import com.otusfoss.mail.core.messages.domain.MailAction.Search
 import com.otusfoss.mail.core.messages.domain.MailAction.SendNow
+import com.otusfoss.mail.core.messages.presentation.actions.buttonLabel
 import com.otusfoss.mail.core.settings.domain.ActionBehavior
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -26,13 +25,21 @@ class FolderBarsTest {
 
     @Test
     fun spamAndTrashOfferTheirWayOutAndDeletingForGood() {
-        val list = ActionBarLayout(listOf(Search, Filters, EmptyFolder), NewMail)
+        val list = ActionBarLayout(listOf(AllActions), EmptyFolder)
         assertEquals(ActionBarLayout(listOf(DeleteForever), NotSpam), behavior.barLayout(Message, MailboxRole.Junk))
-        assertEquals(ActionBarLayout(listOf(DeleteForever), NotSpam), behavior.barLayout(Selection, MailboxRole.Junk))
+        val selectedSpam = ActionBarLayout(listOf(AllActions, DeleteForever), NotSpam)
+        assertEquals(selectedSpam, behavior.barLayout(Selection, MailboxRole.Junk))
         assertEquals(list, behavior.barLayout(Inbox, MailboxRole.Junk))
         assertEquals(ActionBarLayout(listOf(DeleteForever), Restore), behavior.barLayout(Message, MailboxRole.Trash))
-        assertEquals(ActionBarLayout(listOf(DeleteForever), Restore), behavior.barLayout(Selection, MailboxRole.Trash))
+        val selectedTrash = ActionBarLayout(listOf(AllActions, DeleteForever), Restore)
+        assertEquals(selectedTrash, behavior.barLayout(Selection, MailboxRole.Trash))
         assertEquals(list, behavior.barLayout(Inbox, MailboxRole.Trash))
+    }
+
+    @Test
+    fun anEmptyFolderStillNamesItsEmptyButton() {
+        assertEquals("Empty spam", EmptyFolder.buttonLabel(primary = true, role = MailboxRole.Junk))
+        assertEquals("Empty trash", EmptyFolder.buttonLabel(primary = true, role = MailboxRole.Trash))
     }
 
     @Test
@@ -55,7 +62,8 @@ class FolderBarsTest {
         val changed = behavior.copy(bars = behavior.bars + (Message to custom))
         assertEquals(custom, changed.barLayout(Message, MailboxRole.Trash))
         // Other places the user left alone still change with the folder.
-        assertEquals(ActionBarLayout(listOf(DeleteForever), Restore), changed.barLayout(Selection, MailboxRole.Trash))
+        val selectedTrash = ActionBarLayout(listOf(AllActions, DeleteForever), Restore)
+        assertEquals(selectedTrash, changed.barLayout(Selection, MailboxRole.Trash))
     }
 
     @Test

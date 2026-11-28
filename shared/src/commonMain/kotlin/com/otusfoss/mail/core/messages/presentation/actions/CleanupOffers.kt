@@ -58,7 +58,7 @@ internal fun MessageActions.offerEmpty(): OfferedAction? {
     val question =
         ConfirmQuestion("Empty $folder?", "This deletes ${emptying.count} $noun forever. You can't undo this.", "Empty")
     return OfferedAction(
-        "Empty $folder",
+        emptyLabel(emptying.role),
         MailAction.EmptyFolder.symbol,
         OfferEffect.Stays,
         confirm = question,

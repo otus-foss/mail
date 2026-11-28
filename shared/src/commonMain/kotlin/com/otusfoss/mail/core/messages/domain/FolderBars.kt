@@ -1,16 +1,14 @@
 package com.otusfoss.mail.core.messages.domain
 
 import com.otusfoss.mail.core.mailbox.MailboxRole
+import com.otusfoss.mail.core.messages.domain.MailAction.AllActions
 import com.otusfoss.mail.core.messages.domain.MailAction.DeleteForever
 import com.otusfoss.mail.core.messages.domain.MailAction.EditScheduled
 import com.otusfoss.mail.core.messages.domain.MailAction.EmptyFolder
-import com.otusfoss.mail.core.messages.domain.MailAction.Filters
 import com.otusfoss.mail.core.messages.domain.MailAction.FollowUp
 import com.otusfoss.mail.core.messages.domain.MailAction.Forward
-import com.otusfoss.mail.core.messages.domain.MailAction.NewMail
 import com.otusfoss.mail.core.messages.domain.MailAction.NotSpam
 import com.otusfoss.mail.core.messages.domain.MailAction.Restore
-import com.otusfoss.mail.core.messages.domain.MailAction.Search
 import com.otusfoss.mail.core.messages.domain.MailAction.SendNow
 import com.otusfoss.mail.core.settings.domain.ActionBehavior
 
@@ -47,8 +45,9 @@ fun ActionBarPlace.folderDefault(role: MailboxRole): ActionBarLayout? =
 /** Spam and Trash: messages leave with [primary] or for good, and the list can be emptied. */
 private fun ActionBarPlace.cleanupBar(primary: MailAction): ActionBarLayout? =
     when (this) {
-        ActionBarPlace.Inbox -> ActionBarLayout(listOf(Search, Filters, EmptyFolder), NewMail)
-        ActionBarPlace.Selection, ActionBarPlace.Message -> ActionBarLayout(listOf(DeleteForever), primary)
+        ActionBarPlace.Inbox -> ActionBarLayout(listOf(AllActions), EmptyFolder)
+        ActionBarPlace.Selection -> ActionBarLayout(listOf(AllActions, DeleteForever), primary)
+        ActionBarPlace.Message -> ActionBarLayout(listOf(DeleteForever), primary)
         ActionBarPlace.Compose, ActionBarPlace.Everywhere -> null
     }
 

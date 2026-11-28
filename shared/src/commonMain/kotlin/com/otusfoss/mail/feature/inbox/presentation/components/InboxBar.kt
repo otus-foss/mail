@@ -19,7 +19,8 @@ import com.otusfoss.mail.feature.inbox.presentation.InboxState
 /**
  * The message list's bar while nothing is selected. Search opens the search field, Filters runs
  * [onFilters], and Mark all read marks the messages [state] shows. Actions that need a message
- * stay disabled. A minimized bar scales out while searching, before the keyboard arrives.
+ * stay disabled. A minimized bar lists the rest in its menu, and scales out while searching,
+ * before the keyboard arrives.
  */
 @Composable
 internal fun InboxBar(
@@ -34,9 +35,10 @@ internal fun InboxBar(
     val results = remember(messages, matching, filters) { searchMessages(messages, matching, filters) }
     val list = ListSubject(results, matching.accounts.singleOrNull(), state::startSearch, onFilters, onCompose)
     val subject = ActionSubject(actions, list = list)
+    val bar = actions.saved().barFor(ActionBarPlace.Inbox, actions.cleanup?.listRole?.invoke(), subject::offer)
     MailActionBar(
-        actions.saved().barFor(ActionBarPlace.Inbox, actions.cleanup?.listRole?.invoke(), subject::offer),
+        bar,
         onAction = { it.run() },
-        minimized = Minimized(hidden = state.searching),
+        minimized = Minimized(hidden = state.searching, more = bar.more()),
     )
 }

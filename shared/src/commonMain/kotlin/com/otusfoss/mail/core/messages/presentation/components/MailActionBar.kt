@@ -49,7 +49,7 @@ internal fun MailActionBar(
         val offered = bar.offer(button)
         return BarAction(
             UiAction(
-                (if (primary) offered?.primaryLabel else offered?.label) ?: button.buttonLabel(primary),
+                (if (primary) offered?.primaryLabel else offered?.label) ?: button.buttonLabel(primary, bar.role),
                 offered?.symbol ?: button.symbol,
                 enabled = offered != null,
             ) {

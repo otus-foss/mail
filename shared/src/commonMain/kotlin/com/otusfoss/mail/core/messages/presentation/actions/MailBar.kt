@@ -11,10 +11,12 @@ import com.otusfoss.mail.core.messages.domain.barLayout
 import com.otusfoss.mail.core.settings.domain.ActionBehavior
 
 /**
- * One place's bar: its [layout], each button as [offer] gives it, whether it is [minimized] to its
- * primary, and [every] action the place offers, for the All actions menu.
+ * One place's bar on a page of [role] folders: its [layout], each button as [offer] gives it,
+ * whether it is [minimized] to its primary, and [every] action the place offers, for the All
+ * actions menu.
  */
 internal class MailBar(
+    val role: MailboxRole?,
     val layout: ActionBarLayout,
     val offer: (BarButton) -> OfferedAction?,
     val minimized: Boolean,
@@ -44,6 +46,7 @@ internal fun ActionBehavior.barFor(
     val choices = place.actions.filter { it != MailAction.AllActions }
     val hidden = if (minimizedBar) layout.secondary else emptyList()
     return MailBar(
+        role,
         layout,
         offer,
         minimizedBar,

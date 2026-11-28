@@ -254,18 +254,22 @@ buttons all draw from it, so a new `MailAction` fails to compile until each of t
 
 | Place | Buttons | Main button |
 | --- | --- | --- |
-| Message list | Search, Filters, Mark all read | New mail |
-| Selected messages | Read, Flag, Trash | Move |
+| Message list | All actions, Mark all read | New mail |
+| Selected messages | All actions, Read, Trash | Move |
 | Open message | Trash, Move, Zen | Reply |
 | Writing | Attach, Discard | Send |
-| Every screen | Search, Archive, Trash | New mail |
+| Every screen | All actions, Archive, Trash | New mail |
 
 Flag left the open message's bar for Reply, and Zen took Archive's place; both are in **More
 actions**. A toggle such as Zen shows a grey fill behind its icon while it is on.
 
+**All actions** comes first on the message list, the selection, and the **Every screen** bar, so
+Search, Filters, and Flag stay one menu away. The open message leaves it out, because its header's
+**More actions** lists the same actions, and so does Writing, which has no actions beyond its bar.
+
 A bar still on its default is saved as `default`, so a later default reaches it. Builds before
-that saved every default bar as its buttons, and the earlier open message default
-(`archive,trash,move|reply`) still reads as the default.
+that saved every default bar as its buttons, and those earlier defaults (`EARLIER_DEFAULT_BARS`)
+still read as the default.
 
 ### Folder bars
 
@@ -275,8 +279,8 @@ folder pill all count. The open message uses the role of the folder it is shown 
 
 | Folder | Message list | Selected messages | Open message |
 | --- | --- | --- | --- |
-| Spam | Search, Filters, Empty spam; main New mail | Delete forever; main Not spam | Delete forever; main Not spam |
-| Trash | Search, Filters, Empty trash; main New mail | Delete forever; main Restore | Delete forever; main Restore |
+| Spam | All actions; main Empty spam | All actions, Delete forever; main Not spam | Delete forever; main Not spam |
+| Trash | All actions; main Empty trash | All actions, Delete forever; main Restore | Delete forever; main Restore |
 | Sent | Unchanged | Unchanged | Forward; main Follow up |
 
 These are defaults. `MailBehavior.barLayout(place, role)` shows a folder's bar only while the
@@ -298,6 +302,9 @@ Drafts has no bar of its own, because reopening a draft is not built yet.
   after a confirm dialog that gives the folders' message count. They need `mayRemoveItems`.
 - **Follow up** opens a reply to a message the account sent, to its original To and Cc, from the
   identity that sent it (`ComposeRequest.FollowUp`). Sending stays disabled.
+
+An empty Spam or Trash folder keeps **Empty spam** or **Empty trash** as its main button,
+disabled. A minimized list bar lists the other actions, such as New mail, in its menu.
 
 Each change takes the messages off the list at once. Messages the server keeps come back, and the
 list shows a notice. Deleting runs `Email/set` calls of at most `maxObjectsInSet` objects, capped

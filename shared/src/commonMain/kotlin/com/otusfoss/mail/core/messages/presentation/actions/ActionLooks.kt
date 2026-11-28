@@ -21,6 +21,7 @@ import com.otusfoss.core.designsystem.resources.symbol_report
 import com.otusfoss.core.designsystem.resources.symbol_search
 import com.otusfoss.core.designsystem.resources.symbol_self_improvement
 import com.otusfoss.core.designsystem.resources.symbol_send
+import com.otusfoss.mail.core.mailbox.MailboxRole
 import com.otusfoss.mail.core.mailbox.pathText
 import com.otusfoss.mail.core.messages.domain.BarButton
 import com.otusfoss.mail.core.messages.domain.MailAction
@@ -65,14 +66,27 @@ internal val BarButton.label: String
 
 /**
  * The button's name where it shows no state, such as an unavailable or previewed bar button or an
- * alert's button. On the [primary] button, Move to shows only the folder's name.
+ * alert's button. On the [primary] button, Move to shows only the folder's name. On a page of
+ * [role] folders, Empty names the folder.
  */
-fun BarButton.buttonLabel(primary: Boolean = false): String =
+fun BarButton.buttonLabel(
+    primary: Boolean = false,
+    role: MailboxRole? = null,
+): String =
     when (this) {
         is BarButton.MoveTo -> if (primary) name else "Move to $name"
         MailAction.Read -> MessageFlag.Read.label(on = false)
         MailAction.Flag -> MessageFlag.Flagged.label(on = false)
+        MailAction.EmptyFolder -> emptyLabel(role)
         else -> label
+    }
+
+/** "Empty spam" or "Empty trash" for a page of [role] folders; the settings name elsewhere. */
+internal fun emptyLabel(role: MailboxRole?): String =
+    when (role) {
+        MailboxRole.Junk -> "Empty spam"
+        MailboxRole.Trash -> "Empty trash"
+        else -> MailAction.EmptyFolder.label
     }
 
 /** The symbol settings and unavailable slots show, independent of any message. */

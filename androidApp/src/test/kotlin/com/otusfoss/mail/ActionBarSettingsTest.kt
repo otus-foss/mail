@@ -148,7 +148,7 @@ class ActionBarSettingsTest {
         compose.onNodeWithText("Open message").assertDoesNotExist()
         // Fixed mode edits the one shared bar and leaves each screen's own bar saved.
         compose.onNodeWithText("Every screen").performScrollTo().performClick()
-        top("Search").performClick()
+        top("All actions").performClick()
         pick("Remove from bar")
         top("Add action").performClick()
         pick("Reply")

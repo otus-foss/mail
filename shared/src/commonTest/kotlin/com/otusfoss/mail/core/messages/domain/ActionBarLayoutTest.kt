@@ -6,10 +6,10 @@ import com.otusfoss.mail.core.messages.domain.ActionBarPlace.Inbox
 import com.otusfoss.mail.core.messages.domain.ActionBarPlace.Message
 import com.otusfoss.mail.core.messages.domain.ActionBarPlace.Selection
 import com.otusfoss.mail.core.messages.domain.BarButton.MoveTo
+import com.otusfoss.mail.core.messages.domain.MailAction.AllActions
 import com.otusfoss.mail.core.messages.domain.MailAction.Archive
 import com.otusfoss.mail.core.messages.domain.MailAction.Attach
 import com.otusfoss.mail.core.messages.domain.MailAction.Discard
-import com.otusfoss.mail.core.messages.domain.MailAction.Filters
 import com.otusfoss.mail.core.messages.domain.MailAction.Flag
 import com.otusfoss.mail.core.messages.domain.MailAction.MarkAllRead
 import com.otusfoss.mail.core.messages.domain.MailAction.Move
@@ -158,11 +158,11 @@ class ActionBarLayoutTest {
 
     @Test
     fun eachPlaceStartsWithTheSpecsLayout() {
-        assertEquals(layout(Search, Filters, MarkAllRead, primary = NewMail), Inbox.defaultLayout)
-        assertEquals(layout(Read, Flag, Trash), Selection.defaultLayout)
+        assertEquals(layout(AllActions, MarkAllRead, primary = NewMail), Inbox.defaultLayout)
+        assertEquals(layout(AllActions, Read, Trash), Selection.defaultLayout)
         assertEquals(layout(Trash, Move, Zen, primary = Reply), Message.defaultLayout)
         assertEquals(layout(Attach, Discard, primary = Send), Compose.defaultLayout)
-        assertEquals(layout(Search, Archive, Trash, primary = NewMail), Everywhere.defaultLayout)
+        assertEquals(layout(AllActions, Archive, Trash, primary = NewMail), Everywhere.defaultLayout)
         ActionBarPlace.entries.forEach { place ->
             assertEquals(place.defaultLayout, ActionBarLayout.decode(place.defaultLayout.encode(), place))
         }

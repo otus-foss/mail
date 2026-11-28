@@ -188,12 +188,27 @@ class MailBehaviorFormatsTest {
 
     @Test
     fun barsOnTheirDefaultFollowALaterDefault() {
-        val earlier = read("action_bar_message" to "archive,trash,move|reply").actions
-        assertEquals(ActionBarPlace.Message.defaultLayout, earlier.savedLayout(ActionBarPlace.Message))
+        val earlier =
+            read(
+                "action_bar_inbox" to "search,filters,mark_all_read|new_mail",
+                "action_bar_selection" to "read,flag,trash|move",
+                "action_bar_message" to "archive,trash,move|reply",
+                "action_bar_everywhere" to "search,archive,trash|new_mail",
+            ).actions
+        ActionBarPlace.entries.forEach { assertEquals(it.defaultLayout, earlier.savedLayout(it)) }
         val saved = InMemoryKeyValueStore()
         KeyValueMailBehaviorStore(saved).write(MailBehavior())
         assertEquals("default", saved.string("action_bar_message"))
         assertEquals(ActionBehavior(), KeyValueMailBehaviorStore(saved).read().actions)
+    }
+
+    @Test
+    fun anEarlierDefaultChosenAfterTheUpdateStaysChosen() {
+        val flagged = ActionBarLayout(listOf(MailAction.Read, MailAction.Flag, MailAction.Trash), MailAction.Move)
+        val actions = ActionBehavior().let { it.copy(bars = it.bars + (ActionBarPlace.Selection to flagged)) }
+        val store = KeyValueMailBehaviorStore(InMemoryKeyValueStore())
+        store.write(MailBehavior(actions = actions))
+        assertEquals(flagged, store.read().actions.savedLayout(ActionBarPlace.Selection))
     }
 
     @Test
