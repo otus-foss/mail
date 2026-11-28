@@ -9,17 +9,16 @@ import com.otusfoss.mail.core.messages.domain.MailAction
 /**
  * Where actions show up. Swipes are named by layout direction: [startToEnd] is a swipe right in
  * left-to-right languages, and a null swipe does nothing. [bars] holds each place's bar, and
- * [barMode] picks whether places use their own or the Everywhere bar. A [minimizedBar] shows only
- * its primary, as a round button. [notificationActions] are the buttons, in order, that new-mail
- * alerts offer where the account can run them; see `alertButtons`. Read later is offered only
- * while it is on, which the choices take as `readLater`.
+ * [barMode] picks whether places use their own or the Everywhere bar. [notificationActions] are
+ * the buttons, in order, that new-mail alerts offer where the account can run them; see
+ * `alertButtons`. Read later is offered only while it is on, which the choices take as
+ * `readLater`.
  */
 data class ActionBehavior(
     val startToEnd: MailAction? = MailAction.Read,
     val endToStart: MailAction? = MailAction.Trash,
     val bars: Map<ActionBarPlace, ActionBarLayout> = ActionBarPlace.entries.associateWith { it.defaultLayout },
     val barMode: ActionBarMode = ActionBarMode.Adaptive,
-    val minimizedBar: Boolean = false,
     val notificationActions: List<MailAction> = DefaultNotificationActions,
 ) {
     /** What a swipe can be set to besides nothing. */
