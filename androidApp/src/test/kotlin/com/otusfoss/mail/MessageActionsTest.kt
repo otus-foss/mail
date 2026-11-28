@@ -100,7 +100,7 @@ class MessageActionsTest {
     fun archiveFilesTheMessageIntoTheArchiveFolderAndTheRowStaysOut() {
         server.folders += """{"id": "x", "name": "Old mail", "role": "archive"}"""
         openMessage(MailBehavior(read = ReadBehavior(markReadOnOpen = false)))
-        button("Archive").performClick()
+        chooseFromMenu("Archive")
         val archive = lastUpdate()
         assertTrue(archive, "\"update\":{\"m1\":{\"mailboxIds/a\":null,\"mailboxIds/x\":true}}" in archive)
         compose.onNodeWithContentDescription("More actions").assertDoesNotExist()
@@ -157,7 +157,8 @@ class MessageActionsTest {
         server.folders += """{"id": "l", "name": "Read later"}"""
         openMessage(MailBehavior(read = ReadBehavior(markReadOnOpen = false)))
         // Unavailable actions keep their slots, disabled, so the bar never shifts.
-        listOf("Archive", "Delete").forEach { button(it).assertIsNotEnabled() }
+        button("Delete").assertIsNotEnabled()
+        assertFalse(menuOffers("Archive"))
         assertFalse(menuOffers("Flag"))
         assertTrue(menuOffers("Mark read"))
         button("Read later").assertDoesNotExist()

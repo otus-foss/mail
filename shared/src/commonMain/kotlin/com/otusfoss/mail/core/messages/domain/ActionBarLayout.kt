@@ -1,18 +1,17 @@
 package com.otusfoss.mail.core.messages.domain
 
+import com.otusfoss.mail.core.messages.domain.MailAction.AllActions
 import com.otusfoss.mail.core.messages.domain.MailAction.Archive
 import com.otusfoss.mail.core.messages.domain.MailAction.Attach
 import com.otusfoss.mail.core.messages.domain.MailAction.Discard
-import com.otusfoss.mail.core.messages.domain.MailAction.Filters
-import com.otusfoss.mail.core.messages.domain.MailAction.Flag
 import com.otusfoss.mail.core.messages.domain.MailAction.MarkAllRead
 import com.otusfoss.mail.core.messages.domain.MailAction.Move
 import com.otusfoss.mail.core.messages.domain.MailAction.NewMail
 import com.otusfoss.mail.core.messages.domain.MailAction.Read
 import com.otusfoss.mail.core.messages.domain.MailAction.Reply
-import com.otusfoss.mail.core.messages.domain.MailAction.Search
 import com.otusfoss.mail.core.messages.domain.MailAction.Send
 import com.otusfoss.mail.core.messages.domain.MailAction.Trash
+import com.otusfoss.mail.core.messages.domain.MailAction.Zen
 
 /** Whether each place has its own bar, or one bar is used everywhere. */
 enum class ActionBarMode(
@@ -62,15 +61,19 @@ enum class ActionBarPlace(
     val adaptive: Boolean
         get() = this != Everywhere
 
-    /** The spec's layouts. Reply opens a draft, and Send sends it from the compose page. */
+    /**
+     * The spec's layouts, with All actions first where a page has no other menu for them. The open
+     * message has its header's More actions, and a draft has no actions beyond its bar. Reply opens
+     * a draft, and Send sends it from the compose page.
+     */
     val defaultLayout: ActionBarLayout
         get() =
             when (this) {
-                Inbox -> ActionBarLayout(listOf(Search, Filters, MarkAllRead), NewMail)
-                Selection -> ActionBarLayout(listOf(Read, Flag, Trash), Move)
-                Message -> ActionBarLayout(listOf(Archive, Trash, Move), Reply)
+                Inbox -> ActionBarLayout(listOf(AllActions, MarkAllRead), NewMail)
+                Selection -> ActionBarLayout(listOf(AllActions, Read, Trash), Move)
+                Message -> ActionBarLayout(listOf(Trash, Move, Zen), Reply)
                 Compose -> ActionBarLayout(listOf(Attach, Discard), Send)
-                Everywhere -> ActionBarLayout(listOf(Search, Archive, Trash), NewMail)
+                Everywhere -> ActionBarLayout(listOf(AllActions, Archive, Trash), NewMail)
             }
 }
 

@@ -71,8 +71,8 @@ class ActionBehaviorTest {
     @Test
     fun aCopiedBarKeepsWhatTheTargetOffersAndItsOwnMainButtonOtherwise() {
         val actions = ActionBehavior()
-        val selection =
-            ActionBarLayout(listOf(MailAction.Archive, MailAction.Trash), MailAction.Move)
+        // Zen needs one open message, so a selection leaves it out.
+        val selection = ActionBarLayout(listOf(MailAction.Trash), MailAction.Move)
         assertEquals(selection, actions.copiedBar(ActionBarPlace.Message, ActionBarPlace.Selection, readLater = false))
         assertEquals(
             ActionBarPlace.Message.defaultLayout,

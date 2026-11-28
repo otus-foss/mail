@@ -122,7 +122,8 @@ private fun ActionSubject.offer(action: MailAction): OfferedAction? =
                 OfferedAction(
                     if (it.on) "Leave zen mode" else "Zen mode",
                     action.symbol,
-                    false,
+                    OfferEffect.Stays,
+                    on = it.on,
                     run = it.toggle,
                 )
             }
@@ -257,4 +258,4 @@ private fun draftOffer(
     button: BarButton,
     run: () -> Unit,
     symbol: DrawableResource = button.symbol,
-) = OfferedAction(button.buttonLabel(), symbol, leaves = true, run = run)
+) = OfferedAction(button.buttonLabel(), symbol, OfferEffect.Leaves, run = run)

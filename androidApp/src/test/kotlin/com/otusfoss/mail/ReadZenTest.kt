@@ -5,6 +5,8 @@ import androidx.compose.material.ProvideTextStyle
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsNotDisplayed
+import androidx.compose.ui.test.assertIsNotSelected
+import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
@@ -23,7 +25,10 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 import org.robolectric.annotation.GraphicsMode
 
-/** Zen mode in the Read view: the ⋯ menu's entry hides the banners and strips, and shows them again. */
+/**
+ * Zen mode in the Read view: the bar's Zen button shows it is on, hides the banners and strips,
+ * and shows them again.
+ */
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [35], qualifiers = "w412dp-h892dp-xxhdpi")
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
@@ -59,18 +64,17 @@ class ReadZenTest {
         compose.onAllNodesWithText(text, substring = true).fetchSemanticsNodes().isNotEmpty()
 
     @Test
-    fun zenModeHidesTheBannerAndStripsUntilItIsLeft() {
+    fun theZenButtonShowsItIsOnAndHidesTheBannerAndStripsUntilLeft() {
         showDigest()
         compose.waitUntil(TIMEOUT) { exists("Images blocked for privacy") && exists("Mailing list") }
-        compose.onNodeWithContentDescription("More actions").performClick()
-        compose.onNodeWithText("Zen mode").performClick()
+        compose.onNodeWithContentDescription("Zen mode").assertIsNotSelected().performClick()
         compose.waitForIdle()
         assertTrue(zen.value)
+        compose.onNodeWithContentDescription("Leave zen mode").assertIsSelected()
         compose.onNodeWithText("Images blocked for privacy", substring = true).assertIsNotDisplayed()
         compose.onNodeWithText("Mailing list", substring = true).assertIsNotDisplayed()
         compose.screenshot("read/zen")
-        compose.onNodeWithContentDescription("More actions").performClick()
-        compose.onNodeWithText("Leave zen mode").performClick()
+        compose.onNodeWithContentDescription("Leave zen mode").performClick()
         compose.waitUntil(TIMEOUT) { exists("Images blocked for privacy") && exists("Mailing list") }
         compose.onNodeWithText("Images blocked for privacy", substring = true).assertIsDisplayed()
         compose.onNodeWithText("Mailing list", substring = true).assertIsDisplayed()

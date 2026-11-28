@@ -9,6 +9,7 @@ import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
 import com.otusfoss.mail.core.messages.domain.ActionBarMode
 import com.otusfoss.mail.core.settings.domain.ActionBehavior
 import com.otusfoss.mail.core.settings.domain.MailBehavior
@@ -35,11 +36,17 @@ class InboxActionBarTest {
 
     private fun button(label: String) = compose.onNode(hasContentDescription(label) and hasClickAction())
 
+    private fun allActions(entry: String) {
+        button("All actions").performClick()
+        compose.onNodeWithText(entry).performScrollTo().performClick()
+    }
+
     @Test
     fun theListShowsItsDefaultButtonsAndSearchOpensTheSearchField() {
         start()
-        listOf("Search", "Filters", "Mark all read", "New mail").forEach { button(it).assertIsEnabled() }
-        button("Search").performClick()
+        listOf("All actions", "Mark all read", "New mail").forEach { button(it).assertIsEnabled() }
+        listOf("Search", "Filters").forEach { button(it).assertDoesNotExist() }
+        allActions("Search")
         compose.searchField().assertIsFocused()
         button("New mail").assertDoesNotExist()
         compose.onNodeWithContentDescription("Back to inbox").performClick()
@@ -49,7 +56,7 @@ class InboxActionBarTest {
     @Test
     fun filtersOpensTheFilterPanel() {
         start()
-        button("Filters").performClick()
+        allActions("Filters")
         // The Show button in the bar reads "Show mails" while it counts and "Show 1 mail" after.
         compose.onNodeWithContentDescription("Show ", substring = true).assertExists()
     }
@@ -73,12 +80,11 @@ class InboxActionBarTest {
                 actions = ActionBehavior(barMode = ActionBarMode.Fixed),
             ),
         )
-        button("Search").assertIsEnabled()
+        button("All actions").assertIsEnabled()
         button("New mail").assertIsEnabled()
         listOf("Archive", "Delete").forEach { button(it).assertIsNotEnabled() }
 
         compose.onNodeWithText("Welcome").performClick()
-        button("Search").assertIsNotEnabled()
         button("Archive").assertIsEnabled()
         button("New mail").assertIsEnabled()
         button("Mark all read").assertDoesNotExist()

@@ -32,7 +32,7 @@ internal fun MessageMarks.offer(
             on -> Res.drawable.symbol_mark_email_unread
             else -> Res.drawable.symbol_mark_email_read
         }
-    return OfferedAction(flag.label(on), symbol, leaves = false) { set(markable, flag, !on) }
+    return OfferedAction(flag.label(on), symbol, OfferEffect.Stays) { set(markable, flag, !on) }
 }
 
 /** Saves the messages not saved yet; once all are saved, removes them. */
@@ -40,14 +40,14 @@ internal fun MessageActions.offerReadLater(messages: List<MailMessage>): Offered
     val changes = messages.mapNotNull(readLater)
     val saving = changes.filter { it.saves }
     val chosen = saving.ifEmpty { changes }.ifEmpty { return null }
-    return OfferedAction(chosen.first().label, Res.drawable.symbol_bookmark, chosen.any { it.leaves }) {
+    return OfferedAction(chosen.first().label, Res.drawable.symbol_bookmark, OfferEffect.of(chosen.any { it.leaves })) {
         chosen.forEach { it.apply() }
     }
 }
 
 internal fun MessageActions.offerRule(messages: List<MailMessage>): OfferedAction? =
     messages.singleOrNull()?.let(ruleForSender)?.let { start ->
-        OfferedAction(MailAction.RuleForSender.label, MailAction.RuleForSender.symbol, leaves = true, run = start)
+        OfferedAction(MailAction.RuleForSender.label, MailAction.RuleForSender.symbol, OfferEffect.Leaves, run = start)
     }
 
 /**
@@ -75,7 +75,7 @@ internal fun MessageActions.offerMove(
             emptyList()
         }
     if (targets.isEmpty()) return null
-    return OfferedAction(MailAction.Move.label, MailAction.Move.symbol, leaves = false, asks = true) {
+    return OfferedAction(MailAction.Move.label, MailAction.Move.symbol, OfferEffect.Asks) {
         chooseFolder(messages, targets)
     }
 }
@@ -114,7 +114,7 @@ private fun MessageActions.offerMoves(
 ): OfferedAction? {
     val moving = messages.mapNotNull { message -> target(message)?.let { message to it } }
     if (moving.isEmpty()) return null
-    return OfferedAction(label, button.symbol, leaves = true, primaryLabel = primaryLabel) {
+    return OfferedAction(label, button.symbol, OfferEffect.Leaves, primaryLabel = primaryLabel) {
         moving.forEach { (message, folder) -> moves.onMove(message, folder) }
     }
 }

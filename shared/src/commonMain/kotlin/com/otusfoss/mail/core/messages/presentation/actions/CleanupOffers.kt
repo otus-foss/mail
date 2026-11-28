@@ -26,7 +26,7 @@ private fun MessageActions.offerToInbox(
             .filter { cleanup?.role?.invoke(it) == role }
             .mapNotNull { message -> shortcutTarget(message, MailboxRole.Inbox)?.let { message to it } }
     return moving.takeIf { it.isNotEmpty() }?.let {
-        OfferedAction(action.label, action.symbol, leaves = true) {
+        OfferedAction(action.label, action.symbol, OfferEffect.Leaves) {
             moving.forEach { (message, inbox) -> move(message, inbox) }
         }
     }
@@ -42,7 +42,7 @@ internal fun MessageActions.offerDeleteForever(messages: List<MailMessage>): Off
         OfferedAction(
             MailAction.DeleteForever.label,
             MailAction.DeleteForever.symbol,
-            leaves = true,
+            OfferEffect.Leaves,
             confirm = question,
         ) {
             actions.onDelete(deleting)
@@ -58,9 +58,9 @@ internal fun MessageActions.offerEmpty(): OfferedAction? {
     val question =
         ConfirmQuestion("Empty $folder?", "This deletes ${emptying.count} $noun forever. You can't undo this.", "Empty")
     return OfferedAction(
-        "Empty $folder",
+        emptyLabel(emptying.role),
         MailAction.EmptyFolder.symbol,
-        leaves = false,
+        OfferEffect.Stays,
         confirm = question,
         run = emptying.run,
     )

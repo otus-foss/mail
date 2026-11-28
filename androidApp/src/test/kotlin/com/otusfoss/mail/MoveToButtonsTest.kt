@@ -54,11 +54,11 @@ class MoveToButtonsTest {
         compose.onNode(hasText("Action bar") and hasClickAction()).performScrollTo().performClick()
         compose.onNodeWithText("Open message").performScrollTo().performClick()
 
-        top("Archive").performClick()
+        top("Delete").performClick()
         pick("Move to folder…")
         pick("Receipts")
         done()
-        top("Delete").performClick()
+        top("Zen mode").performClick()
         pick("Move to folder…")
         // A folder another slot moves to would trade places with it.
         compose.onNodeWithText("Swaps with Button 1").assertExists()
@@ -74,7 +74,7 @@ class MoveToButtonsTest {
 
         val expected =
             ActionBarLayout(
-                listOf(MoveTo(listOf("Receipts", "Amazon")), MoveTo(listOf("Travel")), MailAction.Move),
+                listOf(MoveTo(listOf("Receipts", "Amazon")), MailAction.Move, MoveTo(listOf("Travel"))),
                 MailAction.Reply,
             )
         assertEquals(
