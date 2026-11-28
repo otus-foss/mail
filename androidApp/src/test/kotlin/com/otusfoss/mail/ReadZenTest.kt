@@ -25,7 +25,10 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 import org.robolectric.annotation.GraphicsMode
 
-/** Zen mode in the Read view: the ⋯ menu's entry hides the banners and strips, and shows them again. */
+/**
+ * Zen mode in the Read view: the bar's Zen button shows it is on, hides the banners and strips,
+ * and shows them again.
+ */
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [35], qualifiers = "w412dp-h892dp-xxhdpi")
 @GraphicsMode(GraphicsMode.Mode.NATIVE)

@@ -37,7 +37,7 @@ internal fun KeyValueStore.actionBehavior(): ActionBehavior {
     return ActionBehavior(
         startToEnd = MailAction.decodeSwipe(string(START_TO_END), defaults.startToEnd),
         endToStart = MailAction.decodeSwipe(string(END_TO_START), defaults.endToStart),
-        bars = ActionBarPlace.entries.associateWith { ActionBarLayout.decode(string(barKey(it)), it) },
+        bars = ActionBarPlace.entries.associateWith { ActionBarLayout.decode(savedBar(it), it) },
         barMode = ActionBarMode.fromStorageValue(string(ACTION_BAR_MODE)) ?: defaults.barMode,
         minimizedBar = flag(MINIMIZED_BAR, defaults.minimizedBar),
         notificationActions = decoded(NOTIFICATION_ACTIONS, defaults.notificationActions, ::decodeNotificationActions),
@@ -47,7 +47,9 @@ internal fun KeyValueStore.actionBehavior(): ActionBehavior {
 internal fun KeyValueEditor.put(actions: ActionBehavior) {
     put(START_TO_END, MailAction.encodeSwipe(actions.startToEnd))
     put(END_TO_START, MailAction.encodeSwipe(actions.endToStart))
-    actions.bars.forEach { (place, layout) -> put(barKey(place), layout.encode()) }
+    actions.bars.forEach { (place, layout) ->
+        put(barKey(place), if (layout == place.defaultLayout) DEFAULT_BAR else layout.encode())
+    }
     put(ACTION_BAR_MODE, actions.barMode.storageValue)
     put(MINIMIZED_BAR, actions.minimizedBar)
     put(NOTIFICATION_ACTIONS, encodeNotificationActions(actions.notificationActions))
@@ -101,6 +103,18 @@ internal fun KeyValueEditor.put(sidebar: SidebarBehavior) {
 }
 
 private fun barKey(place: ActionBarPlace) = "action_bar_${place.storageValue}"
+
+/**
+ * A bar still on its default saves [DEFAULT_BAR], so a later default reaches it. Builds before
+ * that saved every default bar as its buttons; those values in [EARLIER_DEFAULT_BARS] read as the
+ * default too.
+ */
+private fun KeyValueStore.savedBar(place: ActionBarPlace): String? =
+    string(barKey(place)).takeUnless { it == DEFAULT_BAR || it == EARLIER_DEFAULT_BARS[place] }
+
+private const val DEFAULT_BAR = "default"
+
+private val EARLIER_DEFAULT_BARS = mapOf(ActionBarPlace.Message to "archive,trash,move|reply")
 
 private const val START_TO_END = "swipe_start_to_end"
 private const val END_TO_START = "swipe_end_to_start"

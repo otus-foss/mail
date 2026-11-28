@@ -76,14 +76,14 @@ class ActionBarSettingsTest {
         start()
         openActionBarSettings()
         compose.onNodeWithText("Open message").performScrollTo().performClick()
-        top("Archive").performClick()
+        top("Delete").performClick()
         pick("Spam")
         done()
         done()
 
         val saved = AndroidMailBehaviorStore(compose.activity).read()
         val expected =
-            ActionBarLayout(listOf(MailAction.Spam, MailAction.Trash, MailAction.Move), MailAction.Reply)
+            ActionBarLayout(listOf(MailAction.Spam, MailAction.Move, MailAction.Zen), MailAction.Reply)
         assertEquals(expected, saved.actions.barLayout(ActionBarPlace.Message))
         assertEquals(ActionBarPlace.Selection.defaultLayout, saved.actions.barLayout(ActionBarPlace.Selection))
 
@@ -93,7 +93,7 @@ class ActionBarSettingsTest {
         compose.onNode(hasContentDescription("Inbox", substring = true) and isSelectable()).performClick()
         compose.onNodeWithText("Welcome").performClick()
         button("Spam").assertIsEnabled()
-        button("Archive").assertDoesNotExist()
+        button("Delete").assertDoesNotExist()
     }
 
     @Test
@@ -103,11 +103,11 @@ class ActionBarSettingsTest {
         compose.onNodeWithText("Open message").performScrollTo().performClick()
         top("Reply").performClick()
         compose.onNodeWithText("Swaps with Button 1").assertIsDisplayed()
-        pick("Archive")
+        pick("Delete")
         done()
         done()
 
-        val expected = ActionBarLayout(listOf(MailAction.Reply, MailAction.Trash, MailAction.Move), MailAction.Archive)
+        val expected = ActionBarLayout(listOf(MailAction.Reply, MailAction.Move, MailAction.Zen), MailAction.Trash)
         compose.runOnIdle {
             assertEquals(
                 expected,
@@ -130,7 +130,7 @@ class ActionBarSettingsTest {
         compose.onNode(hasContentDescription("Inbox", substring = true) and isSelectable()).performClick()
         compose.onNodeWithText("Welcome").performClick()
         compose.onNode(hasContentDescription("Reply", substring = true) and hasClickAction()).assertIsDisplayed()
-        button("Archive").assertDoesNotExist()
+        button("Delete").assertDoesNotExist()
     }
 
     @Test
@@ -210,7 +210,8 @@ class ActionBarSettingsTest {
         compose.waitUntil(TIMEOUT) { compose.onAllNodes(hasText("Copy to")).fetchSemanticsNodes().isEmpty() }
 
         val saved = AndroidMailBehaviorStore(compose.activity).read()
-        val selection = ActionBarLayout(listOf(MailAction.Archive, MailAction.Trash), MailAction.Move)
+        // Zen needs one open message, so the selection bar leaves it out.
+        val selection = ActionBarLayout(listOf(MailAction.Trash), MailAction.Move)
         assertEquals(selection, saved.actions.savedLayout(ActionBarPlace.Selection))
         assertEquals(ActionBarPlace.Everywhere.defaultLayout, saved.actions.savedLayout(ActionBarPlace.Everywhere))
     }

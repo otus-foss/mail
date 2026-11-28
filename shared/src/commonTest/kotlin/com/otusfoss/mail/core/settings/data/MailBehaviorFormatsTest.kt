@@ -18,6 +18,7 @@ import com.otusfoss.mail.core.settings.domain.FilterSection
 import com.otusfoss.mail.core.settings.domain.InboxContents
 import com.otusfoss.mail.core.settings.domain.InboxPill
 import com.otusfoss.mail.core.settings.domain.ListOrder
+import com.otusfoss.mail.core.settings.domain.MailBehavior
 import com.otusfoss.mail.core.settings.domain.MailListLayout
 import com.otusfoss.mail.core.settings.domain.MailboxStyle
 import com.otusfoss.mail.core.settings.domain.PhotoCleaning
@@ -183,6 +184,16 @@ class MailBehaviorFormatsTest {
                 "action_bar_mode" to "bogus",
             ).actions
         assertEquals(ActionBehavior(), actions)
+    }
+
+    @Test
+    fun barsOnTheirDefaultFollowALaterDefault() {
+        val earlier = read("action_bar_message" to "archive,trash,move|reply").actions
+        assertEquals(ActionBarPlace.Message.defaultLayout, earlier.savedLayout(ActionBarPlace.Message))
+        val saved = InMemoryKeyValueStore()
+        KeyValueMailBehaviorStore(saved).write(MailBehavior())
+        assertEquals("default", saved.string("action_bar_message"))
+        assertEquals(ActionBehavior(), KeyValueMailBehaviorStore(saved).read().actions)
     }
 
     @Test

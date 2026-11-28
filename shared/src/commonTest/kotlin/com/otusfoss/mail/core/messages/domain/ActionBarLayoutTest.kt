@@ -22,6 +22,7 @@ import com.otusfoss.mail.core.messages.domain.MailAction.Search
 import com.otusfoss.mail.core.messages.domain.MailAction.Send
 import com.otusfoss.mail.core.messages.domain.MailAction.Spam
 import com.otusfoss.mail.core.messages.domain.MailAction.Trash
+import com.otusfoss.mail.core.messages.domain.MailAction.Zen
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
@@ -159,7 +160,7 @@ class ActionBarLayoutTest {
     fun eachPlaceStartsWithTheSpecsLayout() {
         assertEquals(layout(Search, Filters, MarkAllRead, primary = NewMail), Inbox.defaultLayout)
         assertEquals(layout(Read, Flag, Trash), Selection.defaultLayout)
-        assertEquals(layout(Archive, Trash, Move, primary = Reply), Message.defaultLayout)
+        assertEquals(layout(Trash, Move, Zen, primary = Reply), Message.defaultLayout)
         assertEquals(layout(Attach, Discard, primary = Send), Compose.defaultLayout)
         assertEquals(layout(Search, Archive, Trash, primary = NewMail), Everywhere.defaultLayout)
         ActionBarPlace.entries.forEach { place ->

@@ -256,11 +256,16 @@ buttons all draw from it, so a new `MailAction` fails to compile until each of t
 | --- | --- | --- |
 | Message list | Search, Filters, Mark all read | New mail |
 | Selected messages | Read, Flag, Trash | Move |
-| Open message | Archive, Trash, Move | Reply |
+| Open message | Trash, Move, Zen | Reply |
 | Writing | Attach, Discard | Send |
 | Every screen | Search, Archive, Trash | New mail |
 
-Flag left the open message's bar for Reply; it is in **More actions**.
+Flag left the open message's bar for Reply, and Zen took Archive's place; both are in **More
+actions**. A toggle such as Zen shows a grey fill behind its icon while it is on.
+
+A bar still on its default is saved as `default`, so a later default reaches it. Builds before
+that saved every default bar as its buttons, and the earlier open message default
+(`archive,trash,move|reply`) still reads as the default.
 
 ### Folder bars
 
