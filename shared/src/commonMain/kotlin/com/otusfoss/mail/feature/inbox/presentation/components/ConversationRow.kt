@@ -17,7 +17,6 @@ import com.otusfoss.core.designsystem.shared.people.components.PersonBadge
 import com.otusfoss.core.designsystem.shared.people.elements.BadgedAvatar
 import com.otusfoss.core.designsystem.shared.rows.components.EntryNeighbors
 import com.otusfoss.core.designsystem.shared.rows.components.RowSelection
-import com.otusfoss.core.designsystem.theme.tokens.rows.InboxTokens
 import com.otusfoss.mail.core.codes.presentation.components.rememberCodeCopy
 import com.otusfoss.mail.core.messages.domain.MailMessage
 import com.otusfoss.mail.core.messages.presentation.components.SenderAvatar
@@ -67,10 +66,11 @@ fun ConversationRow(
         modifier = modifier,
         selection = selection,
         neighbors = neighbors,
+        size = model.size,
         onLongClick = onLongClick,
     ) {
         BadgedAvatar(model.badge?.let { badge -> { PersonBadge(badge.toChipAvatar()) } }) {
-            SenderAvatar(message.sender, size = InboxTokens.compactAvatarSize)
+            SenderAvatar(message.sender, size = model.size.avatarSize)
         }
     }
 }
