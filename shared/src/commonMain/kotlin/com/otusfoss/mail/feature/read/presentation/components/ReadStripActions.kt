@@ -58,17 +58,23 @@ internal class ReadStripActions(
 
     /**
      * A small picture of [file] for the strip, when it is an image small enough to download just
-     * for that; null for other files or when it cannot be had. An image without a size is skipped,
-     * because only a known size keeps the download within [THUMBNAIL_MAX_BYTES].
+     * for that: up to [THUMBNAIL_MAX_BYTES] on Wi-Fi, [METERED_THUMBNAIL_MAX_BYTES] on mobile data
+     * or with Data Saver on. Null for other files or when it cannot be had. An image without a
+     * size is skipped, because only a known size keeps the download within the limit.
      */
     suspend fun thumbnail(
         message: MailMessage,
         file: MailAttachment,
     ): ImageBitmap? =
         file
-            .takeIf { it.kind() == AttachmentKindName.Image && it.size in 1..THUMBNAIL_MAX_BYTES }
+            .takeIf { it.kind() == AttachmentKindName.Image && it.size in 1..thumbnailLimit() }
             ?.let { transfers.bytes(message, it) }
             ?.let { withContext(Dispatchers.Default) { decodeImage(it, THUMBNAIL_PIXELS) } }
+
+    private fun thumbnailLimit(): Long {
+        val network = read.services.files.network
+        return if (network.metered || network.dataSaver) METERED_THUMBNAIL_MAX_BYTES else THUMBNAIL_MAX_BYTES
+    }
 
     /** Where [message]'s newsletter strip stands. */
     fun step(message: MailMessage): NewsletterStep = newsletters.of(message)
@@ -145,8 +151,11 @@ internal class ReadStripActions(
     }
 }
 
-/** The largest image the strip downloads only to show its picture. */
-private const val THUMBNAIL_MAX_BYTES = 2L * 1024 * 1024
+/** The largest image the strip downloads only to show its picture, on Wi-Fi, which fits most phone photos. */
+private const val THUMBNAIL_MAX_BYTES = 20L * 1024 * 1024
+
+/** The same on mobile data or with Data Saver on, which mostly fits screenshots. */
+private const val METERED_THUMBNAIL_MAX_BYTES = 2L * 1024 * 1024
 
 /** Enough pixels for a 40 dp tile on a dense screen. */
 private const val THUMBNAIL_PIXELS = 160
