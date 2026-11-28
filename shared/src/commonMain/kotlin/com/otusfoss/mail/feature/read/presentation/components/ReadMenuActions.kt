@@ -19,7 +19,6 @@ import com.otusfoss.mail.core.mailbox.MailboxRole
 import com.otusfoss.mail.core.messages.domain.MailAction
 import com.otusfoss.mail.core.messages.domain.MailMessage
 import com.otusfoss.mail.core.messages.domain.MessageContent
-import com.otusfoss.mail.core.messages.domain.shownName
 import com.otusfoss.mail.core.messages.presentation.MessageMarks
 import com.otusfoss.mail.core.messages.presentation.actions.ActionSubject
 import com.otusfoss.mail.core.messages.presentation.actions.OfferedAction
