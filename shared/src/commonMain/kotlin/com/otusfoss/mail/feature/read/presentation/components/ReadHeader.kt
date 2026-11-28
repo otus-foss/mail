@@ -105,7 +105,10 @@ private fun ExpandableSubject(subject: String) {
 
 private const val FOLDED_LINES = 2
 
-/** The sender's pill, which takes the room the date and the pills after it leave, its name fading where it does not fit. */
+/**
+ * The sender's pill, which takes the room the date and the pills after it leave, its name fading
+ * where it does not fit.
+ */
 @Composable
 private fun SenderPill(
     page: MailMessage,

@@ -66,14 +66,14 @@ internal class ReadStripActions(
         file: MailAttachment,
     ): ImageBitmap? =
         file
-            .takeIf { it.drawable() && it.size in 1..thumbnailLimit() }
+            .takeIf { it.drawable() && it.size in 1..thumbnailLimit }
             ?.let { transfers.bytes(message, it) }
             ?.let { withContext(Dispatchers.Default) { decodeImage(it, THUMBNAIL_PIXELS) } }
 
-    private fun thumbnailLimit(): Long {
-        val network = read.services.files.network
-        return if (network.metered || network.dataSaver) METERED_THUMBNAIL_MAX_BYTES else THUMBNAIL_MAX_BYTES
-    }
+    private val thumbnailLimit: Long
+        get() =
+            read.services.files.network
+                .let { if (it.metered || it.dataSaver) METERED_THUMBNAIL_MAX_BYTES else THUMBNAIL_MAX_BYTES }
 
     /** Where [message]'s newsletter strip stands. */
     fun step(message: MailMessage): NewsletterStep = newsletters.of(message)
