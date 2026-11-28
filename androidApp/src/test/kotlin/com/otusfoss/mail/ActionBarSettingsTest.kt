@@ -188,8 +188,8 @@ class ActionBarSettingsTest {
             .performScrollTo()
             .performClick()
             .assertIsOn()
-        compose.onNodeWithText("Done").performClick()
-        // Done copies once the sheet has slid away.
+        compose.onNodeWithText("Replace").performClick()
+        // Replace copies once the sheet has slid away.
         compose.waitUntil(TIMEOUT) { compose.onAllNodes(hasText("Copy to")).fetchSemanticsNodes().isEmpty() }
 
         val saved = AndroidMailBehaviorStore(compose.activity).read()

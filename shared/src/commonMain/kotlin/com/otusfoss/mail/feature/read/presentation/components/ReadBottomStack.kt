@@ -112,7 +112,7 @@ private fun ContextStrip(
                 list?.subtitle() ?: "Mailing list",
                 actions.step(page),
                 list?.olderIds?.size ?: 0,
-                onUnsubscribe = { actions.unsubscribe(page, unsubscribe, title) },
+                onUnsubscribe = { actions.unsubscribe(page, unsubscribe) },
                 onArchive = { list?.let { actions.archiveOlder(page, it) } },
             )
         }

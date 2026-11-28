@@ -66,9 +66,9 @@ internal fun CopySignatureSheet(
         )
         Text(
             if (direction == FROM) {
-                "Replaces the signature of ${current.sender.address}."
+                "Replaces this signature."
             } else {
-                "Their signatures are replaced with this one."
+                "Replaces their signatures."
             },
             Modifier.padding(SheetTokens.inset),
             color = OtusColors.text3,

@@ -186,7 +186,7 @@ class JmapMailSource(
                 .values
                 .flatMap { it.mergedByThread() }
                 .filter(query.filters::keepsLoaded)
-        return InboxSnapshot(messages, unavailable, merged.hasMore)
+        return InboxSnapshot(messages, unavailable, merged.hasMore, selected.count { query.reads(it.id) })
     }
 
     /** [login]'s cached pages for [query]; none when the query reads none of its mail. */

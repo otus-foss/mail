@@ -19,6 +19,7 @@ import com.otusfoss.core.designsystem.shared.selection.components.ChoiceRow
 import com.otusfoss.core.designsystem.shared.selection.components.ChoiceSheet
 import com.otusfoss.core.designsystem.shared.selection.components.PickerChip
 import com.otusfoss.mail.core.mailbox.AccountFolders
+import com.otusfoss.mail.core.text.ALL_ACCOUNTS
 
 /**
  * Which account's folders the page shows, as a chip in its header: All accounts while [chosen] is
@@ -74,5 +75,3 @@ fun AccountFolderGroup(
 }
 
 private fun AccountFolders.avatar(): ChipAvatar = ResolvedAvatar(generatedAvatar(accountName, "")).toChipAvatar()
-
-private const val ALL_ACCOUNTS = "All accounts"

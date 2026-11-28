@@ -84,7 +84,6 @@ internal class ReadStripActions(
     fun unsubscribe(
         message: MailMessage,
         how: Unsubscribe,
-        title: String,
     ) {
         val lists = read.services.newsletters ?: return
         val web = how.web
@@ -96,11 +95,11 @@ internal class ReadStripActions(
                 when (val result = lists.unsubscribe(message, how)) {
                     UnsubscribeResult.Done -> Unit
                     is UnsubscribeResult.OpenLink -> finishOnTheWeb(message, result.url)
-                    UnsubscribeResult.Failed -> failed(message, title)
+                    UnsubscribeResult.Failed -> failed(message)
                 }
             }
         }
-        toasts.show(ToastMessage("Unsubscribed from $title", undo, onClose = send))
+        toasts.show(ToastMessage("Unsubscribed", undo, onClose = send))
     }
 
     /** The list took no request, so the user is subscribed until they finish on its page. */
@@ -112,29 +111,37 @@ internal class ReadStripActions(
         openLink(url)
     }
 
-    private fun failed(
-        message: MailMessage,
-        title: String,
-    ) {
+    private fun failed(message: MailMessage) {
         newsletters.set(message, NewsletterStep.Subscribed)
-        toasts.show(ToastMessage("Couldn't unsubscribe from $title. Try again."))
+        toasts.show(ToastMessage("Couldn't unsubscribe. Try again."))
     }
 
-    /** Archives the [list]'s older mail, after unsubscribing. */
+    /**
+     * Archives the [list]'s older mail, after unsubscribing. The strip goes at once and the mail
+     * moves only when the Undo toast closes, as with [unsubscribe].
+     */
     fun archiveOlder(
         message: MailMessage,
         list: MailingList,
     ) {
         val lists = read.services.newsletters ?: return
         newsletters.set(message, NewsletterStep.Archived)
-        read.effects.launch {
-            val done = lists.archive(message.location.accountId, list.olderIds)
-            if (!done) newsletters.set(message, NewsletterStep.Unsubscribed)
-            val count = list.olderIds.size
-            toasts.show(
-                ToastMessage(if (done) "$count older digests archived" else "Couldn't archive them. Try again."),
-            )
+        // A failed unsubscribe may have put the strip back to Subscribed meanwhile; that state wins.
+        val restore = {
+            if (newsletters.of(message) == NewsletterStep.Archived) {
+                newsletters.set(message, NewsletterStep.Unsubscribed)
+            }
         }
+        val undo = UiAction("Undo", onClick = restore)
+        val archive = {
+            read.effects.launch {
+                if (!lists.archive(message.location.accountId, list.olderIds)) {
+                    restore()
+                    toasts.show(ToastMessage("Couldn't archive them. Try again."))
+                }
+            }
+        }
+        toasts.show(ToastMessage("Archived", undo, onClose = archive))
     }
 }
 

@@ -10,12 +10,14 @@ import com.otusfoss.mail.core.messages.domain.SenderKey
 import com.otusfoss.mail.core.messages.domain.lastReceived
 import com.otusfoss.mail.core.messages.presentation.avatar
 import com.otusfoss.mail.core.settings.presentation.label
+import com.otusfoss.mail.core.text.accountLabel
 
 /**
  * One person the filter panel's From or To line matches: a person with every address they use, the most
  * used first, their resolved [avatar] when loaded mail has one, and in how many [conversations]
  * of the view or of search they appear. [own] marks one of the user's addresses in the To line,
- * which the login named [accountName] receives; its [avatar] is that account's.
+ * which the login named [accountName] receives, blank when the user has one account; its [avatar]
+ * is that account's.
  */
 data class FilterPerson(
     val name: String,
@@ -76,7 +78,7 @@ fun toPeople(
                     avatar = accountAvatars[address.accountId],
                     conversations = received.count { (_, people) -> people.any { it.isAt(address.address) } },
                     own = address,
-                    accountName = account,
+                    accountName = accountLabel(listOf(account), accountNames.size).orEmpty(),
                 )
             }
     val loaded =

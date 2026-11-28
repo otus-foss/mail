@@ -18,6 +18,8 @@ data class InboxSnapshot(
     val unavailable: List<UnavailableAccount> = emptyList(),
     /** Whether older pages remain on the server, which [MailSource.more] loads. */
     val hasMore: Boolean = false,
+    /** How many accounts this load asked, so [unavailable] can tell some of them from all. */
+    val accounts: Int = 1,
 )
 
 interface MailSource {

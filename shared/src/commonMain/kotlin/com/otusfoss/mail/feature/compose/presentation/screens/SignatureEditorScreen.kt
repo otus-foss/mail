@@ -107,7 +107,7 @@ fun SignatureEditorScreen(
     if (removing) {
         ConfirmDialog(
             "Remove signature?",
-            "Messages from ${editor.identity.sender.address} go out without one.",
+            null,
             "Remove",
             onConfirm = editor::remove,
             onDismiss = { removing = false },

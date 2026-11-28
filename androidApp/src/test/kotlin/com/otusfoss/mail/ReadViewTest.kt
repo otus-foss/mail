@@ -227,8 +227,9 @@ class ReadViewTest {
         compose.waitUntil(TIMEOUT) { exists("Images blocked for privacy") && exists("Mailing list") }
         compose.screenshot("read/newsletter")
         compose.onNode(hasText("Unsubscribe") and hasClickAction()).performClick()
-        compose.onNodeWithText("Unsubscribed").assertIsDisplayed()
-        assertTrue(exists("23 older digests"))
+        // The card goes and only the Archive button stays where Unsubscribe was.
+        compose.onNode(hasText("Archive 23") and hasClickAction()).assertIsDisplayed()
+        assertTrue(!exists("Mailing list"))
         compose.screenshot("read/newsletter_unsubscribed")
         compose.onNode(hasText("Show") and hasClickAction()).performClick()
         compose.onNodeWithText("Images shown").assertIsDisplayed()

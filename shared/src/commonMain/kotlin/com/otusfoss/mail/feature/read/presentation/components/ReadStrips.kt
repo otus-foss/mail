@@ -53,8 +53,9 @@ internal fun ReadAttachmentStrip(
 }
 
 /**
- * What a newsletter's strip says at each [step]: its [title] and [subtitle] with Unsubscribe, then
- * that it is done with Archive all while [older] mail of the list waits in the account.
+ * A newsletter's strip at each [step]: its [title] and [subtitle] with Unsubscribe. Once
+ * unsubscribed, the card goes and only "Archive [older]" stays in its place while older mail of the
+ * list waits in the account; after that, or with none waiting, the strip is gone.
  */
 @Composable
 internal fun ReadNewsletterStrip(
@@ -66,29 +67,15 @@ internal fun ReadNewsletterStrip(
     onArchive: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val icon = Res.drawable.symbol_newspaper
-    when (step) {
-        NewsletterStep.Subscribed -> {
-            InfoStrip(
-                icon,
-                title,
-                subtitle,
-                UiAction("Unsubscribe", Res.drawable.symbol_unsubscribe, onClick = onUnsubscribe),
-                modifier,
-            )
+    val subscribed = step == NewsletterStep.Subscribed
+    if (step == NewsletterStep.Archived || (!subscribed && older == 0)) return
+    val action =
+        if (subscribed) {
+            UiAction("Unsubscribe", Res.drawable.symbol_unsubscribe, onClick = onUnsubscribe)
+        } else {
+            UiAction("Archive $older", Res.drawable.symbol_archive, onClick = onArchive)
         }
-
-        NewsletterStep.Unsubscribed -> {
-            val waiting = if (older == 1) "1 older digest in your mail" else "$older older digests in your mail"
-            val detail = listOfNotNull(TAKES, waiting.takeIf { older > 0 }).joinToString(" · ")
-            val archive = UiAction("Archive all", Res.drawable.symbol_archive, onClick = onArchive).takeIf { older > 0 }
-            InfoStrip(icon, UNSUBSCRIBED, detail, archive, modifier)
-        }
-
-        NewsletterStep.Archived -> {
-            InfoStrip(icon, UNSUBSCRIBED, "$TAKES · older digests archived", null, modifier)
-        }
-    }
+    InfoStrip(Res.drawable.symbol_newspaper, title, subtitle, action, modifier, framed = subscribed)
 }
 
 /** This file as the design system shows it, with its [thumbnail] and whether it is [kept] offline. */
@@ -134,7 +121,3 @@ private val AttachmentKindName.shown: AttachmentKind
             AttachmentKindName.Code -> AttachmentKind.Code
             AttachmentKindName.Other -> AttachmentKind.Other
         }
-
-private const val UNSUBSCRIBED = "Unsubscribed"
-
-private const val TAKES = "Takes up to 2 days"

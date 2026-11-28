@@ -56,7 +56,7 @@ internal fun SortedMoveSheet(
             PersonText("New mail ${move.catches} will go there too.", move.person?.namedByAddress, RowTextInset)
             when {
                 checking -> {
-                    OlderMailCard("Checking Inbox and Archive…", "Older mail ${move.catches}")
+                    OlderMailCard("Checking Inbox and Archive…", "Older mail")
                 }
 
                 older == null -> {
@@ -72,7 +72,7 @@ internal fun SortedMoveSheet(
                 }
 
                 else -> {
-                    OlderMailCard(olderTitle(count), "All ${move.catches}, still in Inbox or Archive")
+                    OlderMailCard(olderTitle(count), "In Inbox or Archive")
                 }
             }
             if (checking || count > 0) {

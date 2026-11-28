@@ -19,7 +19,6 @@ import com.otusfoss.mail.core.mailbox.MailboxRole
 import com.otusfoss.mail.core.messages.domain.MailAction
 import com.otusfoss.mail.core.messages.domain.MailMessage
 import com.otusfoss.mail.core.messages.domain.MessageContent
-import com.otusfoss.mail.core.messages.domain.shownName
 import com.otusfoss.mail.core.messages.presentation.MessageMarks
 import com.otusfoss.mail.core.messages.presentation.actions.ActionSubject
 import com.otusfoss.mail.core.messages.presentation.actions.OfferedAction
@@ -181,14 +180,16 @@ internal class ReadMenuActions(
     private fun offer(action: MailAction): OfferedAction? =
         if (action == MailAction.Read || action == MailAction.Flag) pageSubject.offer(action) else subject.offer(action)
 
+    /** Saves the block once the toast closes, so its Undo takes nothing back from the server. */
     private fun block() {
         val senderBlocks = blocks ?: return
-        val name = page.sender.shownName
-        read.effects.launch {
-            val blocked = senderBlocks.block(page)
-            val text = if (blocked) "Mail from $name now goes to Spam" else "Couldn't block $name. Try again."
-            read.effects.toasts.show(ToastMessage(text))
+        val toasts = read.effects.toasts
+        val save = {
+            read.effects.launch {
+                if (!senderBlocks.block(page)) toasts.show(ToastMessage("Couldn't block. Try again."))
+            }
         }
+        toasts.show(ToastMessage("Sender blocked", UiAction("Undo") {}, onClose = save))
     }
 
     private fun mute(on: Boolean) {

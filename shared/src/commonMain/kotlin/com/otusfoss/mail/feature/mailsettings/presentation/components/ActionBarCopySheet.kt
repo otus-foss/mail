@@ -48,7 +48,7 @@ internal fun ActionBarCopySheet(
         "Copy to",
         onDismiss,
         done =
-            UiAction("Done", onClick = {
+            UiAction("Replace", enabled = ticked.isNotEmpty(), onClick = {
                 state.updateActions { now ->
                     now.copy(bars = now.bars + ticked.associateWith { now.copiedBar(from, it, readLater) })
                 }
@@ -72,7 +72,6 @@ internal fun ActionBarCopySheet(
             if (unusable.isNotEmpty()) {
                 Caption("${unusable.joinToString(" and ") { it.title }} can't use these buttons.", heading = false)
             }
-            Caption("Replaces the bars you tick.", heading = false)
         }
     }
 }

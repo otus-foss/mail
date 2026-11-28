@@ -13,6 +13,7 @@ import com.otusfoss.core.designsystem.shared.selection.components.ChoiceSheet
 import com.otusfoss.core.designsystem.shared.settings.components.SettingRow
 import com.otusfoss.core.designsystem.shared.settings.components.SettingsSection
 import com.otusfoss.core.designsystem.shared.settings.elements.ValueButton
+import com.otusfoss.mail.core.text.accountLabel
 import com.otusfoss.mail.feature.notifications.domain.NotificationPreviews
 import com.otusfoss.mail.feature.notifications.domain.PreviewChoices
 import com.otusfoss.mail.feature.notifications.presentation.NotificationSettingsState
@@ -36,18 +37,20 @@ fun NotificationOverridesScreen(
     val previews = state.previews ?: PreviewChoices()
     Subpage("Accounts and addresses", onBack) {
         accounts.forEach { account ->
-            SettingsSection(account.name) {
+            SettingsSection(accountLabel(listOf(account.name), accounts.size)) {
+                val login = previews.logins[account.id]
                 SettingRow(
-                    "All mail of this account",
+                    if (accounts.size > 1) "All mail of this account" else "All mail",
                     { editing = PreviewTarget.Login(account.id, account.name) },
-                    description = previews.forLogin(account.id).short,
-                ) { ValueButton(previews.logins[account.id]?.short ?: "Same") }
+                    // The button shows a choice of its own; the line below only says what "Same" means.
+                    description = previews.forLogin(account.id).short.takeIf { login == null },
+                ) { ValueButton(login?.short ?: "Same") }
                 account.addresses.forEach { address ->
                     val own = previews.forAddress(account.id, address)
                     SettingRow(
                         address,
-                        { editing = PreviewTarget.Address(address, account.id, account.name) },
-                        description = (own ?: previews.forLogin(account.id)).short,
+                        { editing = PreviewTarget.Address(address, account.id) },
+                        description = previews.forLogin(account.id).short.takeIf { own == null },
                     ) { ValueButton(own?.short ?: "Same") }
                 }
             }

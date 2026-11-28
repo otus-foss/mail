@@ -81,7 +81,7 @@ class MarkOutcomeTest {
     @Test
     fun namesWhatFailedOutOfTheWholeChange() {
         assertEquals(
-            "Couldn't mark the email as read",
+            "Couldn't mark as read",
             notMarkedText(MessageFlag.Read, on = true, failed = 1, total = 1),
         )
         assertEquals(
@@ -89,6 +89,6 @@ class MarkOutcomeTest {
             notMarkedText(MessageFlag.Read, on = false, failed = 1, total = 4),
         )
         assertEquals("Couldn't flag 3 emails", notMarkedText(MessageFlag.Flagged, on = true, failed = 3, total = 4))
-        assertEquals("Couldn't unflag the email", notMarkedText(MessageFlag.Flagged, on = false, failed = 1, total = 1))
+        assertEquals("Couldn't unflag", notMarkedText(MessageFlag.Flagged, on = false, failed = 1, total = 1))
     }
 }

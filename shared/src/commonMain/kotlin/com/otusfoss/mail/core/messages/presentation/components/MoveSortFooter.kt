@@ -46,7 +46,7 @@ internal fun MoveSortFooter(sorting: MoveSorting) {
             row = { ChoiceRow(it.value, it.detail, person = it.person?.namedByAddress, keyword = it.keyword) },
             onSelect = sorting.onChoose,
             onDismiss = { choosing = false },
-            footnote = "Becomes a rule in ${future.accountName}.",
+            footnote = future.account?.let { "Becomes a rule in $it." },
         )
     }
 }

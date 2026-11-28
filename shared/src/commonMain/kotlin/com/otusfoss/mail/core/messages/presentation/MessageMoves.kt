@@ -34,9 +34,12 @@ class SortChoice(
     val addRule: (MoveTarget, moved: List<MailMessage>) -> Unit,
 )
 
-/** The rules that can sort future mail like a message, saved in [accountName]'s rules. */
+/**
+ * The rules that can sort future mail like a message, saved in its account's rules. [account] names
+ * that account where the user has several, and is null where they have one.
+ */
 class FutureSorting(
-    val accountName: String,
+    val account: String?,
     val choices: List<SortChoice>,
 )
 

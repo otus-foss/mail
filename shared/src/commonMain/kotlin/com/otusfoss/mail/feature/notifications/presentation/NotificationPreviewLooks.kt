@@ -62,10 +62,9 @@ internal sealed interface PreviewTarget {
     data class Address(
         val address: String,
         val loginId: String,
-        val account: String,
     ) : PreviewTarget {
         override val title = address
-        override val same = "Same as $account"
+        override val same = "Same as account"
 
         override fun current(choices: PreviewChoices) = choices.forAddress(loginId, address)
 
