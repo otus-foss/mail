@@ -255,6 +255,11 @@ message arrived: the time today, "Yesterday", the weekday within the last week, 
 format before that (`receivedLabel`). The second line is the sender's name, or the address when
 the message has none.
 
+Read rows step back through weight and color, not opacity: regular weight, with the text, icons,
+and count in text3. Rows touching each other in a list form a group, rounding 4 dp where they meet
+and fully at the group's ends. **Size** in Mail list settings picks Comfortable rows, the default,
+or Compact ones with a smaller avatar and less padding.
+
 The last line shows only what the page doesn't already say:
 
 - The message's other folders, as `LabelPill`s, from its `mailboxIds`. Rows name the inbox and the

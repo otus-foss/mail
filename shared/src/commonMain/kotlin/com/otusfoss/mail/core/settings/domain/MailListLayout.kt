@@ -20,6 +20,14 @@ enum class PreviewLines(
     Two("two", 2),
 }
 
+/** How tall each row is: [Compact] fits more rows, [Comfortable] gives each more room. */
+enum class RowSize(
+    val storageValue: String,
+) {
+    Compact("compact"),
+    Comfortable("comfortable"),
+}
+
 /** How a row names the day a message arrived, and whether its dates name the month, as "Oct 8". */
 enum class DateStyle(
     val storageValue: String,
@@ -51,6 +59,7 @@ data class MailListLayout(
     val folderIcons: Boolean = true,
     val dateStyle: DateStyle = DateStyle.Relative,
     val showThisYear: Boolean = true,
+    val size: RowSize = RowSize.Comfortable,
 ) {
     companion object {
         /** One `name=value` line per setting, so a new setting cannot break an older saved value. */
@@ -62,6 +71,7 @@ data class MailListLayout(
                 FOLDER_ICONS to layout.folderIcons.toString(),
                 DATE_STYLE to layout.dateStyle.storageValue,
                 SHOW_THIS_YEAR to layout.showThisYear.toString(),
+                SIZE to layout.size.storageValue,
             ).joinToString("\n") { (name, value) -> "$name=$value" }
 
         /** Missing or unknown values read as the defaults. */
@@ -76,6 +86,7 @@ data class MailListLayout(
                 dateStyle =
                     DateStyle.entries.firstOrNull { it.storageValue == values[DATE_STYLE] } ?: defaults.dateStyle,
                 showThisYear = values[SHOW_THIS_YEAR]?.toBooleanStrictOrNull() ?: defaults.showThisYear,
+                size = RowSize.entries.firstOrNull { it.storageValue == values[SIZE] } ?: defaults.size,
             )
         }
 
@@ -85,5 +96,6 @@ data class MailListLayout(
         private const val FOLDER_ICONS = "folderIcons"
         private const val DATE_STYLE = "dateStyle"
         private const val SHOW_THIS_YEAR = "showThisYear"
+        private const val SIZE = "size"
     }
 }

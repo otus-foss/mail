@@ -22,7 +22,7 @@ import com.otusfoss.core.designsystem.shared.contacts.components.LetterIndexStat
 import com.otusfoss.core.designsystem.shared.contacts.components.letterIndexHandle
 import com.otusfoss.core.designsystem.shared.people.components.ChipAvatar
 import com.otusfoss.core.designsystem.shared.rows.components.EntryTaps
-import com.otusfoss.core.designsystem.shared.rows.components.RowSelection
+import com.otusfoss.core.designsystem.shared.rows.components.entryNeighbors
 import com.otusfoss.core.designsystem.shared.rows.components.rowSelection
 import com.otusfoss.core.designsystem.shared.rows.elements.SectionCaption
 import com.otusfoss.core.designsystem.theme.tokens.layout.PageTokens
@@ -110,8 +110,8 @@ private fun LazyListScope.groupRows(
             group.displayName,
             peopleCount(content.membersOf(group)),
             group.groupAvatar,
-            group.key,
-            rowSelection(groupKeys, index, actions.selected),
+            groupKeys,
+            index,
             actions,
             ContactEntryEnd(label = content.booksOf(group).firstNotNullOfOrNull { it.rowLabel() }),
         )
@@ -147,8 +147,8 @@ private fun LazyListScope.letterSections(
                 person.name,
                 person.emails.firstOrNull()?.value ?: main.role ?: "No address",
                 person.avatar,
-                main.key,
-                rowSelection(keys, index, actions.selected),
+                keys,
+                index,
                 actions,
                 ContactEntryEnd(
                     detail = "+$extra".takeIf { extra > 0 },
@@ -172,23 +172,29 @@ private fun ContactListContent.letterPositions(sections: Map<String, List<Contac
     return sections.keys.zip(sections.values.runningFold(first) { at, people -> at + 1 + people.size }).toMap()
 }
 
-/** One group or person row: a tap opens it, or toggles it while a selection is on; a hold toggles it. */
+/**
+ * The group or person at [index] in its run of [keys]: a tap opens it, or toggles it while a
+ * selection is on; a hold toggles it. It joins selected neighbors and groups with the run.
+ */
 @Composable
 private fun ListRow(
     title: String,
     subtitle: String,
     avatar: ChipAvatar,
-    key: CardKey,
-    selection: RowSelection?,
+    keys: List<CardKey>,
+    index: Int,
     actions: ContactListActions,
     end: ContactEntryEnd,
 ) {
+    val key = keys[index]
+    val selection = rowSelection(keys, index, actions.selected)
     ContactEntry(
         title,
         subtitle,
         avatar,
         EntryTaps({ if (selection != null) actions.onToggle(key) else actions.onOpen(key) }, { actions.onToggle(key) }),
         selection = selection,
+        neighbors = entryNeighbors(index, keys.size),
         end = end,
     )
 }
