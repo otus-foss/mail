@@ -95,7 +95,6 @@ class MailBehaviorRoundTripTest {
                         ActionBarPlace.entries.associateWith { it.defaultLayout } +
                             (ActionBarPlace.Message to ActionBarLayout(listOf(MailAction.Spam), MailAction.ReadLater)),
                     barMode = ActionBarMode.Fixed,
-                    minimizedBar = true,
                     notificationActions = listOf(MailAction.Reply),
                 ),
             avatars = AvatarBehavior(true, IconSource.DuckDuckGo, "bulwark.example.net", allAccountPhotos = false),

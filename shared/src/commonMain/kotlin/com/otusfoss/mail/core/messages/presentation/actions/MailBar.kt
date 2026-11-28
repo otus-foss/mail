@@ -11,21 +11,20 @@ import com.otusfoss.mail.core.messages.domain.barLayout
 import com.otusfoss.mail.core.settings.domain.ActionBehavior
 
 /**
- * One place's bar: its [layout], each button as [offer] gives it, whether it is [minimized] to its
- * primary, and [every] action the place offers, for the All actions menu.
+ * One place's bar: its [layout], each button as [offer] gives it, and [every] action the place
+ * offers, for the All actions menu.
  */
 internal class MailBar(
     val layout: ActionBarLayout,
     val offer: (BarButton) -> OfferedAction?,
-    val minimized: Boolean,
     val every: List<OfferedAction>,
     private val offBar: List<BarButton>,
 ) {
     /**
-     * What the place offers that the bar does not show, for a menu: the secondary buttons while it
-     * is minimized, then the actions it has no slot for, without those the menu shows elsewhere.
+     * What the place offers that the bar has no slot for, for a menu, without those the menu shows
+     * elsewhere.
      */
-    fun more(shownElsewhere: Set<BarButton> = emptySet()): List<OfferedAction> =
+    fun more(shownElsewhere: Set<BarButton>): List<OfferedAction> =
         offBar.filter { it !in shownElsewhere }.mapNotNull(offer)
 }
 
@@ -42,13 +41,11 @@ internal fun ActionBehavior.barFor(
 ): MailBar {
     val layout = barLayout(place, role).let { if (reply == null) it else it.following(reply) }
     val choices = place.actions.filter { it != MailAction.AllActions }
-    val hidden = if (minimizedBar) layout.secondary else emptyList()
     return MailBar(
         layout,
         offer,
-        minimizedBar,
         every = choices.mapNotNull(offer),
-        offBar = hidden + choices.filter { it !in layout.buttons },
+        offBar = choices.filter { it !in layout.buttons },
     )
 }
 

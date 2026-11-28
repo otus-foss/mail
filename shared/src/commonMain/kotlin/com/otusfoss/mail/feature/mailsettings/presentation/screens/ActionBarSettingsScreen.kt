@@ -28,8 +28,7 @@ import com.otusfoss.mail.feature.mailsettings.presentation.components.title
  * Chooses whether each screen has its own action bar or one bar is used everywhere. A card per
  * bar that mode shows previews it as saved, and tapping the card opens its editor, where Move to
  * buttons pick among [folders], the paths of every account's own folders, each icon in its
- * [folderColor]. The editor's menu copies the bar to other screens. Minimize shrinks every bar to
- * a round button for its main action.
+ * [folderColor]. The editor's menu copies the bar to other screens.
  */
 @Composable
 fun ActionBarSettingsScreen(

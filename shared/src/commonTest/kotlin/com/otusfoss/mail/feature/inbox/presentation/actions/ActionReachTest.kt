@@ -44,10 +44,9 @@ class ActionReachTest {
             MoveTarget("receipts", listOf("Receipts"), own = true, path = listOf("Receipts")),
         )
 
-    /** Full and minimized bars, each with the default buttons and with a Read bar that has no reply. */
+    /** The default buttons, and a Read bar that has no reply. */
     private val behaviors =
-        listOf(false, true).flatMap { minimized ->
-            val base = ActionBehavior(minimizedBar = minimized)
+        ActionBehavior().let { base ->
             val noReply = ActionBarPlace.Message to ActionBarLayout(emptyList(), MailAction.Read)
             listOf(base, base.copy(bars = base.bars + noReply))
         }
@@ -81,8 +80,7 @@ class ActionReachTest {
                             role,
                             subject(role, listOf(message())),
                         )
-                    val shown = if (bar.minimized) listOf(bar.layout.primary) else bar.layout.buttons
-                    shown.filter { bar.offer(it) != null } + (bar.more() + bar.every).map(offers::getValue)
+                    bar.layout.buttons.filter { bar.offer(it) != null } + bar.every.map(offers::getValue)
                 }
             }
         assertEquals(offered(ActionBarPlace.Selection), reached.toSet())
@@ -98,8 +96,8 @@ class ActionReachTest {
         val subject = subject(role, listOf(page), page)
         val (bar, offers) = barOf(behavior, ActionBarPlace.Message, role, subject, page.replyAction(own))
         val menu = readMenu(ReadPage(page, own, count = count))
-        val shown = if (bar.minimized) listOf(bar.layout.primary) else bar.layout.buttons
-        return (shown + menu.placed).filter { subject.offer(it) != null } + bar.more(menu.covers).map(offers::getValue)
+        return (bar.layout.buttons + menu.placed).filter { subject.offer(it) != null } +
+            bar.more(menu.covers).map(offers::getValue)
     }
 
     private fun barOf(
