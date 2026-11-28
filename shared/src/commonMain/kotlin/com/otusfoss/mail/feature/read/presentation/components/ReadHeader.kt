@@ -21,8 +21,8 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.coerceAtLeast
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.max
-import com.otusfoss.core.designsystem.mail.attachments.elements.FilesPill
-import com.otusfoss.core.designsystem.mail.attachments.elements.filesPillWidth
+import com.otusfoss.core.designsystem.mail.attachments.components.FilesPill
+import com.otusfoss.core.designsystem.mail.attachments.components.filesPillWidth
 import com.otusfoss.core.designsystem.mail.compose.elements.AddressPill
 import com.otusfoss.core.designsystem.resources.Res
 import com.otusfoss.core.designsystem.resources.symbol_bookmark
